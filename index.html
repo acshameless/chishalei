@@ -3,8 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>吃啥嘞</title>
+<meta name="description" content="今天吃什么？问问天意。一个带有中原饮食文化气息的数字签筒。">
+<title>吃啥嘞 — 问问天意</title>
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@400;600;800&family=Zen+Kaku+Gothic+New:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -329,6 +331,185 @@ h1 {
 .food-tag:hover .del-btn { opacity: 0.45; }
 .del-btn:hover { opacity: 1 !important; }
 
+/* ── Fortune slip ── */
+.fortune-wrap {
+  width: 100%;
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 0;
+  max-height: 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: max-height 0.4s ease, opacity 0.6s ease 0.3s, margin 0.4s ease;
+}
+.fortune-wrap.visible {
+  max-height: 100px;
+  min-height: 44px;
+  margin-top: -8px;
+  margin-bottom: 8px;
+  opacity: 1;
+}
+
+.fortune-text {
+  font-family: 'Shippori Mincho B1', serif;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--ink-light);
+  letter-spacing: 0.18em;
+  line-height: 1.9;
+}
+
+/* ── Share buttons ── */
+.share-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 0;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.4s ease, opacity 0.5s ease 0.5s, margin-bottom 0.4s ease;
+}
+.share-row.visible {
+  max-height: 60px;
+  margin-bottom: 48px;
+  opacity: 1;
+}
+
+.share-btn {
+  background: none;
+  border: 1px solid var(--paper-dark);
+  padding: 6px 18px;
+  font-size: 11px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-weight: 300;
+  color: var(--ink-light);
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.share-btn:hover {
+  border-color: var(--lacquer);
+  color: var(--lacquer);
+}
+
+/* ── Share overlay ── */
+.share-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(35,32,27,0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+}
+.share-overlay.active { display: flex; }
+
+.share-preview {
+  background: var(--card);
+  border: 1px solid var(--paper-dark);
+  padding: 20px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+}
+.share-preview img {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin-bottom: 16px;
+}
+.share-hint {
+  font-size: 11px;
+  color: var(--ink-light);
+  letter-spacing: 0.15em;
+  font-weight: 300;
+  margin-bottom: 12px;
+}
+.share-close {
+  background: none;
+  border: 1px solid var(--paper-dark);
+  padding: 6px 24px;
+  font-size: 12px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  color: var(--ink-mid);
+  cursor: pointer;
+  letter-spacing: 0.12em;
+  transition: all 0.15s;
+}
+.share-close:hover { border-color: var(--lacquer); color: var(--lacquer); }
+
+/* ── Hidden share card (for html2canvas) ── */
+.share-card-hidden {
+  position: fixed;
+  left: 0;
+  top: 0;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  width: 540px;
+  background: #F6F1E9;
+  background-image: radial-gradient(circle, #CBC0AE 0.8px, transparent 0.8px);
+  background-size: 20px 20px;
+  font-family: 'Shippori Mincho B1', serif;
+  color: #23201B;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80px 48px 56px;
+}
+.sc-label {
+  font-size: 12px;
+  color: #A89F94;
+  letter-spacing: 0.35em;
+  margin-bottom: 40px;
+  font-weight: 300;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+}
+.sc-food {
+  font-size: 56px;
+  font-weight: 600;
+  color: #8A3D27;
+  letter-spacing: 0.12em;
+  margin-bottom: 36px;
+  line-height: 1.3;
+}
+.sc-fortune {
+  font-size: 15px;
+  color: #6B6055;
+  letter-spacing: 0.2em;
+  line-height: 2;
+  margin-bottom: 56px;
+  text-align: center;
+}
+.sc-divider {
+  width: 32px;
+  height: 1px;
+  background: #E8DFD0;
+  margin-bottom: 24px;
+}
+.sc-brand {
+  font-size: 13px;
+  color: #A89F94;
+  letter-spacing: 0.18em;
+  margin-bottom: 6px;
+}
+.sc-url {
+  font-size: 10px;
+  color: #CBC0AE;
+  letter-spacing: 0.12em;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-weight: 300;
+}
+
 /* ── Footer ── */
 .footer {
   margin-top: 64px;
@@ -341,6 +522,37 @@ h1 {
   font-weight: 300;
 }
 .footer-rule { width: 20px; height: 1px; background: var(--paper-dark); }
+
+/* ── Sound toggle ── */
+.sound-toggle {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--paper-dark);
+  background: var(--card);
+  color: var(--ink-mid);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  font-family: 'Shippori Mincho B1', serif;
+  line-height: 1;
+}
+.sound-toggle:hover {
+  border-color: var(--lacquer);
+  color: var(--lacquer);
+  transform: scale(1.08);
+}
+.sound-toggle.muted {
+  opacity: 0.4;
+}
 </style>
 </head>
 <body>
@@ -365,12 +577,21 @@ h1 {
     </div>
   </div>
 
+  <div class="fortune-wrap" id="fortune-wrap">
+    <div class="fortune-text" id="fortune-text"></div>
+  </div>
+
   <div class="btn-wrap">
     <button class="btn" id="btn" onclick="spin()">
       <span class="btn-label">问问天意</span>
       <span class="btn-rule"></span>
       <span class="btn-kanji">签</span>
     </button>
+  </div>
+
+  <div class="share-row" id="share-row">
+    <button class="share-btn" onclick="shareFood()">分享这道菜</button>
+    <button class="share-btn" onclick="shareFortune()">分享今日天意</button>
   </div>
 
   <div class="divider">
@@ -388,8 +609,36 @@ h1 {
   </div>
 </div>
 
+<!-- Share overlay -->
+<div class="share-overlay" id="share-overlay" onclick="closeShareOverlay(event)">
+  <div class="share-preview">
+    <img id="share-preview-img" src="" alt="分享图预览">
+    <div class="share-hint">长按图片保存 · 分享给朋友</div>
+    <button class="share-close" onclick="closeShareOverlay()">关闭</button>
+  </div>
+</div>
+
+<!-- Hidden share card DOM (for html2canvas rendering) -->
+<div class="share-card-hidden" id="share-card">
+  <div class="sc-label" id="sc-label">今儿个吃这个</div>
+  <div class="sc-food" id="sc-food">胡辣汤</div>
+  <div class="sc-fortune" id="sc-fortune">宜热食<br>忌久饿</div>
+  <div class="sc-divider"></div>
+  <div class="sc-brand">吃啥嘞</div>
+  <div class="sc-url">chisha.shameless.top</div>
+</div>
+
+<button class="sound-toggle" id="sound-toggle" onclick="toggleSound()" title="音效开关">♪</button>
+
 <script>
-const foods = [
+/* ═══════════════════════════════════════
+   State & localStorage
+   ═══════════════════════════════════════ */
+
+const STORAGE_KEY = 'chisha-state';
+const STATE_VERSION = 1;
+
+const DEFAULT_FOODS = [
   '烩面','胡辣汤','灌汤包','羊肉汤','浆面条',
   '道口烧鸡','鲤鱼焙面','水煎包','炒凉粉','杠子馍',
   '菜馍','油茶','豆腐脑','红焖羊肉','卤面',
@@ -398,6 +647,185 @@ const foods = [
   '信阳焖罐肉','南阳黄牛肉','周口羊肉汤','许昌卤面','新乡烧饼',
   '洛阳水席','开封炒凉粉','逍遥胡辣汤','三鲜烩面','萝卜丝饼'
 ];
+
+function defaultState() {
+  return {
+    version: STATE_VERSION,
+    foods: [...DEFAULT_FOODS],
+    history: {
+      recent: [],
+      favorites: [],
+      blacklist: [],
+      todayFortune: null,
+      todayPick: null
+    },
+    settings: {
+      sound: true
+    }
+  };
+}
+
+function migrateState(raw) {
+  // v0 → v1: add version, restructure history
+  if (!raw.version) {
+    raw.version = 1;
+    if (Array.isArray(raw.history)) {
+      raw.history = { recent: raw.history };
+    }
+  }
+  if (!raw.history) raw.history = {};
+  if (!raw.history.recent) raw.history.recent = [];
+  if (!raw.history.favorites) raw.history.favorites = [];
+  if (!raw.history.blacklist) raw.history.blacklist = [];
+  if (!('todayFortune' in raw.history)) raw.history.todayFortune = null;
+  if (!('todayPick' in raw.history)) raw.history.todayPick = null;
+  if (!raw.settings) raw.settings = { sound: true };
+  return raw;
+}
+
+function loadState() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (!raw) return defaultState();
+    return migrateState(raw);
+  } catch {
+    return defaultState();
+  }
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch { /* quota exceeded — silent */ }
+}
+
+const state = loadState();
+
+// Convenience accessors
+function getFoods() { return state.foods; }
+
+/* ═══════════════════════════════════════
+   Sound System (Web Audio API)
+   Audio: Woodblock #268822 (CC0) — kwahmah_02
+   Audio: Wax seal #759526 (CC0) — Cerise_Virtuelle
+   ═══════════════════════════════════════ */
+
+let audioCtx = null;
+let woodblockBuffer = null;
+let stampBuffer = null;
+let preloadPromise = null;
+
+function ensureAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return audioCtx;
+}
+
+// Preload audio files into AudioBuffers
+async function loadSoundFile(url) {
+  try {
+    const ctx = ensureAudioCtx();
+    const res = await fetch(url);
+    const arrayBuf = await res.arrayBuffer();
+    return await ctx.decodeAudioData(arrayBuf);
+  } catch {
+    return null; // Graceful fallback: silent
+  }
+}
+
+async function preloadSounds() {
+  const ctx = ensureAudioCtx();
+  [woodblockBuffer, stampBuffer] = await Promise.all([
+    loadSoundFile('sounds/woodblock.wav'),
+    loadSoundFile('sounds/stamp.wav')
+  ]);
+}
+
+function ensurePreload() {
+  if (!preloadPromise) {
+    preloadPromise = preloadSounds();
+  }
+  return preloadPromise;
+}
+
+// Start preloading as early as possible (decodeAudioData works in suspended state)
+ensurePreload();
+
+// Unlock audio context on first user interaction (iOS Safari / WeChat requirement)
+function unlockAudio() {
+  const ctx = ensureAudioCtx();
+  if (ctx.state === 'suspended') ctx.resume();
+}
+document.addEventListener('click', unlockAudio, { once: true });
+document.addEventListener('touchstart', unlockAudio, { once: true });
+
+/**
+ * Play a preloaded AudioBuffer
+ */
+function playBuffer(buffer) {
+  if (!state.settings.sound || !buffer) return;
+  const ctx = ensureAudioCtx();
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
+  source.connect(ctx.destination);
+  source.start(0);
+}
+
+/** Woodblock tap — start spinning */
+function playWoodblock() {
+  if (!state.settings.sound) return;
+  if (woodblockBuffer) {
+    playBuffer(woodblockBuffer);
+    return;
+  }
+  // Buffer not ready yet, wait for preload then play
+  ensurePreload().then(() => {
+    if (state.settings.sound) playBuffer(woodblockBuffer);
+  });
+}
+
+/** Wax seal stamp — result landing */
+function playStamp() {
+  if (!state.settings.sound) return;
+  if (stampBuffer) {
+    playBuffer(stampBuffer);
+    return;
+  }
+  // Buffer not ready yet, wait for preload then play
+  ensurePreload().then(() => {
+    if (state.settings.sound) playBuffer(stampBuffer);
+  });
+}
+
+/* ═══════════════════════════════════════
+   Sound Toggle UI
+   ═══════════════════════════════════════ */
+
+function renderSoundToggle() {
+  const btn = document.getElementById('sound-toggle');
+  if (state.settings.sound) {
+    btn.textContent = '♪';
+    btn.classList.remove('muted');
+    btn.title = '音效开启';
+  } else {
+    btn.textContent = '♪';
+    btn.classList.add('muted');
+    btn.title = '音效已关闭';
+  }
+}
+
+function toggleSound() {
+  state.settings.sound = !state.settings.sound;
+  renderSoundToggle();
+  saveState();
+  // Play a subtle tap when turning sound on, as feedback
+  if (state.settings.sound) playWoodblock();
+}
+
+/* ═══════════════════════════════════════
+   Food Tags & Core UI
+   ═══════════════════════════════════════ */
 
 let current = -1;
 
@@ -419,8 +847,8 @@ function makeTag(name, index) {
 function renderTags() {
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
-  foods.forEach((f, i) => grid.appendChild(makeTag(f, i)));
-  if (current !== -1 && current < foods.length)
+  getFoods().forEach((f, i) => grid.appendChild(makeTag(f, i)));
+  if (current !== -1 && current < getFoods().length)
     grid.querySelectorAll('.food-tag')[current].classList.add('active');
 }
 
@@ -434,10 +862,13 @@ function pick(index) {
   el.classList.remove('landing');
   void el.offsetWidth;
   el.classList.add('landing');
-  el.textContent = foods[index];
+  el.textContent = getFoods()[index];
+  showFortune();
+  showShareRow();
 }
 
 function removeFood(index) {
+  const foods = getFoods();
   if (foods.length <= 1) return;
   foods.splice(index, 1);
   if (current === index) {
@@ -447,15 +878,23 @@ function removeFood(index) {
     el.textContent = '戳下边按钮';
   } else if (current > index) current--;
   renderTags();
+  saveState();
 }
 
 function addFood() {
   const input = document.getElementById('add-input');
   const val = input.value.trim();
-  if (!val || foods.includes(val)) { input.value = ''; return; }
+  const foods = getFoods();
+  if (!val || foods.includes(val)) {
+    input.value = '';
+    input.style.borderColor = 'var(--lacquer)';
+    setTimeout(() => { input.style.borderColor = ''; }, 400);
+    return;
+  }
   foods.push(val);
   input.value = '';
   renderTags();
+  saveState();
   const tags = document.querySelectorAll('.food-tag');
   const newTag = tags[tags.length - 1];
   newTag.classList.add('new-pop');
@@ -465,6 +904,10 @@ function addFood() {
 document.getElementById('add-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') addFood();
 });
+
+/* ═══════════════════════════════════════
+   Spin Logic
+   ═══════════════════════════════════════ */
 
 let spinInterval = null;
 let isSpinning = false;
@@ -489,23 +932,37 @@ function setSpinState(on) {
   }
 }
 
+function addToRecent(foodName) {
+  const recent = state.history.recent;
+  // Avoid consecutive duplicates
+  if (recent.length > 0 && recent[0].name === foodName) return;
+  recent.unshift({ name: foodName, date: new Date().toISOString().slice(0, 10) });
+  // FIFO cap at 30
+  if (recent.length > 30) recent.length = 30;
+}
+
 function stopSpin() {
   if (!spinInterval) return;
-  clearInterval(spinInterval);
+  clearTimeout(spinInterval);
   spinInterval = null;
   setSpinState(false);
+  playStamp();
   pick(lastShown);
+  addToRecent(getFoods()[lastShown]);
+  saveState();
 }
 
 function spin() {
   if (isSpinning) { stopSpin(); return; }
 
+  const foods = getFoods();
   const el = document.getElementById('result');
   let rounds = 0;
   const total = 20 + Math.floor(Math.random() * 10);
 
   el.classList.remove('landing');
   setSpinState(true);
+  playWoodblock();
 
   // Slow down over time
   function nextTick() {
@@ -516,7 +973,10 @@ function spin() {
     if (rounds >= total) {
       spinInterval = null;
       setSpinState(false);
+      playStamp();
       pick(lastShown);
+      addToRecent(foods[lastShown]);
+      saveState();
       return;
     }
 
@@ -530,7 +990,212 @@ function spin() {
   spinInterval = setTimeout(nextTick, 50);
 }
 
+/* ═══════════════════════════════════════
+   Fortune / 签文系统 (v1.3)
+   ═══════════════════════════════════════ */
+
+const FORTUNES = [
+  // ── 食签 (30) ──
+  { type:'food', yi:'宜热食', ji:'忌久饿' },
+  { type:'food', yi:'宜细嚼', ji:'忌匆忙' },
+  { type:'food', yi:'宜加辣', ji:'忌寡淡' },
+  { type:'food', yi:'宜尝新', ji:'忌将就' },
+  { type:'food', yi:'宜汤食', ji:'忌干噎' },
+  { type:'food', yi:'宜慢煮', ji:'忌急火' },
+  { type:'food', yi:'宜对坐', ji:'忌独食' },
+  { type:'food', yi:'宜加醋', ji:'忌无味' },
+  { type:'food', yi:'宜大碗', ji:'忌小气' },
+  { type:'food', yi:'宜蘸料', ji:'忌清汤' },
+  { type:'food', yi:'宜现做', ji:'忌剩饭' },
+  { type:'food', yi:'宜堂食', ji:'忌外带' },
+  { type:'food', yi:'宜面食', ji:'忌凉腹' },
+  { type:'food', yi:'宜炖煮', ji:'忌生冷' },
+  { type:'food', yi:'宜点多', ji:'忌客气' },
+  { type:'food', yi:'宜趁热', ji:'忌等凉' },
+  { type:'food', yi:'宜有肉', ji:'忌全素' },
+  { type:'food', yi:'宜带汁', ji:'忌干巴' },
+  { type:'food', yi:'宜主食', ji:'忌空腹' },
+  { type:'food', yi:'宜分食', ji:'忌争抢' },
+  { type:'food', yi:'宜老店', ji:'忌连锁' },
+  { type:'food', yi:'宜路边', ji:'忌讲究' },
+  { type:'food', yi:'宜加蛋', ji:'忌省事' },
+  { type:'food', yi:'宜手作', ji:'忌速冻' },
+  { type:'food', yi:'宜早食', ji:'忌过午' },
+  { type:'food', yi:'宜饱食', ji:'忌节制' },
+  { type:'food', yi:'宜重口', ji:'忌寡淡' },
+  { type:'food', yi:'宜烫嘴', ji:'忌温吞' },
+  { type:'food', yi:'宜回锅', ji:'忌一遍' },
+  { type:'food', yi:'宜打包', ji:'忌浪费' },
+  // ── 节气签 (24) ──
+  { type:'solar', text:'立春回暖，宜一碗春卷' },
+  { type:'solar', text:'雨水润物，宜汤面暖身' },
+  { type:'solar', text:'惊蛰初雷，宜吃梨润燥' },
+  { type:'solar', text:'春分时节，宜荠菜饺子' },
+  { type:'solar', text:'清明踏青，宜青团一枚' },
+  { type:'solar', text:'谷雨生百谷，宜食新茶' },
+  { type:'solar', text:'立夏将至，宜凉皮一碗' },
+  { type:'solar', text:'小满微热，宜绿豆消暑' },
+  { type:'solar', text:'芒种忙种，宜饱食再行' },
+  { type:'solar', text:'夏至长日，宜一碗凉面' },
+  { type:'solar', text:'小暑渐热，宜酸梅汤解' },
+  { type:'solar', text:'大暑极热，宜西瓜消暑' },
+  { type:'solar', text:'立秋转凉，宜贴秋膘' },
+  { type:'solar', text:'处暑余热，宜莲藕清心' },
+  { type:'solar', text:'白露微凉，宜一杯热茶' },
+  { type:'solar', text:'秋分平和，宜蟹黄满腹' },
+  { type:'solar', text:'寒露渐寒，宜羊肉暖身' },
+  { type:'solar', text:'霜降初霜，宜柿子红了' },
+  { type:'solar', text:'立冬入冬，宜涮锅围炉' },
+  { type:'solar', text:'小雪飘雪，宜炖菜暖屋' },
+  { type:'solar', text:'大雪封门，宜红薯暖手' },
+  { type:'solar', text:'冬至团圆，宜饺子一盘' },
+  { type:'solar', text:'小寒刺骨，宜胡辣汤一碗' },
+  { type:'solar', text:'大寒极寒，宜烩面暖透' },
+  // ── 微人生感 (18) ──
+  { type:'life', text:'饱腹之后，再谈远方' },
+  { type:'life', text:'日暮归家，灶上有烟' },
+  { type:'life', text:'好饭不怕晚' },
+  { type:'life', text:'慢慢吃，来日方长' },
+  { type:'life', text:'人间烟火气，最抚凡人心' },
+  { type:'life', text:'一碗下肚，万事可缓' },
+  { type:'life', text:'吃饱了不想家' },
+  { type:'life', text:'认真吃饭，就是认真生活' },
+  { type:'life', text:'先干饭，后干事' },
+  { type:'life', text:'有什么事，吃完再说' },
+  { type:'life', text:'忙了一天，这顿值了' },
+  { type:'life', text:'别亏待自己的胃' },
+  { type:'life', text:'能好好吃饭的日子，都是好日子' },
+  { type:'life', text:'今天也是好好吃饭的一天' },
+  { type:'life', text:'胃暖了，心就安了' },
+  { type:'life', text:'不赶时间的饭，最香' },
+  { type:'life', text:'吃完这碗，明天继续' },
+  { type:'life', text:'世事无常，但饭要按时吃' }
+];
+
+function hashCode(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return hash;
+}
+
+function getDailyFortune() {
+  const today = new Date().toISOString().slice(0, 10);
+  const seed = Math.abs(hashCode(today));
+  return FORTUNES[seed % FORTUNES.length];
+}
+
+function renderFortune() {
+  const fortune = getDailyFortune();
+  const el = document.getElementById('fortune-text');
+  if (fortune.type === 'food') {
+    el.innerHTML = fortune.yi + '　' + fortune.ji;
+  } else {
+    el.textContent = fortune.text;
+  }
+}
+
+function showFortune() {
+  document.getElementById('fortune-wrap').classList.add('visible');
+}
+
+function showShareRow() {
+  document.getElementById('share-row').classList.add('visible');
+}
+
+/* ═══════════════════════════════════════
+   Share / 分享图系统 (v1.2)
+   ═══════════════════════════════════════ */
+
+function prepareShareCard(type) {
+  const card = document.getElementById('share-card');
+  const label = document.getElementById('sc-label');
+  const food = document.getElementById('sc-food');
+  const fortune = document.getElementById('sc-fortune');
+  const dailyFortune = getDailyFortune();
+
+  if (type === 'food') {
+    // Share card A: food result
+    const resultText = document.getElementById('result').textContent;
+    label.textContent = '今儿个吃这个';
+    food.textContent = resultText;
+    if (dailyFortune.type === 'food') {
+      fortune.innerHTML = dailyFortune.yi + '<br>' + dailyFortune.ji;
+    } else {
+      fortune.textContent = dailyFortune.text;
+    }
+  } else {
+    // Share card B: daily fortune
+    label.textContent = '今日天意';
+    if (dailyFortune.type === 'food') {
+      food.textContent = dailyFortune.yi;
+      fortune.textContent = dailyFortune.ji;
+    } else {
+      food.textContent = '';
+      fortune.textContent = dailyFortune.text;
+    }
+  }
+}
+
+async function generateShareImage(type) {
+  if (typeof html2canvas === 'undefined') {
+    alert('分享功能加载中，请稍后再试');
+    return;
+  }
+  prepareShareCard(type);
+  const card = document.getElementById('share-card');
+  // Temporarily make visible for html2canvas
+  card.style.visibility = 'visible';
+  card.style.opacity = '1';
+
+  try {
+    const canvas = await html2canvas(card, {
+      backgroundColor: '#F6F1E9',
+      scale: 2,
+      useCORS: true,
+      logging: false
+    });
+    const dataUrl = canvas.toDataURL('image/png');
+    showShareOverlay(dataUrl);
+  } catch(e) {
+    console.error('Share image generation failed:', e);
+  } finally {
+    card.style.visibility = 'hidden';
+    card.style.opacity = '0';
+  }
+}
+
+function showShareOverlay(imgSrc) {
+  const overlay = document.getElementById('share-overlay');
+  const img = document.getElementById('share-preview-img');
+  img.src = imgSrc;
+  overlay.classList.add('active');
+}
+
+function closeShareOverlay(e) {
+  if (e && e.target !== document.getElementById('share-overlay') && !e.target.closest('.share-close')) return;
+  document.getElementById('share-overlay').classList.remove('active');
+}
+
+function shareFood() {
+  const resultText = document.getElementById('result').textContent;
+  if (resultText === '戳下边按钮') return;
+  generateShareImage('food');
+}
+
+function shareFortune() {
+  generateShareImage('fortune');
+}
+
+/* ═══════════════════════════════════════
+   Init
+   ═══════════════════════════════════════ */
+
 renderTags();
+renderSoundToggle();
+renderFortune();
 </script>
 </body>
 </html>
