@@ -728,14 +728,6 @@ h1 {
   border-bottom: 1px solid #E8DFD0;
   margin-bottom: 40px;
 }
-.slc-label {
-  font-size: 12px;
-  color: #A89F94;
-  letter-spacing: 0.35em;
-  margin-bottom: 40px;
-  font-weight: 300;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
-}
 .slc-food {
   font-size: 56px;
   font-weight: 600;
@@ -767,14 +759,6 @@ h1 {
 
 /* Cook section (middle) */
 .slc-cook-section { padding-bottom: 40px; }
-.slc-cook-title {
-  font-size: 14px;
-  color: #B85438;
-  letter-spacing: 0.22em;
-  margin-bottom: 24px;
-  font-weight: 600;
-  text-align: center;
-}
 .slc-cook-content {
   font-size: 13px;
   line-height: 1.8;
@@ -1023,14 +1007,12 @@ h1 {
 <!-- Hidden long share card (for html2canvas rendering) -->
 <div class="share-card-wrapper">
   <div class="share-long-card" id="share-long-card">
-    <div class="slc-fortune-section">
-      <div class="slc-label">今儿个吃这个</div>
+    <div class="slc-fortune-section" id="slc-fortune-section">
       <div class="slc-food" id="slc-food">胡辣汤</div>
       <div class="slc-fortune" id="slc-fortune"></div>
       <div class="slc-divider"></div>
     </div>
-    <div class="slc-cook-section">
-      <div class="slc-cook-title">做法</div>
+    <div class="slc-cook-section" id="slc-cook-section">
       <div class="slc-cook-content" id="slc-cook-content"></div>
     </div>
     <div class="slc-footer">
@@ -1828,6 +1810,8 @@ function prepareLongShareCard(dish) {
   const fortune = document.getElementById('slc-fortune');
   const dateEl = document.getElementById('slc-date');
   const cookContent = document.getElementById('slc-cook-content');
+  const cookSection = document.getElementById('slc-cook-section');
+  const fortuneSection = document.getElementById('slc-fortune-section');
 
   const d = new Date();
   dateEl.textContent = d.getFullYear() + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0');
@@ -1837,10 +1821,19 @@ function prepareLongShareCard(dish) {
   fortune.innerHTML = foodTip +
     '<span class="slc-tip-sub">' + getTimeTip() + ' · ' + getSolarTip() + '</span>';
 
-  // Cook content: use cached or fallback, no API blocking
+  // 做法只读缓存，没有就不显示做法部分
   let recipe = state.customRecipes[dish] || getCookCache(dish);
-  if (!recipe) recipe = getCookFallback(dish);
-  renderCook(recipe, cookContent);
+  if (recipe) {
+    cookSection.style.display = 'block';
+    fortuneSection.style.borderBottom = '1px solid #E8DFD0';
+    fortuneSection.style.marginBottom = '40px';
+    renderCook(recipe, cookContent);
+  } else {
+    cookSection.style.display = 'none';
+    fortuneSection.style.borderBottom = 'none';
+    fortuneSection.style.marginBottom = '0';
+    cookContent.innerHTML = '';
+  }
 }
 
 async function generateLongShareImage() {
