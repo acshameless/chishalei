@@ -300,6 +300,27 @@ h1 {
 .divider::after  { content: ''; flex: 1;        height: 1px; background: var(--paper-dark); }
 .divider > span  { white-space: nowrap; }
 
+.pool-tabs {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+.pool-tab {
+  font-size: 11px;
+  color: var(--ink-light);
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  padding-bottom: 2px;
+  border-bottom: 1px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+  user-select: none;
+}
+.pool-tab:hover { color: var(--ink-mid); }
+.pool-tab.active {
+  color: var(--lacquer);
+  border-bottom-color: var(--lacquer);
+}
+
 .add-input {
   background: transparent;
   border: none;
@@ -373,6 +394,20 @@ h1 {
 .food-tag:hover .del-btn { opacity: 0.45; }
 .del-btn:hover { opacity: 1 !important; }
 
+.star-btn {
+  margin-left: 5px;
+  font-size: 11px;
+  color: var(--lacquer);
+  opacity: 0;
+  transition: opacity 0.15s;
+  cursor: pointer;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.food-tag:hover .star-btn { opacity: 0.4; }
+.star-btn:hover { opacity: 1 !important; }
+.star-btn.in-menu { opacity: 0.6; }
+
 /* ── Fortune slip ── */
 .fortune-wrap {
   width: 100%;
@@ -435,6 +470,54 @@ h1 {
   margin-bottom: 48px;
   opacity: 1;
 }
+
+/* ── Cook / 老师傅教做 ── */
+.cook-wrap {
+  width: 100%;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.5s ease, opacity 0.5s ease 0.2s, margin 0.4s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.cook-wrap.visible {
+  max-height: 500px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  opacity: 1;
+}
+.cook-label {
+  font-size: 11px;
+  color: var(--ink-light);
+  letter-spacing: 0.3em;
+  margin-bottom: 10px;
+  font-weight: 300;
+}
+.cook-content {
+  font-size: 12.5px;
+  color: var(--ink-mid);
+  line-height: 1.8;
+  letter-spacing: 0.04em;
+  max-width: 100%;
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--paper-dark);
+  padding: 20px 24px;
+  position: relative;
+  white-space: pre-line;
+}
+.cook-content::before, .cook-content::after {
+  content: '';
+  position: absolute;
+  width: 12px; height: 12px;
+  border-color: var(--lacquer);
+  border-style: solid;
+  opacity: 0.35;
+}
+.cook-content::before { top: -1px; left: -1px; border-width: 1.5px 0 0 1.5px; }
+.cook-content::after  { bottom: -1px; right: -1px; border-width: 0 1.5px 1.5px 0; }
 
 .share-btn {
   background: none;
@@ -666,10 +749,19 @@ h1 {
 
   <div class="share-row" id="share-row">
     <button class="share-btn" onclick="shareFood()">分享这道菜</button>
+    <button class="share-btn" id="cook-btn" onclick="askCook()">老师傅教做</button>
+  </div>
+
+  <div class="cook-wrap" id="cook-wrap">
+    <div class="cook-label">老师傅的做法</div>
+    <div class="cook-content" id="cook-content"></div>
   </div>
 
   <div class="divider">
-    <span>全部选项</span>
+    <div class="pool-tabs">
+      <span class="pool-tab active" id="tab-all" onclick="switchPool('all')">全部选项</span>
+      <span class="pool-tab" id="tab-my" onclick="switchPool('myMenu')">我的菜单</span>
+    </div>
     <input class="add-input" id="add-input" type="text" placeholder="添加…" maxlength="12">
     <button class="add-btn" onclick="addFood()">＋</button>
   </div>
@@ -713,7 +805,7 @@ h1 {
    ═══════════════════════════════════════ */
 
 const STORAGE_KEY = 'chisha-state';
-const STATE_VERSION = 1;
+const STATE_VERSION = 2;
 
 const DEFAULT_FOODS = [
   '烩面','胡辣汤','灌汤包','羊肉汤','浆面条',
@@ -767,6 +859,7 @@ function defaultState() {
   return {
     version: STATE_VERSION,
     foods: [...DEFAULT_FOODS],
+    myMenu: [],
     history: {
       recent: [],
       favorites: [],
@@ -794,6 +887,7 @@ function migrateState(raw) {
   if (!raw.history.blacklist) raw.history.blacklist = [];
   if (!('todayFortune' in raw.history)) raw.history.todayFortune = null;
   if (!('todayPick' in raw.history)) raw.history.todayPick = null;
+  if (!raw.myMenu) raw.myMenu = [];
   if (!raw.settings) raw.settings = { sound: true };
   return raw;
 }
@@ -817,7 +911,11 @@ function saveState() {
 const state = loadState();
 
 // Convenience accessors
-function getFoods() { return state.foods; }
+let currentPool = 'all'; // 'all' | 'myMenu'
+
+function getFoods() {
+  return currentPool === 'myMenu' ? state.myMenu : state.foods;
+}
 
 /* ═══════════════════════════════════════
    Sound System (Web Audio API)
@@ -950,6 +1048,18 @@ function makeTag(name, index) {
   const label = document.createElement('span');
   label.textContent = name;
   tag.appendChild(label);
+
+  // 全部选项模式下显示 star（加入/移出我的菜单）
+  if (currentPool === 'all') {
+    const star = document.createElement('span');
+    star.className = 'star-btn';
+    const isInMenu = state.myMenu.includes(name);
+    star.textContent = isInMenu ? '★' : '☆';
+    if (isInMenu) star.classList.add('in-menu');
+    star.onclick = e => { e.stopPropagation(); toggleMyMenu(name); };
+    tag.appendChild(star);
+  }
+
   const del = document.createElement('span');
   del.className = 'del-btn';
   del.textContent = '✕';
@@ -962,8 +1072,18 @@ function makeTag(name, index) {
 function renderTags() {
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
-  getFoods().forEach((f, i) => grid.appendChild(makeTag(f, i)));
-  if (current !== -1 && current < getFoods().length)
+  const foods = getFoods();
+  if (foods.length === 0) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'width:100%;text-align:center;color:var(--ink-light);font-size:12px;letter-spacing:0.08em;padding:24px 0;';
+    empty.textContent = currentPool === 'myMenu'
+      ? '从"全部选项"里选几道菜放进来'
+      : '暂无选项';
+    grid.appendChild(empty);
+    return;
+  }
+  foods.forEach((f, i) => grid.appendChild(makeTag(f, i)));
+  if (current !== -1 && current < foods.length)
     grid.querySelectorAll('.food-tag')[current].classList.add('active');
 }
 
@@ -1008,14 +1128,32 @@ function removeFood(index) {
 function addFood() {
   const input = document.getElementById('add-input');
   const val = input.value.trim();
-  const foods = getFoods();
-  if (!val || foods.includes(val)) {
-    input.value = '';
+  if (!val) {
     input.style.borderColor = 'var(--lacquer)';
     setTimeout(() => { input.style.borderColor = ''; }, 400);
     return;
   }
-  foods.push(val);
+  // 全部选项模式下：添加到全部选项池
+  // 我的菜单模式下：添加到我的菜单（如果全部选项中没有则同时添加）
+  if (currentPool === 'all') {
+    if (state.foods.includes(val)) {
+      input.value = '';
+      input.style.borderColor = 'var(--lacquer)';
+      setTimeout(() => { input.style.borderColor = ''; }, 400);
+      return;
+    }
+    state.foods.push(val);
+  } else {
+    if (state.myMenu.includes(val)) {
+      input.value = '';
+      input.style.borderColor = 'var(--lacquer)';
+      setTimeout(() => { input.style.borderColor = ''; }, 400);
+      return;
+    }
+    // 如果不在全部选项中，先加入全部选项
+    if (!state.foods.includes(val)) state.foods.push(val);
+    state.myMenu.push(val);
+  }
   input.value = '';
   renderTags();
   saveState();
@@ -1023,6 +1161,38 @@ function addFood() {
   const newTag = tags[tags.length - 1];
   newTag.classList.add('new-pop');
   newTag.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function switchPool(pool) {
+  currentPool = pool;
+  document.getElementById('tab-all').classList.toggle('active', pool === 'all');
+  document.getElementById('tab-my').classList.toggle('active', pool === 'myMenu');
+  // 切换后如果当前高亮的菜不在新池中，清除高亮
+  const foods = getFoods();
+  if (current !== -1 && (current >= foods.length || foods[current] !== document.getElementById('result').textContent)) {
+    current = -1;
+    const el = document.getElementById('result');
+    const tipEl = document.getElementById('result-tip');
+    el.classList.remove('landing');
+    el.textContent = '待君问签';
+    tipEl.classList.remove('visible');
+    tipEl.textContent = '';
+    hideSignNumber();
+    document.getElementById('share-row').classList.remove('visible');
+    document.getElementById('cook-wrap').classList.remove('visible');
+  }
+  renderTags();
+}
+
+function toggleMyMenu(name) {
+  const idx = state.myMenu.indexOf(name);
+  if (idx >= 0) {
+    state.myMenu.splice(idx, 1);
+  } else {
+    state.myMenu.push(name);
+  }
+  saveState();
+  renderTags();
 }
 
 document.getElementById('add-input').addEventListener('keydown', e => {
@@ -1086,6 +1256,7 @@ function spin() {
 
   el.classList.remove('landing');
   document.getElementById('result-tip').classList.remove('visible');
+  document.getElementById('cook-wrap').classList.remove('visible');
   setSpinState(true);
   playWoodblock();
 
@@ -1443,6 +1614,83 @@ function shareFood() {
   const resultText = document.getElementById('result').textContent;
   if (resultText === '待君问签') return;
   generateShareImage('food');
+}
+
+/* ═══════════════════════════════════════
+   Cook / 老师傅教做
+   ═══════════════════════════════════════ */
+
+const COOK_FALLBACK = {
+  '面|条|粉|烩|卤': '【材料】面粉/粉条、配菜、葱姜蒜、调料\n【步骤】1. 备料切配 2. 煮面/炒面至断生 3. 调味出锅\n【火候】中火翻炒，面条断生即可\n【小贴士】煮面水宽一些，不容易坨',
+  '汤|胡辣|油茶|羊肉': '【材料】主料、香料、高汤/清水\n【步骤】1. 熬汤底 2. 下主料煮熟 3. 调味出锅\n【火候】小火慢熬出味，大火顶开\n【小贴士】汤底提前熬，味道更醇厚',
+  '鸡|鸭|肉|羊|牛|烧|焖': '【材料】肉类、葱姜、料酒、香料\n【步骤】1. 焯水去腥 2. 煸炒/炖煮入味 3. 调味收汁\n【火候】大火烧开，小火慢炖\n【小贴士】冷水下锅焯水，血沫去得干净',
+  '包|饺|馍|饼|煎|蒸': '【材料】面粉、馅料、调料\n【步骤】1. 和面醒发 2. 包馅成型 3. 蒸/煎/烤熟\n【火候】中火慢煎，底部金黄\n【小贴士】面要醒够，皮才软和',
+  '炸|酥|焦|紫': '【材料】主料、淀粉/面糊、油\n【步骤】1. 腌制入味 2. 挂糊 3. 油炸至金黄\n【火候】六成油温下锅，中火炸至金黄\n【小贴士】复炸一次更酥脆',
+  '凉|皮|豆腐|萝卜': '【材料】主料、配菜、调料汁\n【步骤】1. 主料切配 2. 调汁拌匀 3. 装盘\n【火候】无需加热或轻炒即可\n【小贴士】调料汁提前调好，味道更融合'
+};
+
+function getCookFallback(dish) {
+  for (const [pattern, text] of Object.entries(COOK_FALLBACK)) {
+    if (new RegExp(pattern).test(dish)) return text;
+  }
+  return '【材料】主料、配菜、调料\n【步骤】1. 备料 2. 烹制 3. 调味出锅\n【火候】中火翻炒至熟\n【小贴士】火候到位，味道自然好';
+}
+
+function getCookCache(dish) {
+  try {
+    const key = 'chisha-cook-' + encodeURIComponent(dish);
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { recipe, ts } = JSON.parse(raw);
+    if (Date.now() - ts > 30 * 24 * 60 * 60 * 1000) return null;
+    return recipe;
+  } catch { return null; }
+}
+
+function setCookCache(dish, recipe) {
+  const key = 'chisha-cook-' + encodeURIComponent(dish);
+  localStorage.setItem(key, JSON.stringify({ recipe, ts: Date.now() }));
+}
+
+async function askCook() {
+  const dish = document.getElementById('result').textContent;
+  if (dish === '待君问签') return;
+
+  const wrap = document.getElementById('cook-wrap');
+  const content = document.getElementById('cook-content');
+  const btn = document.getElementById('cook-btn');
+
+  // 检查缓存
+  const cached = getCookCache(dish);
+  if (cached) {
+    content.textContent = cached;
+    wrap.classList.add('visible');
+    return;
+  }
+
+  // 加载状态
+  btn.textContent = '问老师傅中…';
+  content.textContent = '正在请教老师傅…';
+  wrap.classList.add('visible');
+
+  try {
+    const res = await fetch('/api/cook', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dish })
+    });
+
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    const recipe = data.recipe || getCookFallback(dish);
+    content.textContent = recipe;
+    setCookCache(dish, recipe);
+  } catch (e) {
+    // fallback：显示预设模板
+    content.textContent = getCookFallback(dish);
+  } finally {
+    btn.textContent = '老师傅教做';
+  }
 }
 
 /* ═══════════════════════════════════════
