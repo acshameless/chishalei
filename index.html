@@ -1577,7 +1577,7 @@ function initParticles() {
   const foods = getFoods();
   const w = window.innerWidth;
   const h = window.innerHeight;
-  const sphereRadius = Math.min(w, h) * 0.32;
+  const sphereRadius = Math.min(w, h) * 0.35;
 
   foods.forEach((name, i) => {
     const el = makeParticle(name, i);
@@ -1587,11 +1587,15 @@ function initParticles() {
     const pw = rect.width || 80;
     const ph = rect.height || 28;
 
+    // phi 从 0.6~1.73（约34°~99°），避开北极聚集区
+    const phiMin = 0.6;
+    const phiMax = Math.PI * 0.55;
+
     particles.push({
       name, index: i,
       theta: Math.random() * Math.PI * 2,
-      phi: Math.random() * Math.PI * 0.5,
-      r: sphereRadius + (Math.random() - 0.5) * 50,
+      phi: phiMin + Math.random() * (phiMax - phiMin),
+      r: sphereRadius * (0.7 + Math.random() * 0.6),
       vTheta: (Math.random() - 0.5) * 0.004,
       vPhi: (Math.random() - 0.5) * 0.002,
       el, width: pw, height: ph
@@ -1616,7 +1620,7 @@ function updateParticles() {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const centerX = w / 2;
-  const centerY = h * 0.85;
+  const centerY = h * 0.82;
 
   // 风暴状态：保持峰值直到 pick() 触发衰减
   if (stormActive) {
@@ -1657,8 +1661,8 @@ function updateParticles() {
     const screenY = centerY - y3d * p.r;
 
     // 深度感：近大远小，近实远虚
-    const scale = 0.65 + (z3d + 1) / 2 * 0.5;
-    const opacity = 0.35 + (z3d + 1) / 2 * 0.65;
+    const scale = 0.35 + (z3d + 1) / 2 * 1.0;
+    const opacity = 0.15 + (z3d + 1) / 2 * 0.85;
     const zIdx = Math.floor((z3d + 1) * 100);
 
     p.el.style.left = screenX + 'px';
@@ -1715,7 +1719,7 @@ function pick(index) {
     const w2 = window.innerWidth;
     const h2 = window.innerHeight;
     const cx = w2 / 2;
-    const cy = h2 * 0.85;
+    const cy = h2 * 0.82;
     const startX = cx + x3d * chosen.r;
     const startY = cy - y3d * chosen.r;
     const startScale = 0.65 + (z3d + 1) / 2 * 0.5;
