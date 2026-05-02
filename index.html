@@ -1534,7 +1534,6 @@ let mouseX = -1000;
 let mouseY = -1000;
 let stormActive = false;
 let stormTimer = 0;
-let stormIntensity = 0;
 
 function makeParticle(name, index) {
   const tag = document.createElement('span');
@@ -1603,12 +1602,13 @@ function initParticles() {
 function triggerParticleStorm() {
   stormActive = true;
   stormTimer = 0;
-  stormIntensity = 0;
 
   particles.forEach(p => {
-    // 初始轻微晃动，随后逐渐加速
-    p.vx = (Math.random() - 0.5) * 8;
-    p.vy = (Math.random() - 0.5) * 8;
+    // 瞬间剧烈爆发，和上方文字闪烁同频
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 15 + Math.random() * 20;
+    p.vx = Math.cos(angle) * speed;
+    p.vy = Math.sin(angle) * speed - 10;
   });
 }
 
@@ -1619,22 +1619,10 @@ function updateParticles() {
   const repelRadius = 100;
   const repelForce = 0.12;
 
-  // 风暴状态更新：缓升 → 峰值 → 缓降
+  // 风暴状态：爆发后快速衰减，和上方 spin 节奏同步
   if (stormActive) {
     stormTimer++;
-    const t = stormTimer;
-    if (t < 20) {
-      stormIntensity = t / 20 * 0.3;          // 启动：缓升到 0.3
-    } else if (t < 40) {
-      stormIntensity = 0.3 + (t - 20) / 20 * 0.7; // 加速：升到 1.0
-    } else if (t < 130) {
-      stormIntensity = 1.0;                   // 峰值：保持最大直到抽签结束
-    } else if (t < 160) {
-      stormIntensity = 1.0 - (t - 130) / 30;  // 衰减：缓降
-    } else {
-      stormActive = false;
-      stormIntensity = 0;
-    }
+    if (stormTimer > 90) stormActive = false;
   }
 
   particles.forEach(p => {
@@ -1648,39 +1636,49 @@ function updateParticles() {
     if (p.y < zoneTop) { p.y = zoneTop; p.vy = Math.abs(p.vy) * 0.8; }
     if (p.y > h - p.height) { p.y = h - p.height; p.vy = -Math.abs(p.vy) * 0.8; }
 
-    // 风暴：双色球搅拌筒效果
+    // 风暴：瞬间爆发 + 快速衰减，和上方文字闪烁同频
     if (stormActive) {
       const px = p.x + p.width / 2;
       const py = p.y + p.height / 2;
       const centerX = w / 2;
 
-      // 1. 筒壁软性约束：越靠外越被推回中间
+      // 衰减系数：前30帧猛，之后快速弱
+      const agitation = Math.max(0, 1 - stormTimer / 50);
+
+      // 1. 筒壁约束
       const tubeHalfWidth = w * 0.36;
       const distFromCenter = px - centerX;
       if (Math.abs(distFromCenter) > tubeHalfWidth) {
         const overflow = Math.abs(distFromCenter) - tubeHalfWidth;
         const pushDir = distFromCenter > 0 ? -1 : 1;
-        p.vx += pushDir * overflow * 0.04 * stormIntensity;
+        p.vx += pushDir * overflow * 0.06 * agitation;
       }
 
-      // 2. 底部搅拌力：越靠下被推得越高
+      // 2. 底部搅拌力（前30帧最强）
       const bottomProximity = Math.max(0, 1 - py / (h * 0.75));
-      p.vy -= bottomProximity * 2.0 * stormIntensity;
+      p.vy -= bottomProximity * 4.0 * agitation;
 
-      // 3. 顶部轻微回落
+      // 3. 顶部回落
       if (py < h * 0.6) {
-        p.vy += 0.24 * stormIntensity;
+        p.vy += 0.3 * agitation;
       }
 
-      // 4. 随机脉冲（搅拌不规则性）
-      if (stormTimer % 5 === 0) {
-        p.vx += (Math.random() - 0.5) * 10 * stormIntensity;
-        p.vy += (Math.random() - 0.5) * 10 * stormIntensity - 3.0 * stormIntensity;
+      // 4. 随机脉冲（每3帧一次，快速衰减）
+      if (stormTimer % 3 === 0) {
+        p.vx += (Math.random() - 0.5) * 14 * agitation;
+        p.vy += (Math.random() - 0.5) * 14 * agitation - 5 * agitation;
       }
 
       // 5. 底部强反弹
       if (p.y > h - p.height - 10) {
-        p.vy = -Math.abs(p.vy) * (0.9 + 0.15 * stormIntensity);
+        p.vy = -Math.abs(p.vy) * (0.92 + 0.18 * agitation);
+      }
+
+      // 6. 风暴期间快速衰减速度（和 spin 减速同步）
+      const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+      if (speed > 3) {
+        p.vx *= 0.94 + 0.04 * agitation;
+        p.vy *= 0.94 + 0.04 * agitation;
       }
     }
 
