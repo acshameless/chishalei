@@ -32,7 +32,7 @@ body {
   align-items: center;
   min-height: 100dvh;
   box-sizing: border-box;
-  padding: 20px 20px 40px;
+  padding: 16px 16px 24px;
   position: relative;
   overflow-x: hidden;
   background-image: radial-gradient(circle, #CBC0AE 1px, transparent 1px);
@@ -62,7 +62,7 @@ body::before {
 }
 
 /* ── Header ── */
-.header { text-align: center; margin-bottom: 20px; }
+.header { text-align: center; margin-bottom: 16px; }
 
 .mark {
   display: flex;
@@ -84,7 +84,7 @@ h1 {
 }
 
 /* ── Result card ── */
-.result-wrap { width: 100%; margin-bottom: 16px; }
+.result-wrap { width: 100%; margin-bottom: 12px; }
 
 .result-card {
   background: var(--card);
@@ -234,7 +234,7 @@ h1 {
 }
 
 /* ── Button ── */
-.btn-wrap { margin-bottom: 24px; }
+.btn-wrap { margin-bottom: 16px; }
 
 .btn {
   display: inline-flex;
@@ -839,7 +839,9 @@ h1 {
   position: absolute;
   left: -100%;
   top: 0;
-  width: 540px;
+  width: 0;
+  height: 0;
+  overflow: visible;
   opacity: 0;
   pointer-events: none;
   z-index: -1;
@@ -847,6 +849,9 @@ h1 {
 
 /* 签签分享卡 */
 .share-card-hidden {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 540px;
   height: 960px;
   display: flex;
@@ -914,6 +919,9 @@ h1 {
 
 /* 做法分享卡 */
 .cook-share-card {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 540px;
   min-height: 960px;
   background: #F6F1E9;
@@ -1072,7 +1080,7 @@ h1 {
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   max-height: none;
   opacity: 1;
 }
@@ -3351,6 +3359,19 @@ if (containerEl) {
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 60) {
       switchPool(currentPool === 'all' ? 'myMenu' : 'all');
     }
+  }, { passive: true });
+}
+
+/* ── 分享页面向下滑动关闭 ── */
+let shareTouchStartY = 0;
+const shareOverlayEl = document.getElementById('share-overlay');
+if (shareOverlayEl) {
+  shareOverlayEl.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) shareTouchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  shareOverlayEl.addEventListener('touchend', e => {
+    const dy = e.changedTouches[0].clientY - shareTouchStartY;
+    if (dy > 80) closeShareOverlay();
   }, { passive: true });
 }
 
