@@ -1195,6 +1195,143 @@ h1 {
   display: block;
 }
 .history-close:hover { border-color: var(--lacquer); color: var(--lacquer); }
+
+/* ── Category picker ── */
+.category-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(35,32,27,0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+}
+.category-overlay.active { display: flex; }
+.category-panel {
+  background: var(--card);
+  border: 1px solid var(--paper-dark);
+  max-width: 520px;
+  width: 100%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--paper-dark);
+}
+.category-title {
+  font-size: 16px;
+  font-family: 'Shippori Mincho B1', serif;
+  color: var(--ink);
+  letter-spacing: 0.1em;
+}
+.category-close {
+  background: none;
+  border: 1px solid var(--paper-dark);
+  padding: 4px 14px;
+  font-size: 11px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  color: var(--ink-light);
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  transition: all 0.15s;
+}
+.category-close:hover { border-color: var(--lacquer); color: var(--lacquer); }
+.category-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 12px 16px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+.category-tabs::-webkit-scrollbar { display: none; }
+.category-tab {
+  padding: 4px 12px;
+  font-size: 11px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  color: var(--ink-light);
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  letter-spacing: 0.05em;
+}
+.category-tab:hover { color: var(--lacquer); }
+.category-tab.active {
+  color: var(--lacquer);
+  border-color: var(--paper-dark);
+  background: var(--paper);
+}
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 12px 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+.category-item {
+  padding: 7px 8px;
+  font-size: 12px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  color: var(--ink-mid);
+  border: 1px solid var(--paper-dark);
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: all 0.15s;
+  user-select: none;
+  position: relative;
+}
+.category-item:hover {
+  border-color: var(--lacquer-lt);
+  color: var(--lacquer);
+}
+.category-item.selected {
+  border-color: var(--lacquer);
+  color: var(--lacquer);
+  background: rgba(184,84,56,0.04);
+}
+.category-item.in-menu {
+  opacity: 0.5;
+  border-style: dashed;
+}
+.category-footer {
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--paper-dark);
+  text-align: center;
+  flex-shrink: 0;
+}
+.category-btn {
+  background: none;
+  border: 1px solid var(--paper-dark);
+  padding: 8px 28px;
+  font-size: 12px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  color: var(--ink-mid);
+  cursor: pointer;
+  letter-spacing: 0.15em;
+  transition: all 0.2s;
+}
+.category-btn:hover {
+  border-color: var(--lacquer);
+  color: var(--lacquer);
+}
+
+@media (max-width: 420px) {
+  .category-grid { grid-template-columns: repeat(2, 1fr); }
+}
 </style>
 </head>
 <body>
@@ -1245,6 +1382,7 @@ h1 {
     </div>
     <input class="add-input" id="add-input" type="text" placeholder="添加…" maxlength="12">
     <button class="add-btn" onclick="addFood()">＋</button>
+    <button class="control-btn" id="category-toggle" onclick="showCategoryPicker()" title="选菜入单">选</button>
     <button class="control-btn" id="history-toggle" onclick="showHistory()" title="抽签历史">历</button>
     <button class="control-btn" id="sound-toggle" onclick="toggleSound()" title="音效开关">♪</button>
   </div>
@@ -1310,6 +1448,21 @@ h1 {
   </div>
 </div>
 
+<!-- Category picker overlay -->
+<div class="category-overlay" id="category-overlay" onclick="closeCategoryPicker(event)">
+  <div class="category-panel">
+    <div class="category-header">
+      <div class="category-title">选菜入单</div>
+      <button class="category-close" onclick="closeCategoryPicker()">关闭</button>
+    </div>
+    <div class="category-tabs" id="category-tabs"></div>
+    <div class="category-grid" id="category-grid"></div>
+    <div class="category-footer">
+      <button class="category-btn" onclick="addSelectedToMyMenu()">加入我的菜单</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ═══════════════════════════════════════
    State & localStorage
@@ -1326,6 +1479,57 @@ const DEFAULT_FOODS = [
   '蒸饺','煎包','板面','扁粉菜','臊子面',
   '信阳焖罐肉','南阳黄牛肉','周口羊肉汤','许昌卤面','新乡烧饼',
   '洛阳水席','开封炒凉粉','逍遥胡辣汤','三鲜烩面','萝卜丝饼'
+];
+
+const FOOD_CATEGORIES = [
+  {
+    name: '川菜',
+    items: ['回锅肉','麻婆豆腐','宫保鸡丁','水煮牛肉','鱼香肉丝','辣子鸡','毛血旺','夫妻肺片','水煮鱼','酸菜鱼','口水鸡','樟茶鸭','东坡肘子','担担面','龙抄手','赖汤圆','宜宾燃面','钵钵鸡','串串香','麻辣香锅','干锅牛蛙','泡椒凤爪','蒜泥白肉','鸡豆花','甜烧白','咸烧白','火爆腰花','干煸豆角','鱼香茄子','红烧兔肉','冷吃兔','跷脚牛肉','豆花饭','肥肠粉','蛋烘糕']
+  },
+  {
+    name: '粤菜',
+    items: ['白切鸡','烧鹅','烤乳猪','叉烧','蜜汁叉烧','豉油鸡','盐焗鸡','深井烧鹅','脆皮烧肉','烧鸭','烧乳鸽','老火靓汤','艇仔粥','及第粥','干炒牛河','湿炒牛河','虾饺','烧卖','叉烧包','蛋挞','流沙包','肠粉','布拉肠粉','马蹄糕','萝卜糕','芋头糕','煲仔饭','腊味煲仔饭','避风塘炒蟹','清蒸石斑','蒜蓉蒸扇贝','白灼虾','豉汁蒸排骨','陈皮骨','咕噜肉']
+  },
+  {
+    name: '鲁菜',
+    items: ['糖醋鲤鱼','九转大肠','葱烧海参','德州扒鸡','四喜丸子','油爆双脆','奶汤蒲菜','糟熘鱼片','爆三样','滑炒里脊丝','香酥鸡','炸蛎黄','清蒸加吉鱼','扒原壳鲍鱼','芙蓉鸡片','拔丝山药','诗礼银杏','孔府一品锅','坛子肉','把子肉','单县羊肉汤','周村烧饼','济南酥锅','胶东大包子','鲅鱼水饺','海鲜疙瘩汤','辣炒蛤蜊','葱油饼','甜沫','胶东四大拌']
+  },
+  {
+    name: '苏菜',
+    items: ['松鼠鳜鱼','狮子头','软兜长鱼','大煮干丝','文思豆腐','水晶肴肉','三套鸭','盐水鸭','鸭血粉丝汤','南京烤鸭','碧螺虾仁','响油鳝糊','蟹粉豆腐','平桥豆腐','拆烩鲢鱼头','白袍虾仁','霸王别姬','沛公狗肉','彭城鱼丸','地锅鸡','奥灶面','藏书白切羊肉','桃源红烧羊肉','无锡排骨','梁溪脆鳝','常州大麻糕','镇江肴肉','扬州炒饭','蟹黄汤包','千层油糕']
+  },
+  {
+    name: '浙菜',
+    items: ['西湖醋鱼','东坡肉','龙井虾仁','叫花鸡','宋嫂鱼羹','干炸响铃','蜜汁火方','冰糖甲鱼','苔菜小方烤','雪菜大汤黄鱼','腐皮包黄鱼','绍兴醉鸡','宁波汤圆','温州鱼丸','嘉兴粽子','片儿川','虾爆鳝面','葱包桧','西湖莼菜汤','千岛湖鱼头','金华火腿','湖州千张包','嘉兴酱鸭','舟山海鲜面','台州食饼筒']
+  },
+  {
+    name: '闽菜',
+    items: ['佛跳墙','荔枝肉','醉糟鸡','鸡汤汆海蚌','淡糟香螺片','太极芋泥','锅边糊','鱼丸','肉燕','扁肉燕','沙县拌面','沙县蒸饺','姜母鸭','同安封肉','海蛎煎','土笋冻','烧肉粽','面线糊','四果汤','花生汤','拗九粥','红糟鱼','白斩河田鸡','涮九品','九门头']
+  },
+  {
+    name: '湘菜',
+    items: ['剁椒鱼头','辣椒炒肉','湘西外婆菜','腊味合蒸','东安子鸡','组庵鱼翅','组庵豆腐','口味虾','口味蛇','麻辣子鸡','金钱蛋','擂辣椒皮蛋','农家小炒肉','土匪猪肝','发丝牛百叶','三层套鸡','百鸟朝凤','子龙脱袍','毛氏红烧肉','永州血鸭','常德牛肉粉','邵阳猪血丸子','衡阳鱼粉','郴州烧鸡公','浏阳蒸菜']
+  },
+  {
+    name: '徽菜',
+    items: ['臭鳜鱼','火腿炖甲鱼','腌鲜鳜鱼','黄山炖鸽','问政山笋','李鸿章杂烩','椒盐米鸡','云雾肉','八公山豆腐','徽州毛豆腐','徽州刀板香','中和汤','蜜汁红芋','方腊鱼','清炖马蹄蟹','杨梅丸子','凤炖牡丹','双脆锅巴','红烧划水','符离集烧鸡','肥西老母鸡汤','吴山贡鹅','三河米饺','庐州烤鸭','阜阳格拉条']
+  },
+  {
+    name: '东北菜',
+    items: ['锅包肉','猪肉炖粉条','小鸡炖蘑菇','地三鲜','溜肉段','杀猪菜','酸菜白肉血肠','排骨炖豆角','东北乱炖','得莫利炖鱼','铁锅炖大鹅','酱骨架','老虎菜','大拉皮','粘豆包','玉米饼子','东北饺子','烤冷面','延边冷面','鸡西冷面','哈尔滨红肠','松花鸡腿','老式锅包肉','雪衣豆沙','熘肥肠']
+  },
+  {
+    name: '西北菜',
+    items: ['羊肉泡馍','肉夹馍','凉皮','臊子面','油泼面','Biangbiang面','葫芦头','甑糕','腊汁肉','水盆羊肉','兰州牛肉面','酿皮','甜胚子','手抓羊肉','羊杂碎','大盘鸡','新疆烤羊肉串','烤包子','抓饭','馕包肉','拉条子','青海酸奶','狗浇尿饼','宁夏手抓','敦煌驴肉黄面']
+  },
+  {
+    name: '西南菜-云贵',
+    items: ['过桥米线','汽锅鸡','野生菌火锅','饵块','乳扇','宣威火腿','丽江腊排骨','菠萝饭','鬼鸡','老奶洋芋','大救驾','竹筒饭','酸汤鱼','丝娃娃','肠旺面','花溪牛肉粉','遵义羊肉粉','水城烙锅','青岩猪脚','盗汗鸡','鸡豆凉粉','糟辣脆皮鱼','乌江豆腐鱼','骟鸡点豆腐','折耳根炒腊肉']
+  },
+  {
+    name: '京鄂豫沪',
+    items: ['北京烤鸭','京酱肉丝','涮羊肉','炸酱面','豆汁儿','卤煮火烧','炒肝','爆肚','驴打滚','豌豆黄','莲藕排骨汤','热干面','三鲜豆皮','武昌鱼','排骨藕汤','面窝','糊汤粉','烩面','胡辣汤','灌汤包','鲤鱼焙面','道口烧鸡','小笼包','生煎包','红烧肉','响油鳝丝']
+  }
 ];
 
 const FOOD_TIPS = {
@@ -1413,23 +1617,7 @@ function loadState() {
   try {
     const raw = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (!raw) return defaultState();
-    const migrated = migrateState(raw);
-
-    // 自动清理：如果 myMenu 和 foods 内容完全相同（旧代码双向同步 bug 导致），重置 myMenu
-    if (migrated.myMenu && migrated.foods &&
-        migrated.myMenu.length === migrated.foods.length &&
-        migrated.myMenu.length > 0) {
-      const setMy = new Set(migrated.myMenu);
-      const setAll = new Set(migrated.foods);
-      if (setMy.size === migrated.myMenu.length &&
-          setAll.size === migrated.foods.length &&
-          setMy.size === setAll.size &&
-          [...setMy].every(x => setAll.has(x))) {
-        migrated.myMenu = [];
-      }
-    }
-
-    return migrated;
+    return migrateState(raw);
   } catch {
     return defaultState();
   }
@@ -1622,6 +1810,10 @@ function initSlotMachine() {
 
     col.appendChild(strip);
     container.appendChild(col);
+
+    // 初始状态每列独立随机偏移，避免所有列同步显示
+    const initialOffset = Math.floor(Math.random() * foods.length) * 44;
+    strip.style.transform = `translateY(-${initialOffset}px)`;
   }
 }
 
@@ -1925,6 +2117,71 @@ function clearMyMenu() {
   state.myMenu = [];
   saveState();
   renderSlotMachine();
+}
+
+/* ── Category Picker ── */
+let categorySelectedIndex = 0;
+let categorySelectedItems = new Set();
+
+function showCategoryPicker() {
+  categorySelectedIndex = 0;
+  categorySelectedItems.clear();
+  renderCategoryTabs();
+  renderCategoryGrid(0);
+  document.getElementById('category-overlay').classList.add('active');
+}
+
+function closeCategoryPicker(e) {
+  if (e && e.target !== document.getElementById('category-overlay') && !e.target.closest('.category-close')) return;
+  document.getElementById('category-overlay').classList.remove('active');
+}
+
+function renderCategoryTabs() {
+  const tabs = document.getElementById('category-tabs');
+  tabs.innerHTML = FOOD_CATEGORIES.map((cat, i) =>
+    '<span class="category-tab' + (i === categorySelectedIndex ? ' active' : '') + '" onclick="switchCategoryTab(' + i + ')">' + cat.name + '</span>'
+  ).join('');
+}
+
+function switchCategoryTab(index) {
+  categorySelectedIndex = index;
+  renderCategoryTabs();
+  renderCategoryGrid(index);
+}
+
+function renderCategoryGrid(index) {
+  const grid = document.getElementById('category-grid');
+  const cat = FOOD_CATEGORIES[index];
+  if (!cat) { grid.innerHTML = ''; return; }
+  grid.innerHTML = cat.items.map(name => {
+    const inMenu = state.myMenu.includes(name) || state.foods.includes(name);
+    const isSelected = categorySelectedItems.has(name);
+    return '<div class="category-item' + (isSelected ? ' selected' : '') + (inMenu ? ' in-menu' : '') + '" onclick="toggleCategoryItem(\'' + name + '\', this)">' + name + '</div>';
+  }).join('');
+}
+
+function toggleCategoryItem(name, el) {
+  if (categorySelectedItems.has(name)) {
+    categorySelectedItems.delete(name);
+    el.classList.remove('selected');
+  } else {
+    categorySelectedItems.add(name);
+    el.classList.add('selected');
+  }
+}
+
+function addSelectedToMyMenu() {
+  if (categorySelectedItems.size === 0) {
+    closeCategoryPicker();
+    return;
+  }
+  categorySelectedItems.forEach(name => {
+    if (!state.myMenu.includes(name)) state.myMenu.push(name);
+    if (!state.foods.includes(name)) state.foods.push(name);
+  });
+  saveState();
+  renderSlotMachine();
+  closeCategoryPicker();
 }
 
 document.getElementById('add-input').addEventListener('keydown', e => {
