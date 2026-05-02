@@ -644,6 +644,7 @@ h1 {
   max-width: 380px;
   width: 100%;
   text-align: center;
+  position: relative;
 }
 .share-preview img {
   width: 100%;
@@ -670,6 +671,35 @@ h1 {
   transition: all 0.15s;
 }
 .share-close:hover { border-color: var(--lacquer); color: var(--lacquer); }
+
+.share-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(246, 241, 233, 0.85);
+  border: 1px solid var(--paper-dark);
+  color: var(--ink-mid);
+  font-size: 16px;
+  font-family: 'Shippori Mincho B1', serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  line-height: 1;
+  padding-bottom: 2px;
+  transition: all 0.15s;
+}
+.share-nav:hover {
+  background: var(--card);
+  border-color: var(--lacquer);
+  color: var(--lacquer);
+}
+.share-nav.prev { left: 6px; }
+.share-nav.next { right: 6px; }
 
 /* ── Cook loading animation ── */
 .cook-loading {
@@ -1074,10 +1104,12 @@ h1 {
 <!-- Share overlay -->
 <div class="share-overlay" id="share-overlay" onclick="closeShareOverlay(event)">
   <div class="share-preview">
+    <button class="share-nav prev" onclick="scrollShare(-1)">‹</button>
     <div class="share-slider" id="share-slider">
       <img id="share-img-1" src="" alt="">
       <img id="share-img-2" src="" alt="">
     </div>
+    <button class="share-nav next" onclick="scrollShare(1)">›</button>
     <div class="share-dots" id="share-dots">
       <span class="share-dot active"></span>
       <span class="share-dot"></span>
@@ -1423,6 +1455,20 @@ function pick(index) {
   tipEl.classList.add('visible');
   showSignNumber();
   showShareRow();
+
+  // 自定义菜如果没有描述，自动请求 LLM 并更新显示
+  if (!tipText && !DEFAULT_FOODS.includes(foodName)) {
+    fetchCookFor(foodName).then(() => {
+      // 如果当前仍然显示这道菜，更新 tip
+      if (document.getElementById('result').textContent === foodName) {
+        const newTip = state.customTips[foodName];
+        if (newTip) {
+          tipEl.innerHTML = '<span class="tip-main">' + newTip + '</span>' +
+            '<span class="tip-sub">' + getTimeTip() + ' · ' + getSolarTip() + '</span>';
+        }
+      }
+    });
+  }
 }
 
 function removeFood(index) {
@@ -1483,7 +1529,10 @@ async function fetchCookFor(dish) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ dish })
     });
-    if (!res.ok) return;
+    if (!res.ok) {
+      console.warn('fetchCookFor failed:', res.status);
+      return;
+    }
     const data = await res.json();
     if (data.tip) {
       state.customTips[dish] = data.tip;
@@ -1493,7 +1542,7 @@ async function fetchCookFor(dish) {
     }
     saveState();
   } catch (e) {
-    // 静默失败，不影响用户体验
+    console.warn('fetchCookFor error:', e.message);
   }
 }
 
@@ -1956,6 +2005,13 @@ async function generateCookImage() {
 function updateShareDots(index) {
   const dots = document.querySelectorAll('.share-dot');
   dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
+}
+
+function scrollShare(dir) {
+  const slider = document.getElementById('share-slider');
+  if (!slider) return;
+  const newLeft = slider.scrollLeft + dir * slider.clientWidth;
+  slider.scrollTo({ left: newLeft, behavior: 'smooth' });
 }
 
 function showShareOverlay() {
