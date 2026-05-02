@@ -50,8 +50,11 @@ JSON 结构严格如下：
       },
       body: JSON.stringify({
         model,
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.6,
+        messages: [
+          { role: 'system', content: '你是一位中原（河南）菜系的家庭烹饪专家。输出必须是合法JSON，不要markdown代码块，不要任何解释文字。同一道菜每次输出要保持一致。' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.2,
         max_tokens: 600
       })
     });
