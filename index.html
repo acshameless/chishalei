@@ -1534,6 +1534,7 @@ let mouseX = -1000;
 let mouseY = -1000;
 let stormActive = false;
 let stormTimer = 0;
+let stormDecayStart = -1;
 
 function makeParticle(name, index) {
   const tag = document.createElement('span');
@@ -1602,13 +1603,14 @@ function initParticles() {
 function triggerParticleStorm() {
   stormActive = true;
   stormTimer = 0;
+  stormDecayStart = -1;
 
   particles.forEach(p => {
-    // 瞬间剧烈爆发，和上方文字闪烁同频
+    // 瞬间剧烈爆发
     const angle = Math.random() * Math.PI * 2;
-    const speed = 15 + Math.random() * 20;
+    const speed = 18 + Math.random() * 22;
     p.vx = Math.cos(angle) * speed;
-    p.vy = Math.sin(angle) * speed - 10;
+    p.vy = Math.sin(angle) * speed - 12;
   });
 }
 
@@ -1619,10 +1621,13 @@ function updateParticles() {
   const repelRadius = 100;
   const repelForce = 0.12;
 
-  // 风暴状态：爆发后快速衰减，和上方 spin 节奏同步
+  // 风暴状态：保持峰值直到 pick() 触发衰减
   if (stormActive) {
     stormTimer++;
-    if (stormTimer > 90) stormActive = false;
+    if (stormDecayStart !== -1 && stormTimer - stormDecayStart > 80) {
+      stormActive = false;
+      stormDecayStart = -1;
+    }
   }
 
   particles.forEach(p => {
@@ -1636,14 +1641,14 @@ function updateParticles() {
     if (p.y < zoneTop) { p.y = zoneTop; p.vy = Math.abs(p.vy) * 0.8; }
     if (p.y > h - p.height) { p.y = h - p.height; p.vy = -Math.abs(p.vy) * 0.8; }
 
-    // 风暴：瞬间爆发 + 快速衰减，和上方文字闪烁同频
+    // 风暴：保持峰值翻腾，pick() 后才开始衰减
     if (stormActive) {
       const px = p.x + p.width / 2;
       const py = p.y + p.height / 2;
       const centerX = w / 2;
 
-      // 衰减系数：前30帧猛，之后快速弱
-      const agitation = Math.max(0, 1 - stormTimer / 50);
+      // pick() 前保持峰值，pick() 后开始衰减
+      const agitation = stormDecayStart === -1 ? 1.0 : Math.max(0, 1 - (stormTimer - stormDecayStart) / 50);
 
       // 1. 筒壁约束
       const tubeHalfWidth = w * 0.36;
@@ -1654,7 +1659,7 @@ function updateParticles() {
         p.vx += pushDir * overflow * 0.06 * agitation;
       }
 
-      // 2. 底部搅拌力（前30帧最强）
+      // 2. 底部搅拌力
       const bottomProximity = Math.max(0, 1 - py / (h * 0.75));
       p.vy -= bottomProximity * 4.0 * agitation;
 
@@ -1663,7 +1668,7 @@ function updateParticles() {
         p.vy += 0.3 * agitation;
       }
 
-      // 4. 随机脉冲（每3帧一次，快速衰减）
+      // 4. 随机脉冲（每3帧一次）
       if (stormTimer % 3 === 0) {
         p.vx += (Math.random() - 0.5) * 14 * agitation;
         p.vy += (Math.random() - 0.5) * 14 * agitation - 5 * agitation;
@@ -1674,11 +1679,12 @@ function updateParticles() {
         p.vy = -Math.abs(p.vy) * (0.92 + 0.18 * agitation);
       }
 
-      // 6. 风暴期间快速衰减速度（和 spin 减速同步）
+      // 6. 速度衰减（pick() 后加速衰减）
       const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+      const decayRate = stormDecayStart === -1 ? 0.97 : 0.94;
       if (speed > 3) {
-        p.vx *= 0.94 + 0.04 * agitation;
-        p.vy *= 0.94 + 0.04 * agitation;
+        p.vx *= decayRate;
+        p.vy *= decayRate;
       }
     }
 
@@ -1749,6 +1755,11 @@ function pick(index) {
   tipEl.classList.add('visible');
   showSignNumber();
   showShareRow();
+
+  // 触发风暴衰减：其他签开始慢慢减速恢复
+  if (stormActive && stormDecayStart === -1) {
+    stormDecayStart = stormTimer;
+  }
 
   // 中签飞行：被选中的签保持高速飞到结果卡片
   const chosen = particles[index];
@@ -2025,7 +2036,7 @@ function spin() {
   const foods = getFoods();
   const el = document.getElementById('result');
   let rounds = 0;
-  const total = 20 + Math.floor(Math.random() * 10);
+  const total = 14 + Math.floor(Math.random() * 5); // 14~18轮，更紧凑
 
   el.classList.remove('landing');
   document.getElementById('result-tip').classList.remove('visible');
@@ -2051,10 +2062,10 @@ function spin() {
       return;
     }
 
-    // Speed: starts fast (50ms), decelerates from round 12 onward
-    const delay = rounds < 12
+    // Speed: starts fast (50ms), decelerates from round 9 onward
+    const delay = rounds < 9
       ? 50
-      : 50 + (rounds - 12) * 18;
+      : 50 + (rounds - 9) * 18;
     spinInterval = setTimeout(nextTick, delay);
   }
 
