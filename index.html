@@ -398,6 +398,30 @@ h1 {
   opacity: 1;
   color: var(--lacquer);
   font-size: 14px;
+  font-weight: 600;
+  transform: scale(1.07);
+  text-shadow: 0 0 14px rgba(184,84,56,0.18);
+  transition: all 0.35s cubic-bezier(0.22, 0.8, 0.3, 1);
+}
+
+/* 横向贯穿的中心高亮条 */
+.slot-container::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 44px;
+  background: rgba(184, 84, 56, 0.04);
+  border-top: 1px solid rgba(184, 84, 56, 0.07);
+  border-bottom: 1px solid rgba(184, 84, 56, 0.07);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: 1;
+}
+.slot-container.has-winner::after {
+  opacity: 1;
 }
 
 /* 滚动时的动态模拟效果 */
@@ -1598,14 +1622,37 @@ function triggerSlotSpin(targetIndex) {
     const delay = distFromMid * 0.12;
     const duration = 1.8 + distFromMid * 0.35;
 
+    strip.dataset.finalY = finalY;
     strip.style.transition = `transform ${duration}s cubic-bezier(0.22, 0.8, 0.3, 1) ${delay}s`;
     strip.style.transform = `translateY(${finalY}px)`;
   });
 }
 
 function updateSlotHighlight(index) {
-  document.querySelectorAll('.slot-item').forEach(item => {
-    item.classList.toggle('active', parseInt(item.dataset.index) === index);
+  const itemHeight = 44;
+  const strips = document.querySelectorAll('.slot-strip');
+  document.querySelectorAll('.slot-item.active').forEach(item => item.classList.remove('active'));
+  document.querySelector('.slot-container')?.classList.add('has-winner');
+
+  strips.forEach(strip => {
+    const finalY = parseFloat(strip.dataset.finalY || 0);
+    const colHeight = strip.parentElement.offsetHeight;
+    const centerOffset = colHeight / 2 - itemHeight / 2;
+    const items = strip.querySelectorAll('.slot-item');
+    let closestItem = null;
+    let minDist = Infinity;
+
+    items.forEach(item => {
+      if (parseInt(item.dataset.index) !== index) return;
+      const itemTop = item.offsetTop + finalY;
+      const dist = Math.abs(itemTop - centerOffset);
+      if (dist < minDist) {
+        minDist = dist;
+        closestItem = item;
+      }
+    });
+
+    if (closestItem) closestItem.classList.add('active');
   });
 }
 
@@ -1616,10 +1663,7 @@ function renderSlotMachine() {
 function pick(index) {
   const el = document.getElementById('result');
   const tipEl = document.getElementById('result-tip');
-  const tags = document.querySelectorAll('.particle-tag');
-  if (current !== -1 && tags[current]) tags[current].classList.remove('active');
   current = index;
-  tags[current].classList.add('active');
   el.classList.remove('landing');
   void el.offsetWidth;
   el.classList.add('landing');
@@ -1922,6 +1966,7 @@ function spin() {
   document.getElementById('result-tip').classList.remove('visible');
   document.getElementById('share-row').classList.remove('visible');
   document.getElementById('cook-wrap').classList.remove('visible');
+  document.querySelector('.slot-container')?.classList.remove('has-winner');
   setSpinState(true);
   playWoodblock();
 
