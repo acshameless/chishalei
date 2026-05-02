@@ -1534,6 +1534,7 @@ let mouseX = -1000;
 let mouseY = -1000;
 let stormActive = false;
 let stormTimer = 0;
+let stormIntensity = 0;
 
 function makeParticle(name, index) {
   const tag = document.createElement('span');
@@ -1602,19 +1603,12 @@ function initParticles() {
 function triggerParticleStorm() {
   stormActive = true;
   stormTimer = 0;
+  stormIntensity = 0;
 
   particles.forEach(p => {
-    // 剧烈爆发，像签筒被猛摇
-    const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight * 0.8;
-    const px = p.x + p.width / 2;
-    const py = p.y + p.height / 2;
-    const dx = px - centerX;
-    const dy = py - centerY;
-    const angle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 1.2;
-    const speed = 15 + Math.random() * 20;
-    p.vx = Math.cos(angle) * speed;
-    p.vy = Math.sin(angle) * speed - 8;
+    // 初始轻微晃动，随后逐渐加速
+    p.vx = (Math.random() - 0.5) * 4;
+    p.vy = (Math.random() - 0.5) * 4;
   });
 }
 
@@ -1625,10 +1619,22 @@ function updateParticles() {
   const repelRadius = 100;
   const repelForce = 0.12;
 
-  // 风暴状态更新
+  // 风暴状态更新：缓升 → 峰值 → 缓降
   if (stormActive) {
     stormTimer++;
-    if (stormTimer > 90) stormActive = false;
+    const t = stormTimer;
+    if (t < 20) {
+      stormIntensity = t / 20 * 0.3;          // 启动：缓升到 0.3
+    } else if (t < 50) {
+      stormIntensity = 0.3 + (t - 20) / 30 * 0.7; // 加速：升到 1.0
+    } else if (t < 70) {
+      stormIntensity = 1.0;                   // 峰值：保持最大
+    } else if (t < 100) {
+      stormIntensity = 1.0 - (t - 70) / 30;   // 衰减：缓降
+    } else {
+      stormActive = false;
+      stormIntensity = 0;
+    }
   }
 
   particles.forEach(p => {
@@ -1642,23 +1648,25 @@ function updateParticles() {
     if (p.y < zoneTop) { p.y = zoneTop; p.vy = Math.abs(p.vy) * 0.8; }
     if (p.y > h - p.height) { p.y = h - p.height; p.vy = -Math.abs(p.vy) * 0.8; }
 
-    // 风暴：签筒内剧烈翻腾
+    // 风暴：签筒摇晃，先加速后减速
     if (stormActive) {
       const centerX = w / 2;
-      const centerY = h * 0.8;
+      const centerY = h * 0.85;
       const px = p.x + p.width / 2;
       const py = p.y + p.height / 2;
       const dx = px - centerX;
       const dy = py - centerY;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist > 1) {
-        // 离心力向外甩
-        p.vx += (dx / dist) * 0.4;
-        p.vy += (dy / dist) * 0.4;
+        // 离心力随强度增强
+        p.vx += (dx / dist) * 0.6 * stormIntensity;
+        p.vy += (dy / dist) * 0.6 * stormIntensity;
       }
-      // 底部强反弹，像筒底
+      // 上下震荡（摇筒感）
+      p.vy += Math.sin(stormTimer * 0.35) * 1.2 * stormIntensity;
+      // 底部反弹随强度增强
       if (p.y > h - p.height - 10) {
-        p.vy = -Math.abs(p.vy) * 0.9;
+        p.vy = -Math.abs(p.vy) * (0.85 + 0.12 * stormIntensity);
       }
     }
 
