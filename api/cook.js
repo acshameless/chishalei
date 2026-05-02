@@ -73,17 +73,62 @@ JSON 结构严格如下：
     const data = await response.json();
     const raw = data.choices?.[0]?.message?.content || '';
 
-    let result;
-    try {
-      result = JSON.parse(raw);
-    } catch {
-      const match = raw.match(/\{[\s\S]*\}/);
-      if (match) result = JSON.parse(match[0]);
-      else throw new Error('Invalid JSON');
+    const result = safeJsonParse(raw);
+    if (!result) throw new Error('Invalid JSON: ' + raw.slice(0, 200));
+
+    // Normalize: ensure recipe object exists
+    if (!result.recipe) {
+      result.recipe = {
+        materials: [{ name: '主料', amount: '300克' }],
+        steps: [{ title: '烹制', desc: '按个人口味烹饪至熟', why: '火候到位味道自然好', heat: '中火' }],
+        tips: ['食材预处理做足，炒菜才顺手', '调味分两次，中间尝咸淡']
+      };
+    }
+    if (!result.tip) {
+      result.tip = '用心烹饪，味道自然不会差';
     }
 
     res.status(200).json(result);
   } catch (e) {
     res.status(500).json({ error: 'Failed to fetch recipe', detail: e.message });
   }
+}
+
+function safeJsonParse(str) {
+  if (!str) return null;
+
+  // 1. Direct parse
+  try { return JSON.parse(str); } catch {}
+
+  // 2. Strip markdown code blocks
+  let clean = str.replace(/```json\s*/gi, '').replace(/```\s*$/g, '').trim();
+  try { return JSON.parse(clean); } catch {}
+
+  // 3. Extract first { ... } block (greedy)
+  const match = clean.match(/\{[\s\S]*\}/);
+  if (match) {
+    try { return JSON.parse(match[0]); } catch {}
+    clean = match[0];
+  }
+
+  // 4. Fix common LLM JSON errors
+  // 4a. Remove trailing commas before } or ]
+  let fixed = clean.replace(/,\s*([}\]])/g, '$1');
+  // 4b. Fix missing commas between adjacent }{
+  fixed = fixed.replace(/([}\]])\s*([{\[])/g, '$1,$2');
+  // 4c. Fix unescaped quotes inside strings (aggressive but works for CJK content)
+  fixed = fixed.replace(/"([^"\\]*?)"([^,}\]:\s])/g, (m, p1, p2) => {
+    // If the quote is followed by something that doesn't look like JSON syntax,
+    // it might be an unescaped quote inside a string
+    if (p2 === '"') return m; // already escaped or valid
+    return '"' + p1 + '\\"' + p2;
+  });
+  try { return JSON.parse(fixed); } catch {}
+
+  // 5. Last resort: use Function constructor (safer than eval)
+  try {
+    return (new Function('return ' + clean))();
+  } catch {}
+
+  return null;
 }

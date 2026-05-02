@@ -695,6 +695,36 @@ h1 {
   color: #FDF8F2;
 }
 
+/* ── Cook loading animation ── */
+.cook-loading {
+  text-align: center;
+  padding: 32px 20px;
+  color: var(--ink-light);
+  font-size: 12px;
+  letter-spacing: 0.15em;
+}
+.cook-loading-dots {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 16px;
+  align-items: center;
+}
+.cook-loading-dots span {
+  width: 5px;
+  height: 5px;
+  background: var(--lacquer);
+  border-radius: 50%;
+  opacity: 0.25;
+  animation: cook-dot-pulse 1.6s ease-in-out infinite;
+}
+.cook-loading-dots span:nth-child(2) { animation-delay: 0.25s; }
+.cook-loading-dots span:nth-child(3) { animation-delay: 0.5s; }
+@keyframes cook-dot-pulse {
+  0%, 100% { opacity: 0.25; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.3); }
+}
+
 /* ── Hidden share card (for html2canvas) ── */
 .share-card-wrapper {
   position: absolute;
@@ -1421,24 +1451,16 @@ function addFood() {
     setTimeout(() => { input.style.borderColor = ''; }, 400);
     return;
   }
-  if (currentPool === 'all') {
-    if (state.foods.includes(val)) {
-      input.value = '';
-      input.style.borderColor = 'var(--lacquer)';
-      setTimeout(() => { input.style.borderColor = ''; }, 400);
-      return;
-    }
-    state.foods.push(val);
-  } else {
-    if (state.myMenu.includes(val)) {
-      input.value = '';
-      input.style.borderColor = 'var(--lacquer)';
-      setTimeout(() => { input.style.borderColor = ''; }, 400);
-      return;
-    }
-    if (!state.foods.includes(val)) state.foods.push(val);
-    state.myMenu.push(val);
+  if (state.foods.includes(val) || state.myMenu.includes(val)) {
+    input.value = '';
+    input.style.borderColor = 'var(--lacquer)';
+    setTimeout(() => { input.style.borderColor = ''; }, 400);
+    return;
   }
+  // 添加到全部选项
+  state.foods.push(val);
+  // 自动加入我的菜单
+  state.myMenu.push(val);
   input.value = '';
   renderTags();
   saveState();
@@ -2147,7 +2169,7 @@ async function askCook() {
 
   // 加载状态
   btn.textContent = '生成中…';
-  content.innerHTML = '<div style="text-align:center;color:var(--ink-light);font-size:12px;padding:20px;">正在生成做法…</div>';
+  content.innerHTML = '<div class="cook-loading"><div class="cook-loading-dots"><span></span><span></span><span></span></div><div>正在生成做法</div></div>';
   wrap.classList.add('visible');
 
   try {
