@@ -354,7 +354,10 @@ h1 {
 /* ── Food tags ── */
 .particle-container {
   position: fixed;
-  inset: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 58vh;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
@@ -1006,71 +1009,27 @@ h1 {
   font-family: 'Shippori Mincho B1', serif;
 }
 
-/* ── Footer ── */
-.pool-float {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 5;
-  background: rgba(246, 241, 233, 0.92);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-top: 1px solid var(--paper-dark);
-  padding: 8px 16px 10px;
-}
-.pool-float-inner {
-  max-width: 640px;
-  margin: 0 auto;
-}
-.float-footer {
-  text-align: center;
-  font-size: 10px;
-  color: var(--ink-light);
-  letter-spacing: 0.22em;
-  font-weight: 300;
-  margin-top: 6px;
-}
-
-/* ── Sound toggle ── */
-.sound-toggle {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 10;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 1px solid var(--paper-dark);
-  background: var(--card);
-  color: var(--ink-mid);
-  font-size: 16px;
-  cursor: pointer;
+/* ── Control row ── */
+.control-row {
   display: flex;
+  gap: 10px;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-  font-family: 'Shippori Mincho B1', serif;
-  line-height: 1;
+  flex-wrap: wrap;
+  margin-bottom: 0;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.4s ease, opacity 0.5s ease 0.3s, margin 0.4s ease;
 }
-.sound-toggle:hover {
-  border-color: var(--lacquer);
-  color: var(--lacquer);
-  transform: scale(1.08);
+.control-row.visible {
+  margin-bottom: 16px;
+  max-height: 60px;
+  opacity: 1;
 }
-.sound-toggle.muted {
-  opacity: 0.4;
-}
-
-/* ── History toggle ── */
-.history-toggle {
-  position: fixed;
-  bottom: 24px;
-  left: 24px;
-  z-index: 10;
-  width: 36px;
-  height: 36px;
+.control-btn {
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   border: 1px solid var(--paper-dark);
   background: var(--card);
@@ -1078,17 +1037,20 @@ h1 {
   font-size: 13px;
   font-family: 'Shippori Mincho B1', serif;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
   line-height: 1;
+  flex-shrink: 0;
 }
-.history-toggle:hover {
+.control-btn:hover {
   border-color: var(--lacquer);
   color: var(--lacquer);
   transform: scale(1.08);
+}
+.control-btn.muted {
+  opacity: 0.4;
 }
 
 /* ── History overlay ── */
@@ -1251,21 +1213,19 @@ h1 {
     <button class="share-btn" id="cook-btn" onclick="askCook()">做法</button>
   </div>
 
-  <div class="cook-wrap" id="cook-wrap">
-    <div class="cook-content" id="cook-content"></div>
+  <div class="control-row" id="control-row">
+    <div class="pool-tabs">
+      <span class="pool-tab active" id="tab-all" onclick="switchPool('all')">全部选项</span>
+      <span class="pool-tab" id="tab-my" onclick="switchPool('myMenu')">我的菜单</span>
+    </div>
+    <input class="add-input" id="add-input" type="text" placeholder="添加…" maxlength="12">
+    <button class="add-btn" onclick="addFood()">＋</button>
+    <button class="control-btn" id="history-toggle" onclick="showHistory()" title="抽签历史">历</button>
+    <button class="control-btn" id="sound-toggle" onclick="toggleSound()" title="音效开关">♪</button>
   </div>
 
-  <div class="pool-float">
-    <div class="pool-float-inner">
-      <div class="divider">
-        <div class="pool-tabs">
-          <span class="pool-tab active" id="tab-all" onclick="switchPool('all')">全部选项</span>
-          <span class="pool-tab" id="tab-my" onclick="switchPool('myMenu')">我的菜单</span>
-        </div>
-        <input class="add-input" id="add-input" type="text" placeholder="添加…" maxlength="12">
-        <button class="add-btn" onclick="addFood()">＋</button>
-      </div>
-    </div>
+  <div class="cook-wrap" id="cook-wrap">
+    <div class="cook-content" id="cook-content"></div>
   </div>
 </div>
 
@@ -1312,10 +1272,6 @@ h1 {
     </div>
   </div>
 </div>
-
-<button class="history-toggle" id="history-toggle" onclick="showHistory()" title="抽签历史">历</button>
-
-<button class="sound-toggle" id="sound-toggle" onclick="toggleSound()" title="音效开关">♪</button>
 
 <!-- History overlay -->
 <div class="history-overlay" id="history-overlay" onclick="closeHistory(event)">
@@ -1586,6 +1542,9 @@ let particles = [];
 let particleRAF = null;
 let mouseX = -1000;
 let mouseY = -1000;
+let stormActive = false;
+let stormWindX = 0;
+let stormWindY = 0;
 
 function makeParticle(name, index) {
   const tag = document.createElement('span');
@@ -1623,6 +1582,7 @@ function initParticles() {
   const foods = getFoods();
   const w = window.innerWidth;
   const h = window.innerHeight;
+  const zoneTop = h * 0.42; // 下半区顶部边界
 
   foods.forEach((name, i) => {
     const el = makeParticle(name, i);
@@ -1633,25 +1593,11 @@ function initParticles() {
     const pw = rect.width || 80;
     const ph = rect.height || 28;
 
-    // 随机位置，避开中间主内容区域
-    let x, y;
-    const margin = 60; // 避开边缘
-    const centerTop = h * 0.22;
-    const centerBottom = h * 0.72;
+    const margin = 40; // 避开边缘
 
-    if (Math.random() > 0.5) {
-      // 放在上方或下方区域
-      x = margin + Math.random() * (w - pw - margin * 2);
-      y = Math.random() < 0.5
-        ? margin + Math.random() * (centerTop - margin * 2)
-        : centerBottom + Math.random() * (h - centerBottom - margin - ph);
-    } else {
-      // 放在左侧或右侧区域
-      x = Math.random() < 0.5
-        ? margin + Math.random() * (w * 0.18 - margin)
-        : w * 0.82 + Math.random() * (w * 0.18 - margin - pw);
-      y = margin + Math.random() * (h - ph - margin * 2);
-    }
+    // 只在下半区随机分布
+    const x = margin + Math.random() * (w - pw - margin * 2);
+    const y = zoneTop + Math.random() * (h - zoneTop - ph - margin);
 
     particles.push({
       name, index: i,
@@ -1665,22 +1611,54 @@ function initParticles() {
   updateParticles();
 }
 
+function triggerParticleStorm() {
+  stormActive = true;
+  // 随机风向：主要向上吹，带一点水平偏移
+  stormWindX = (Math.random() - 0.5) * 5;
+  stormWindY = -3 - Math.random() * 4;
+
+  particles.forEach(p => {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 3 + Math.random() * 7;
+    p.vx += Math.cos(angle) * speed + stormWindX * 0.5;
+    p.vy += Math.sin(angle) * speed + stormWindY * 0.5;
+  });
+}
+
 function updateParticles() {
   const w = window.innerWidth;
   const h = window.innerHeight;
+  const zoneTop = h * 0.42; // 下半区顶部边界
   const repelRadius = 100;
   const repelForce = 0.12;
+
+  // 风暴风力衰减
+  if (stormActive) {
+    stormWindX *= 0.93;
+    stormWindY *= 0.93;
+    if (Math.abs(stormWindX) < 0.02 && Math.abs(stormWindY) < 0.02) {
+      stormActive = false;
+      stormWindX = 0;
+      stormWindY = 0;
+    }
+  }
 
   particles.forEach(p => {
     // 基础运动
     p.x += p.vx;
     p.y += p.vy;
 
-    // 边界反弹
+    // 边界反弹：限制在下半区
     if (p.x < 0) { p.x = 0; p.vx = Math.abs(p.vx) * 0.8; }
     if (p.x > w - p.width) { p.x = w - p.width; p.vx = -Math.abs(p.vx) * 0.8; }
-    if (p.y < 0) { p.y = 0; p.vy = Math.abs(p.vy) * 0.8; }
+    if (p.y < zoneTop) { p.y = zoneTop; p.vy = Math.abs(p.vy) * 0.8; }
     if (p.y > h - p.height) { p.y = h - p.height; p.vy = -Math.abs(p.vy) * 0.8; }
+
+    // 风暴风力
+    if (stormActive) {
+      p.vx += stormWindX * 0.06;
+      p.vy += stormWindY * 0.06;
+    }
 
     // 鼠标/触摸推开
     const cx = p.x + p.width / 2;
@@ -1695,15 +1673,20 @@ function updateParticles() {
       p.vy += (dy / dist) * force;
     }
 
-    // 速度衰减 + 扰动（保持持续运动）
-    p.vx *= 0.998;
-    p.vy *= 0.998;
+    // 速度衰减 + 扰动
+    const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+    if (stormActive && speed > 2) {
+      p.vx *= 0.95;
+      p.vy *= 0.95;
+    } else {
+      p.vx *= 0.998;
+      p.vy *= 0.998;
+    }
     if (Math.abs(p.vx) < 0.08) p.vx += (Math.random() - 0.5) * 0.04;
     if (Math.abs(p.vy) < 0.08) p.vy += (Math.random() - 0.5) * 0.04;
 
     // 限制最大速度
-    const maxSpeed = 1.2;
-    const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+    const maxSpeed = stormActive ? 10 : 1.2;
     if (speed > maxSpeed) {
       p.vx = (p.vx / speed) * maxSpeed;
       p.vy = (p.vy / speed) * maxSpeed;
@@ -1795,6 +1778,7 @@ function removeFood(index) {
     tipEl.textContent = '';
     hideSignNumber();
     document.getElementById('share-row').classList.remove('visible');
+    document.getElementById('control-row').classList.remove('visible');
     document.getElementById('cook-wrap').classList.remove('visible');
   } else if (current > index) {
     current--;
@@ -1891,6 +1875,7 @@ function switchPool(pool) {
     tipEl.textContent = '';
     hideSignNumber();
     document.getElementById('share-row').classList.remove('visible');
+    document.getElementById('control-row').classList.remove('visible');
     document.getElementById('cook-wrap').classList.remove('visible');
   }
   renderParticles();
@@ -1969,6 +1954,10 @@ function stopSpin() {
   clearTimeout(spinInterval);
   spinInterval = null;
   setSpinState(false);
+  // 快速平息风暴
+  stormActive = false;
+  stormWindX = 0;
+  stormWindY = 0;
   playStamp();
   pick(lastShown);
   addToRecent(getFoods()[lastShown]);
@@ -1979,6 +1968,8 @@ function stopSpin() {
 function spin() {
   if (isSpinning) { stopSpin(); return; }
 
+  triggerParticleStorm();
+
   const foods = getFoods();
   const el = document.getElementById('result');
   let rounds = 0;
@@ -1986,6 +1977,8 @@ function spin() {
 
   el.classList.remove('landing');
   document.getElementById('result-tip').classList.remove('visible');
+  document.getElementById('share-row').classList.remove('visible');
+  document.getElementById('control-row').classList.remove('visible');
   document.getElementById('cook-wrap').classList.remove('visible');
   setSpinState(true);
   playWoodblock();
@@ -2283,6 +2276,7 @@ function hideSignNumber() {
 
 function showShareRow() {
   document.getElementById('share-row').classList.add('visible');
+  document.getElementById('control-row').classList.add('visible');
 }
 
 /* ═══════════════════════════════════════
