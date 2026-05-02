@@ -400,17 +400,18 @@ h1 {
   letter-spacing: 0.18em;
   line-height: 1.9;
 }
-.fortune-columns {
-  display: flex;
-  gap: 14px;
-  justify-content: center;
-}
-.fc-col {
+.food-sign-inner {
   writing-mode: vertical-rl;
   text-orientation: upright;
-  letter-spacing: 0.3em;
-  font-size: 13px;
-  line-height: 1.6;
+  letter-spacing: 0.12em;
+  font-size: 14px;
+  line-height: 1.3;
+}
+.food-sign-inner span {
+  display: inline-block;
+}
+.fj-gap {
+  height: 16px;
 }
 
 /* ── Share buttons ── */
@@ -1250,7 +1251,7 @@ function renderFortune() {
   const el = document.getElementById('fortune-text');
   if (fortune.type === 'food') {
     // 竖排：忌在左，宜在右，从右到左读
-    el.innerHTML = '<div class="fortune-columns"><div class="fc-col">' + fortune.ji + '</div><div class="fc-col">' + fortune.yi + '</div></div>';
+    el.innerHTML = '<div class="food-sign-inner"><span>' + fortune.yi + '</span><span class="fj-gap">&ensp;</span><span>' + fortune.ji + '</span></div>';
   } else {
     el.innerHTML = '';
     el.textContent = fortune.text;
@@ -1288,7 +1289,7 @@ function prepareShareCard(type) {
   // Date stamp: 2026.05.01 · 立夏
   const d = new Date();
   const term = getCurrentSolarTerm();
-  dateEl.textContent = d.getFullYear() + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0') + ' · ' + term;
+  dateEl.textContent = d.getFullYear() + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0');
 
   if (type === 'food') {
     // Share card A: food result
@@ -1368,7 +1369,6 @@ function shareFortune() {
 
 function applySeasonalTheme() {
   const term = getCurrentSolarTerm();
-  // 24 节气 subtle 色调覆盖层（中国传统色，极淡）
   const colors = {
     '立春': 'rgba(232,216,179,0.05)', '雨水': 'rgba(232,224,216,0.05)',
     '惊蛰': 'rgba(212,160,136,0.04)', '春分': 'rgba(200,216,208,0.05)',
@@ -1389,6 +1389,27 @@ function applySeasonalTheme() {
   }
 }
 applySeasonalTheme();
+
+// Debug helper: preview any solar term theme in console
+// e.g. previewSolarTheme('夏至')
+window.previewSolarTheme = function(term) {
+  const colors = {
+    '立春': 'rgba(232,216,179,0.05)', '雨水': 'rgba(232,224,216,0.05)',
+    '惊蛰': 'rgba(212,160,136,0.04)', '春分': 'rgba(200,216,208,0.05)',
+    '清明': 'rgba(184,200,184,0.05)', '谷雨': 'rgba(200,184,168,0.04)',
+    '立夏': 'rgba(216,160,120,0.04)', '小满': 'rgba(216,152,128,0.04)',
+    '芒种': 'rgba(216,192,136,0.04)', '夏至': 'rgba(216,128,104,0.04)',
+    '小暑': 'rgba(216,112,88,0.04)',  '大暑': 'rgba(216,104,80,0.04)',
+    '立秋': 'rgba(232,224,208,0.05)', '处暑': 'rgba(224,208,176,0.05)',
+    '白露': 'rgba(224,216,200,0.05)', '秋分': 'rgba(216,208,192,0.05)',
+    '寒露': 'rgba(208,200,184,0.05)', '霜降': 'rgba(200,192,176,0.05)',
+    '立冬': 'rgba(200,192,176,0.05)', '小雪': 'rgba(192,184,168,0.05)',
+    '大雪': 'rgba(184,176,160,0.05)', '冬至': 'rgba(176,168,152,0.05)',
+    '小寒': 'rgba(168,160,144,0.05)', '大寒': 'rgba(160,152,136,0.05)'
+  };
+  document.documentElement.style.setProperty('--seasonal-tint', colors[term] || 'transparent');
+  console.log('Previewing theme for:', term);
+};
 
 renderTags();
 renderSoundToggle();
