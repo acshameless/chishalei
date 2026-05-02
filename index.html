@@ -76,11 +76,11 @@ body::before {
   justify-content: flex-start;
   align-items: center;
   width: 100%;
-  flex-shrink: 0;
+  flex: 1;
 }
 
 /* ── Header ── */
-.header { text-align: center; margin-bottom: 20px; }
+.header { text-align: center; margin-top: 6vh; margin-bottom: 20px; }
 
 .mark {
   display: flex;
@@ -252,7 +252,7 @@ h1 {
 }
 
 /* ── Button ── */
-.btn-wrap { margin-bottom: 24px; }
+.btn-wrap { margin-top: 20px; margin-bottom: 20px; }
 
 .btn {
   display: inline-flex;
@@ -2231,7 +2231,6 @@ function pick(index) {
   document.getElementById('cook-wrap').classList.remove('visible');
   document.getElementById('cook-btn').textContent = '做法';
   document.getElementById('cook-content').innerHTML = '';
-  applyGoldenLayout();
 
   // 自定义菜如果没有描述，自动请求 LLM 并更新显示
   if (!tipText && !DEFAULT_FOODS.includes(foodName)) {
@@ -2376,7 +2375,6 @@ function switchPool(pool) {
     document.getElementById('cook-btn').textContent = '做法';
   }
   renderSlotMachine();
-  applyGoldenLayout();
 }
 
 function toggleMyMenu(name) {
@@ -2908,7 +2906,6 @@ function hideSignNumber() {
 
 function showShareRow() {
   document.getElementById('share-row').classList.add('visible');
-  applyGoldenLayout();
 }
 
 /* ═══════════════════════════════════════
@@ -3254,7 +3251,6 @@ async function askCook() {
     renderCook(state.customRecipes[dish], content);
     wrap.classList.add('visible');
     btn.textContent = '导出';
-    applyGoldenLayout();
     return;
   }
 
@@ -3264,7 +3260,6 @@ async function askCook() {
     renderCook(cached, content);
     wrap.classList.add('visible');
     btn.textContent = '导出';
-    applyGoldenLayout();
     return;
   }
 
@@ -3301,7 +3296,6 @@ async function askCook() {
     renderCook(getCookFallback(dish), content);
   } finally {
     btn.textContent = '导出';
-    applyGoldenLayout();
   }
 }
 
@@ -3368,8 +3362,6 @@ renderSlotMachine();
 renderSoundToggle();
 renderSignNumber();
 renderFortune();
-// 延迟一次 rAF 确保 slot-machine 已渲染后再计算布局
-requestAnimationFrame(() => requestAnimationFrame(applyGoldenLayout));
 
 /* ── 触摸滑动切换池子 ── */
 let touchStartX = 0;
@@ -3402,46 +3394,11 @@ if (shareOverlayEl) {
   }, { passive: true });
 }
 
-/* ── 黄金比例布局：默认状态下按钮位于视口 38.2% 处 ── */
-function applyGoldenLayout() {
-  const upper = document.querySelector('.upper-content');
-  const btn = document.querySelector('.btn-wrap');
-  const lower = document.querySelector('.lower-content');
-  if (!upper || !btn || !lower) return;
-
-  const bodyStyles = getComputedStyle(document.body);
-  const padTop = parseFloat(bodyStyles.paddingTop);
-  const padBottom = parseFloat(bodyStyles.paddingBottom);
-  const available = window.innerHeight - padTop - padBottom;
-
-  // 用 offsetHeight 累加，排除被隐藏元素（scrollHeight 会把 max-height:0 的内容也算进去）
-  const upperH = Array.from(upper.children).reduce((s, c) => s + c.offsetHeight, 0);
-  const btnH = btn.offsetHeight;
-
-  // lower-content 里 particle-container 可能还没渲染完，用 min-height 保底
-  const particle = lower.querySelector('.particle-container, .slot-container, .menu-grid-container');
-  const particleH = particle ? Math.max(particle.offsetHeight, 180) : 180;
-  const controlH = document.getElementById('control-row')?.offsetHeight || 0;
-  const shareH = document.getElementById('share-row')?.offsetHeight || 0;
-  const cookH = document.getElementById('cook-wrap')?.offsetHeight || 0;
-  const lowerH = shareH + controlH + cookH + particleH;
-
-  if (upperH + btnH + lowerH <= available) {
-    const target = available * 0.382;
-    btn.style.marginTop = Math.max(0, target - upperH) + 'px';
-  } else {
-    btn.style.marginTop = '0px';
-  }
-}
-
-// 窗口大小变化时重新渲染老虎机并调整布局
+// 窗口大小变化时重新渲染老虎机
 let resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => {
-    renderSlotMachine();
-    applyGoldenLayout();
-  }, 300);
+  resizeTimer = setTimeout(() => renderSlotMachine(), 300);
 });
 </script>
 </body>
