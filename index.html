@@ -354,73 +354,51 @@ h1 {
 /* ── Food tags ── */
 .particle-container {
   position: fixed;
-  inset: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 48vh;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
 }
-.particle-tag {
+.slot-column {
+  width: 110px;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+}
+.slot-strip {
   position: absolute;
-  background: var(--card);
-  border: 1px solid var(--paper-dark);
-  padding: 4px 12px;
+  top: 0;
+  left: 0;
+  width: 100%;
+  will-change: transform;
+}
+.slot-item {
+  height: 44px;
+  line-height: 44px;
+  text-align: center;
+  font-family: 'Shippori Mincho B1', serif;
   font-size: 12.5px;
   color: var(--ink-mid);
-  cursor: pointer;
-  transition: background 0.16s, border-color 0.16s, color 0.16s, opacity 0.1s;
-  font-family: 'Shippori Mincho B1', serif;
-  font-weight: 400;
+  opacity: 0.45;
   letter-spacing: 0.05em;
-  user-select: none;
-  display: inline-flex;
-  align-items: center;
-  transform: translate(-50%, -50%);
-  pointer-events: auto;
   white-space: nowrap;
-  opacity: 0.85;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.particle-tag:hover {
-  background: var(--lacquer-lt);
-  border-color: var(--lacquer-lt);
-  color: var(--lacquer-dim);
+.slot-item.active {
   opacity: 1;
-  z-index: 10;
-}
-.particle-tag.active {
-  background: var(--lacquer);
-  border-color: var(--lacquer);
-  color: #FDF8F2;
-  opacity: 1;
-  z-index: 10;
-}
-.particle-tag.new-pop { animation: stamp 0.38s cubic-bezier(0.22,1,0.36,1); }
-
-.particle-del-btn {
-  margin-left: 6px;
-  font-size: 10px;
-  color: inherit;
-  opacity: 0;
-  transition: opacity 0.15s;
-  cursor: pointer;
-  flex-shrink: 0;
-  line-height: 1;
-}
-.particle-tag:hover .particle-del-btn { opacity: 0.45; }
-.particle-del-btn:hover { opacity: 1 !important; }
-
-.particle-star-btn {
-  margin-left: 4px;
-  font-size: 11px;
   color: var(--lacquer);
-  opacity: 0;
-  transition: opacity 0.15s;
-  cursor: pointer;
-  flex-shrink: 0;
-  line-height: 1;
+  font-size: 14px;
 }
-.particle-tag:hover .particle-star-btn { opacity: 0.4; }
-.particle-star-btn:hover { opacity: 1 !important; }
-.particle-star-btn.in-menu { opacity: 0.6; }
 
 /* ── Fortune slip ── */
 .fortune-wrap {
@@ -1529,160 +1507,92 @@ let current = -1;
    Particle Cloud System
    ═══════════════════════════════════════ */
 
-let particles = [];
-let particleRAF = null;
-let mouseX = -1000;
-let mouseY = -1000;
 let stormActive = false;
 let stormTimer = 0;
 let stormDecayStart = -1;
-let globalRotX = 0;
-let globalRotY = 0;
 
-function makeParticle(name, index) {
-  const tag = document.createElement('span');
-  tag.className = 'particle-tag';
-  const label = document.createElement('span');
-  label.textContent = name;
-  tag.appendChild(label);
-
-  if (currentPool === 'all') {
-    const star = document.createElement('span');
-    star.className = 'particle-star-btn';
-    const isInMenu = state.myMenu.includes(name);
-    star.textContent = isInMenu ? '★' : '☆';
-    if (isInMenu) star.classList.add('in-menu');
-    star.onclick = e => { e.stopPropagation(); toggleMyMenu(name); };
-    tag.appendChild(star);
-  }
-
-  const del = document.createElement('span');
-  del.className = 'particle-del-btn';
-  del.textContent = '✕';
-  del.onclick = e => { e.stopPropagation(); removeFood(index); };
-  tag.appendChild(del);
-  tag.onclick = () => pick(index);
-  return tag;
-}
-
-function initParticles() {
-  if (particleRAF) cancelAnimationFrame(particleRAF);
-  particles = [];
-  globalRotX = 0;
-  globalRotY = 0;
-
+function initSlotMachine() {
   const container = document.getElementById('particle-container');
   container.innerHTML = '';
 
   const foods = getFoods();
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  const sphereRadius = Math.min(w, h) * 0.35;
+  if (foods.length === 0) return;
 
-  foods.forEach((name, i) => {
-    const el = makeParticle(name, i);
-    container.appendChild(el);
+  const columns = Math.min(5, Math.max(3, Math.floor(window.innerWidth / 130)));
 
-    const rect = el.getBoundingClientRect();
-    const pw = rect.width || 80;
-    const ph = rect.height || 28;
+  for (let i = 0; i < columns; i++) {
+    const col = document.createElement('div');
+    col.className = 'slot-column';
+    const strip = document.createElement('div');
+    strip.className = 'slot-strip';
+    strip.dataset.col = i;
 
-    // phi 从 0.6~1.73（约34°~99°），避开北极聚集区
-    const phiMin = 0.6;
-    const phiMax = Math.PI * 0.55;
+    // 重复 4 遍菜品列表
+    for (let r = 0; r < 4; r++) {
+      foods.forEach((name, idx) => {
+        const item = document.createElement('div');
+        item.className = 'slot-item';
+        item.textContent = name;
+        item.dataset.index = idx;
+        strip.appendChild(item);
+      });
+    }
 
-    particles.push({
-      name, index: i,
-      theta: Math.random() * Math.PI * 2,
-      phi: phiMin + Math.random() * (phiMax - phiMin),
-      r: sphereRadius * (0.7 + Math.random() * 0.6),
-      vTheta: (Math.random() - 0.5) * 0.004,
-      vPhi: (Math.random() - 0.5) * 0.002,
-      el, width: pw, height: ph
-    });
-  });
-
-  updateParticles();
+    col.appendChild(strip);
+    container.appendChild(col);
+  }
 }
 
-function triggerParticleStorm() {
+function triggerSlotSpin(targetIndex) {
   stormActive = true;
   stormTimer = 0;
   stormDecayStart = -1;
 
-  particles.forEach(p => {
-    p.vTheta += (Math.random() - 0.5) * 0.08;
-    p.vPhi += (Math.random() - 0.5) * 0.05;
+  const foods = getFoods();
+  const itemHeight = 44;
+  const strips = document.querySelectorAll('.slot-strip');
+
+  // 先重置到随机位置
+  strips.forEach(strip => {
+    const randomOffset = Math.floor(Math.random() * foods.length) * itemHeight;
+    strip.style.transition = 'none';
+    strip.style.transform = `translateY(-${randomOffset}px)`;
+  });
+
+  void document.body.offsetWidth;
+
+  // 开始滚动
+  strips.forEach((strip, i) => {
+    const colHeight = strip.parentElement.offsetHeight;
+    const centerOffset = colHeight / 2 - itemHeight / 2;
+    const cycleHeight = foods.length * itemHeight;
+
+    // 目标：让 targetIndex 出现在第 2 圈的中心
+    const targetCycle = 2;
+    const baseY = -(targetCycle * cycleHeight + targetIndex * itemHeight) + centerOffset;
+
+    // 额外滚动圈数（中间列少转，两侧多转）
+    const mid = Math.floor(strips.length / 2);
+    const distFromMid = Math.abs(i - mid);
+    const extraRounds = 2 + distFromMid;
+    const finalY = baseY - extraRounds * cycleHeight;
+
+    const delay = distFromMid * 0.12;
+    const duration = 1.8 + distFromMid * 0.35;
+
+    strip.style.transition = `transform ${duration}s cubic-bezier(0.22, 0.8, 0.3, 1) ${delay}s`;
+    strip.style.transform = `translateY(${finalY}px)`;
   });
 }
 
-function updateParticles() {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  const centerX = w / 2;
-  const centerY = h * 0.82;
-
-  // 风暴状态：保持峰值直到 pick() 触发衰减
-  if (stormActive) {
-    stormTimer++;
-    if (stormDecayStart !== -1 && stormTimer - stormDecayStart > 80) {
-      stormActive = false;
-      stormDecayStart = -1;
-    }
-  }
-
-  // 全局旋转速度
-  let rotX = 0.002;
-  let rotY = 0.004;
-  if (stormActive) {
-    const agitation = stormDecayStart === -1 ? 1.0 : Math.max(0, 1 - (stormTimer - stormDecayStart) / 60);
-    rotX = 0.002 + 0.14 * agitation;
-    rotY = 0.004 + 0.20 * agitation;
-  }
-  globalRotX += rotX;
-  globalRotY += rotY;
-
-  particles.forEach(p => {
-    // 更新球坐标
-    p.theta += p.vTheta + rotY;
-    p.phi += p.vPhi + rotX;
-
-    // 限制 phi 范围
-    if (p.phi < 0.05) { p.phi = 0.05; p.vPhi = Math.abs(p.vPhi) * 0.5; }
-    if (p.phi > Math.PI * 0.55) { p.phi = Math.PI * 0.55; p.vPhi = -Math.abs(p.vPhi) * 0.5; }
-
-    // 球坐标转笛卡尔
-    const x3d = Math.sin(p.theta) * Math.sin(p.phi);
-    const y3d = Math.cos(p.phi);
-    const z3d = Math.cos(p.theta) * Math.sin(p.phi);
-
-    // 投影到屏幕
-    const screenX = centerX + x3d * p.r;
-    const screenY = centerY - y3d * p.r;
-
-    // 深度感：近大远小，近实远虚
-    const scale = 0.35 + (z3d + 1) / 2 * 1.0;
-    const opacity = 0.15 + (z3d + 1) / 2 * 0.85;
-    const zIdx = Math.floor((z3d + 1) * 100);
-
-    p.el.style.left = screenX + 'px';
-    p.el.style.top = screenY + 'px';
-    p.el.style.transform = `translate(-50%, -50%) scale(${scale.toFixed(3)})`;
-    p.el.style.opacity = opacity.toFixed(3);
-    p.el.style.zIndex = zIdx;
+function updateSlotHighlight(index) {
+  document.querySelectorAll('.slot-item').forEach(item => {
+    item.classList.toggle('active', parseInt(item.dataset.index) === index);
   });
-
-  particleRAF = requestAnimationFrame(updateParticles);
 }
 
-// 鼠标/触摸追踪
-document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
-document.addEventListener('touchmove', e => { if (e.touches.length > 0) { mouseX = e.touches[0].clientX; mouseY = e.touches[0].clientY; } }, { passive: true });
-document.addEventListener('mouseleave', () => { mouseX = -1000; mouseY = -1000; });
-
-function renderParticles() {
-  // 延迟一帧确保 DOM 尺寸正确
-  requestAnimationFrame(() => initParticles());
+function renderSlotMachine() {
+  requestAnimationFrame(() => initSlotMachine());
 }
 
 function pick(index) {
@@ -1709,46 +1619,45 @@ function pick(index) {
     stormDecayStart = stormTimer;
   }
 
-  // 中签飞行：从3D球面投影位置飞到结果卡片
-  const chosen = particles[index];
-  if (chosen) {
-    // 计算当前3D投影位置
-    const x3d = Math.sin(chosen.theta) * Math.sin(chosen.phi);
-    const y3d = Math.cos(chosen.phi);
-    const z3d = Math.cos(chosen.theta) * Math.sin(chosen.phi);
-    const w2 = window.innerWidth;
-    const h2 = window.innerHeight;
-    const cx = w2 / 2;
-    const cy = h2 * 0.82;
-    const startX = cx + x3d * chosen.r;
-    const startY = cy - y3d * chosen.r;
-    const startScale = 0.65 + (z3d + 1) / 2 * 0.5;
+  // 高亮老虎机中的选中项
+  updateSlotHighlight(index);
 
-    const card = document.getElementById('result-card');
-    const cardRect = card.getBoundingClientRect();
+  // 中签飞行：从老虎机中间列飞到结果卡片
+  const strips = document.querySelectorAll('.slot-strip');
+  const midCol = Math.floor(strips.length / 2);
+  const midStrip = strips[midCol];
+  if (midStrip) {
+    const items = midStrip.querySelectorAll('.slot-item');
+    const activeItem = Array.from(items).find(item => parseInt(item.dataset.index) === index);
+    if (activeItem) {
+      const rect = activeItem.getBoundingClientRect();
+      const card = document.getElementById('result-card');
+      const cardRect = card.getBoundingClientRect();
 
-    const clone = chosen.el.cloneNode(true);
-    clone.style.position = 'fixed';
-    clone.style.left = startX + 'px';
-    clone.style.top = startY + 'px';
-    clone.style.margin = '0';
-    clone.style.zIndex = '200';
-    clone.style.pointerEvents = 'none';
-    clone.style.transition = 'all 0.5s cubic-bezier(0.2, 0.5, 0.2, 1)';
-    clone.style.transform = `translate(-50%, -50%) scale(${startScale.toFixed(3)})`;
-    document.body.appendChild(clone);
+      const clone = activeItem.cloneNode(true);
+      clone.style.position = 'fixed';
+      clone.style.left = rect.left + 'px';
+      clone.style.top = rect.top + 'px';
+      clone.style.width = rect.width + 'px';
+      clone.style.height = rect.height + 'px';
+      clone.style.margin = '0';
+      clone.style.zIndex = '200';
+      clone.style.pointerEvents = 'none';
+      clone.style.transition = 'all 0.5s cubic-bezier(0.2, 0.5, 0.2, 1)';
+      document.body.appendChild(clone);
 
-    void clone.offsetWidth;
+      void clone.offsetWidth;
 
-    const targetX = cardRect.left + cardRect.width / 2;
-    const targetY = cardRect.top + cardRect.height / 2;
+      const targetX = cardRect.left + cardRect.width / 2;
+      const targetY = cardRect.top + cardRect.height / 2;
 
-    clone.style.left = targetX + 'px';
-    clone.style.top = targetY + 'px';
-    clone.style.transform = 'translate(-50%, -50%) scale(1.5)';
-    clone.style.opacity = '0.1';
+      clone.style.left = targetX + 'px';
+      clone.style.top = targetY + 'px';
+      clone.style.transform = 'translate(-50%, -50%) scale(1.5)';
+      clone.style.opacity = '0.1';
 
-    setTimeout(() => clone.remove(), 550);
+      setTimeout(() => clone.remove(), 550);
+    }
   }
 
   // 切换菜品时 reset 做法区域
@@ -1805,7 +1714,7 @@ function removeFood(index) {
   } else if (current > index) {
     current--;
   }
-  renderParticles();
+  renderSlotMachine();
   saveState();
 }
 
@@ -1828,12 +1737,8 @@ function addFood() {
   // 自动加入我的菜单
   state.myMenu.push(val);
   input.value = '';
-  renderParticles();
+  renderSlotMachine();
   saveState();
-  const tags = document.querySelectorAll('.particle-tag');
-  const newTag = tags[tags.length - 1];
-  newTag.classList.add('new-pop');
-  newTag.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
   // 自定义菜（不在 DEFAULT_FOODS 中）自动请求 LLM 获取描述和做法
   if (!DEFAULT_FOODS.includes(val)) {
@@ -1899,7 +1804,7 @@ function switchPool(pool) {
     document.getElementById('share-row').classList.remove('visible');
     document.getElementById('cook-wrap').classList.remove('visible');
   }
-  renderParticles();
+  renderSlotMachine();
 }
 
 function toggleMyMenu(name) {
@@ -1910,7 +1815,7 @@ function toggleMyMenu(name) {
     state.myMenu.push(name);
   }
   saveState();
-  renderParticles();
+  renderSlotMachine();
 }
 
 document.getElementById('add-input').addEventListener('keydown', e => {
@@ -1987,12 +1892,13 @@ function stopSpin() {
 function spin() {
   if (isSpinning) { stopSpin(); return; }
 
-  triggerParticleStorm();
-
   const foods = getFoods();
   const el = document.getElementById('result');
   let rounds = 0;
   const total = 14 + Math.floor(Math.random() * 5); // 14~18轮，更紧凑
+  const targetIndex = Math.floor(Math.random() * foods.length);
+
+  triggerSlotSpin(targetIndex);
 
   el.classList.remove('landing');
   document.getElementById('result-tip').classList.remove('visible');
@@ -2011,6 +1917,8 @@ function spin() {
       spinInterval = null;
       setSpinState(false);
       playStamp();
+      lastShown = targetIndex;
+      el.textContent = foods[lastShown];
       pick(lastShown);
       addToRecent(foods[lastShown]);
       addDraw(foods[lastShown]);
@@ -2678,7 +2586,7 @@ window.previewSolarTheme = function(term) {
   console.log('Previewing theme for:', term, 'paper:', papers[term] || '#F6F1E9');
 };
 
-renderParticles();
+renderSlotMachine();
 renderSoundToggle();
 renderSignNumber();
 renderFortune();
@@ -2687,7 +2595,7 @@ renderFortune();
 let resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => renderParticles(), 300);
+  resizeTimer = setTimeout(() => renderSlotMachine(), 300);
 });
 </script>
 </body>
