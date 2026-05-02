@@ -40,7 +40,8 @@ body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background: radial-gradient(ellipse 80% 70% at 50% 38%, rgba(246,241,233,0.65) 0%, transparent 100%);
+  background: radial-gradient(ellipse 80% 70% at 50% 38%, var(--paper) 0%, transparent 100%);
+  opacity: 0.65;
   pointer-events: none;
   z-index: 0;
 }
@@ -194,6 +195,31 @@ h1 {
 
 .result-food.landing {
   animation: stamp 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.result-tip {
+  margin-top: 10px;
+  min-height: 2.8em;
+  opacity: 0;
+  transition: opacity 0.5s ease 0.4s;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+  line-height: 1.5;
+}
+.result-tip.visible {
+  opacity: 1;
+}
+.result-tip .tip-main {
+  font-size: 12px;
+  color: var(--ink-mid);
+  letter-spacing: 0.06em;
+}
+.result-tip .tip-sub {
+  font-size: 11px;
+  color: var(--ink-light);
+  letter-spacing: 0.06em;
 }
 
 @keyframes stamp {
@@ -512,27 +538,22 @@ h1 {
   font-weight: 600;
   color: #8A3D27;
   letter-spacing: 0.12em;
-  margin-bottom: 36px;
   line-height: 1.3;
 }
 .sc-fortune {
-  font-size: 15px;
+  font-size: 14px;
   color: #6B6055;
-  letter-spacing: 0.2em;
-  line-height: 2;
+  letter-spacing: 0.06em;
+  line-height: 1.6;
+  margin-top: 10px;
   margin-bottom: 56px;
   text-align: center;
 }
-.sc-fortune.vertical {
-  display: flex;
-  gap: 18px;
-  justify-content: center;
-  line-height: 1.6;
-}
-.sc-fortune.vertical .sc-fc {
-  writing-mode: vertical-rl;
-  text-orientation: upright;
-  letter-spacing: 0.3em;
+.sc-fortune .sc-tip-sub {
+  display: block;
+  font-size: 12px;
+  color: #A89F94;
+  letter-spacing: 0.06em;
 }
 .sc-divider {
   width: 32px;
@@ -625,6 +646,7 @@ h1 {
       <div class="corner-bl"></div>
       <div class="result-label">今儿个吃这个</div>
       <div class="result-food" id="result">待君问签</div>
+      <div class="result-tip" id="result-tip"></div>
       <div class="sign-number" id="sign-number"></div>
     </div>
   </div>
@@ -643,7 +665,6 @@ h1 {
 
   <div class="share-row" id="share-row">
     <button class="share-btn" onclick="shareFood()">分享这道菜</button>
-    <button class="share-btn" onclick="shareFortune()">分享今日天意</button>
   </div>
 
   <div class="divider">
@@ -702,6 +723,44 @@ const DEFAULT_FOODS = [
   '信阳焖罐肉','南阳黄牛肉','周口羊肉汤','许昌卤面','新乡烧饼',
   '洛阳水席','开封炒凉粉','逍遥胡辣汤','三鲜烩面','萝卜丝饼'
 ];
+
+const FOOD_TIPS = {
+  '烩面': '汤面一体，趁热吃更香',
+  '胡辣汤': '辛辣暖胃，配油条更佳',
+  '灌汤包': '汤汁烫口，轻咬慢吸',
+  '羊肉汤': '温补暖身，配饼最搭',
+  '浆面条': '酸香开胃，发酵易消化',
+  '道口烧鸡': '高蛋白，撕肉慢吃',
+  '鲤鱼焙面': '糖醋开胃，注意控糖',
+  '水煎包': '底部焦脆，油煎适量',
+  '炒凉粉': '爽滑Q弹，肠胃弱者少食',
+  '杠子馍': '实心耐嚼，配汤更宜',
+  '菜馍': '菜面结合，营养均衡',
+  '油茶': '早餐饮品，暖胃提神',
+  '豆腐脑': '植物蛋白，清淡爽口',
+  '红焖羊肉': '温补佳品，秋冬更宜',
+  '卤面': '蒸制少油，干湿适中',
+  '炸紫酥肉': '油炸解馋，适量为宜',
+  '桶子鸡': '咸香入味，多喝水',
+  '烧饼夹肉': '碳水蛋白，注意分量',
+  '焦饼': '酥脆焦香，细嚼慢咽',
+  '葱油饼': '葱香四溢，油分偏高',
+  '蒸饺': '蒸制健康，营养均衡',
+  '煎包': '焦底香脆，趁热吃',
+  '板面': '宽面劲道，汤浓味正',
+  '扁粉菜': '粉条青菜，补充纤维',
+  '臊子面': '汤菜丰富，多菜少油',
+  '信阳焖罐肉': '慢炖软糯，易消化',
+  '南阳黄牛肉': '优质蛋白，补中益气',
+  '周口羊肉汤': '汤鲜味厚，暖身佳品',
+  '许昌卤面': '卤香入味，配蒜更香',
+  '新乡烧饼': '外酥里嫩，适量为宜',
+  '洛阳水席': '汤菜多样，少量多餐',
+  '开封炒凉粉': '夜市经典，凉热适中',
+  '逍遥胡辣汤': '辛香浓郁，早餐饮品',
+  '三鲜烩面': '配料丰富，汤鲜面滑',
+  '萝卜丝饼': '蔬菜面饼，清淡爽口'
+};
 
 function defaultState() {
   return {
@@ -909,6 +968,7 @@ function renderTags() {
 
 function pick(index) {
   const el = document.getElementById('result');
+  const tipEl = document.getElementById('result-tip');
   const tags = document.querySelectorAll('.food-tag');
   if (current !== -1 && tags[current]) tags[current].classList.remove('active');
   current = index;
@@ -918,7 +978,10 @@ function pick(index) {
   void el.offsetWidth;
   el.classList.add('landing');
   el.textContent = getFoods()[index];
-  showFortune();
+  const foodName = getFoods()[index];
+  tipEl.innerHTML = '<span class="tip-main">' + (FOOD_TIPS[foodName] || '') + '</span>' +
+    '<span class="tip-sub">' + getTimeTip() + ' · ' + getSolarTip() + '</span>';
+  tipEl.classList.add('visible');
   showSignNumber();
   showShareRow();
 }
@@ -930,8 +993,11 @@ function removeFood(index) {
   if (current === index) {
     current = -1;
     const el = document.getElementById('result');
+    const tipEl = document.getElementById('result-tip');
     el.classList.remove('landing');
     el.textContent = '待君问签';
+    tipEl.classList.remove('visible');
+    tipEl.textContent = '';
     hideSignNumber();
   } else if (current > index) current--;
   renderTags();
@@ -1018,6 +1084,7 @@ function spin() {
   const total = 20 + Math.floor(Math.random() * 10);
 
   el.classList.remove('landing');
+  document.getElementById('result-tip').classList.remove('visible');
   setSpinState(true);
   playWoodblock();
 
@@ -1181,10 +1248,83 @@ function getCurrentSolarTerm() {
   return current.name;
 }
 
+function isSolarTermDay() {
+  const month = new Date().getMonth() + 1;
+  const day = new Date().getDate();
+  const dates = [
+    { m: 2, d: 4 }, { m: 2, d: 19 }, { m: 3, d: 5 }, { m: 3, d: 20 },
+    { m: 4, d: 4 }, { m: 4, d: 19 }, { m: 5, d: 5 }, { m: 5, d: 20 },
+    { m: 6, d: 5 }, { m: 6, d: 21 }, { m: 7, d: 6 }, { m: 7, d: 22 },
+    { m: 8, d: 7 }, { m: 8, d: 23 }, { m: 9, d: 7 }, { m: 9, d: 22 },
+    { m: 10, d: 8 }, { m: 10, d: 23 }, { m: 11, d: 7 }, { m: 11, d: 22 },
+    { m: 12, d: 6 }, { m: 12, d: 21 }, { m: 1, d: 5 }, { m: 1, d: 20 }
+  ];
+  return dates.some(t => t.m === month && t.d === day);
+}
+
+function getTimeTip() {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 10) return '早餐宜温热';
+  if (h >= 10 && h < 14) return '午餐要吃饱';
+  if (h >= 14 && h < 17) return '下午适量补';
+  if (h >= 17 && h < 20) return '晚餐宜清淡';
+  if (h >= 20 && h < 24) return '夜宵不宜重';
+  return '深夜少食';
+}
+
+function getSolarTip() {
+  const term = getCurrentSolarTerm();
+  const tips = {
+    '立春': '春季生发，少食油腻',
+    '雨水': '湿气渐重，健脾祛湿',
+    '惊蛰': '春雷初动，养肝护目',
+    '春分': '阴阳平衡，清淡为主',
+    '清明': '清肝明目，多吃绿叶',
+    '谷雨': '湿气最盛，注意排湿',
+    '立夏': '暑气渐起，多喝水',
+    '小满': '湿热交加，清淡饮食',
+    '芒种': '闷热多汗，补充盐分',
+    '夏至': '昼长夜短，多食瓜果',
+    '小暑': '高温闷热，清凉解暑',
+    '大暑': '酷热难耐，忌生冷过度',
+    '立秋': '秋燥当令，滋阴润肺',
+    '处暑': '暑去凉来，养胃健脾',
+    '白露': '早晚转凉，温热饮食',
+    '秋分': '昼夜均分，润燥养阴',
+    '寒露': '寒气渐盛，暖胃驱寒',
+    '霜降': '深秋寒凉，温补为宜',
+    '立冬': '冬气始至，温补暖身',
+    '小雪': '寒意渐浓，热汤暖身',
+    '大雪': '严寒降临，进补正时',
+    '冬至': '阴极阳生，羊肉温补',
+    '小寒': '冷在三九，防寒暖胃',
+    '大寒': '一年最冷，温热进补'
+  };
+  return tips[term] || '';
+}
+
+function getTip(foodName) {
+  const food = FOOD_TIPS[foodName] || '';
+  const time = getTimeTip();
+  const solar = getSolarTip();
+  const parts = [food, time, solar].filter(Boolean);
+  return parts.join(' · ');
+}
+
 function getDailyFortune() {
   const today = new Date().toISOString().slice(0, 10);
+
+  // 精确的节气日 → 显示对应节气签（横排）
+  if (isSolarTermDay()) {
+    const term = getCurrentSolarTerm();
+    const solar = FORTUNES.find(f => f.type === 'solar' && f.text.startsWith(term));
+    if (solar) return solar;
+  }
+
+  // 非节气日 → 从食签中按日期 hash 选取（竖排宜/忌）
+  const foods = FORTUNES.filter(f => f.type === 'food');
   const seed = Math.abs(hashCode(today));
-  return FORTUNES[seed % FORTUNES.length];
+  return foods[seed % foods.length];
 }
 
 function toChineseUpper(n) {
@@ -1247,39 +1387,17 @@ function prepareShareCard(type) {
   const food = document.getElementById('sc-food');
   const fortune = document.getElementById('sc-fortune');
   const dateEl = document.getElementById('sc-date');
-  const dailyFortune = getDailyFortune();
 
-  // Date stamp: 2026.05.01 · 立夏
+  // Date stamp: 2026.05.01
   const d = new Date();
-  const term = getCurrentSolarTerm();
   dateEl.textContent = d.getFullYear() + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0');
 
-  if (type === 'food') {
-    // Share card A: food result
-    const resultText = document.getElementById('result').textContent;
-    label.textContent = '今儿个吃这个';
-    food.textContent = resultText;
-    if (dailyFortune.type === 'food') {
-      // 竖排：忌在左，宜在右
-      fortune.innerHTML = '<div class="sc-fc">' + dailyFortune.ji + '</div><div class="sc-fc">' + dailyFortune.yi + '</div>';
-      fortune.classList.add('vertical');
-    } else {
-      fortune.textContent = dailyFortune.text;
-      fortune.classList.remove('vertical');
-    }
-  } else {
-    // Share card B: daily fortune
-    label.textContent = '今日天意';
-    if (dailyFortune.type === 'food') {
-      food.textContent = '';
-      fortune.innerHTML = '<div class="sc-fc">' + dailyFortune.ji + '</div><div class="sc-fc">' + dailyFortune.yi + '</div>';
-      fortune.classList.add('vertical');
-    } else {
-      food.textContent = '';
-      fortune.textContent = dailyFortune.text;
-      fortune.classList.remove('vertical');
-    }
-  }
+  const resultText = document.getElementById('result').textContent;
+  label.textContent = '今儿个吃这个';
+  food.textContent = resultText;
+  const foodTip = FOOD_TIPS[resultText] || '';
+  fortune.innerHTML = foodTip +
+    '<span class="sc-tip-sub">' + getTimeTip() + ' · ' + getSolarTip() + '</span>';
 }
 
 async function generateShareImage(type) {
@@ -1322,30 +1440,30 @@ function shareFood() {
   generateShareImage('food');
 }
 
-function shareFortune() {
-  generateShareImage('fortune');
-}
-
 /* ═══════════════════════════════════════
    Init
    ═══════════════════════════════════════ */
 
 function applySeasonalTheme() {
   const term = getCurrentSolarTerm();
-  // 24 节气 subtle 背景色调（修改 --paper，效果更明显且稳定）
+  // 24 节气背景色调 — 冬夏差异约 30-40 色阶，肉眼可辨，仍保持安静
   const papers = {
-    '立春': '#F0EEE6', '雨水': '#F0EDE8',
-    '惊蛰': '#F2EDE8', '春分': '#EEF0EA',
-    '清明': '#EAF0E8', '谷雨': '#F0EEE8',
-    '立夏': '#F6F0E6', '小满': '#F6EEE6',
-    '芒种': '#F6F0E0', '夏至': '#F8F0E4',
-    '小暑': '#FAF0E4', '大暑': '#FAEEE2',
-    '立秋': '#F2EEE4', '处暑': '#F0EEE2',
-    '白露': '#EEEEE0', '秋分': '#EEEDE0',
-    '寒露': '#F0EDE0', '霜降': '#F0EBDE',
-    '立冬': '#EEEBE0', '小雪': '#ECE9DE',
-    '大雪': '#EAE7DC', '冬至': '#E8E5DA',
-    '小寒': '#EAE7DC', '大寒': '#E8E5DA'
+    // 春 — 偏嫩绿/暖黄
+    '立春': '#EEF0E0', '雨水': '#EBEDE5',
+    '惊蛰': '#F0EBE0', '春分': '#E8EDE5',
+    '清明': '#E5EBE2', '谷雨': '#EAE8DC',
+    // 夏 — 偏暖黄/橙
+    '立夏': '#F2E8D5', '小满': '#F0E5D0',
+    '芒种': '#EEE2C8', '夏至': '#F0DEC5',
+    '小暑': '#F2DCC0', '大暑': '#F5DAC0',
+    // 秋 — 偏金/棕
+    '立秋': '#F0E8D8', '处暑': '#EDE5D5',
+    '白露': '#E8E5D8', '秋分': '#E5E2D5',
+    '寒露': '#E2DFD2', '霜降': '#DFDCCF',
+    // 冬 — 偏冷灰
+    '立冬': '#E5E2DC', '小雪': '#E0DDD7',
+    '大雪': '#DBD8D2', '冬至': '#D6D3CD',
+    '小寒': '#D1CEC8', '大寒': '#CCC9C3'
   };
   const p = papers[term];
   if (p) {
@@ -1358,18 +1476,18 @@ applySeasonalTheme();
 // e.g. previewSolarTheme('夏至')
 window.previewSolarTheme = function(term) {
   const papers = {
-    '立春': '#F0EEE6', '雨水': '#F0EDE8',
-    '惊蛰': '#F2EDE8', '春分': '#EEF0EA',
-    '清明': '#EAF0E8', '谷雨': '#F0EEE8',
-    '立夏': '#F6F0E6', '小满': '#F6EEE6',
-    '芒种': '#F6F0E0', '夏至': '#F8F0E4',
-    '小暑': '#FAF0E4', '大暑': '#FAEEE2',
-    '立秋': '#F2EEE4', '处暑': '#F0EEE2',
-    '白露': '#EEEEE0', '秋分': '#EEEDE0',
-    '寒露': '#F0EDE0', '霜降': '#F0EBDE',
-    '立冬': '#EEEBE0', '小雪': '#ECE9DE',
-    '大雪': '#EAE7DC', '冬至': '#E8E5DA',
-    '小寒': '#EAE7DC', '大寒': '#E8E5DA'
+    '立春': '#EEF0E0', '雨水': '#EBEDE5',
+    '惊蛰': '#F0EBE0', '春分': '#E8EDE5',
+    '清明': '#E5EBE2', '谷雨': '#EAE8DC',
+    '立夏': '#F2E8D5', '小满': '#F0E5D0',
+    '芒种': '#EEE2C8', '夏至': '#F0DEC5',
+    '小暑': '#F2DCC0', '大暑': '#F5DAC0',
+    '立秋': '#F0E8D8', '处暑': '#EDE5D5',
+    '白露': '#E8E5D8', '秋分': '#E5E2D5',
+    '寒露': '#E2DFD2', '霜降': '#DFDCCF',
+    '立冬': '#E5E2DC', '小雪': '#E0DDD7',
+    '大雪': '#DBD8D2', '冬至': '#D6D3CD',
+    '小寒': '#D1CEC8', '大寒': '#CCC9C3'
   };
   document.documentElement.style.setProperty('--paper', papers[term] || '#F6F1E9');
   console.log('Previewing theme for:', term, 'paper:', papers[term] || '#F6F1E9');
@@ -1377,7 +1495,6 @@ window.previewSolarTheme = function(term) {
 
 renderTags();
 renderSoundToggle();
-renderFortune();
 renderSignNumber();
 </script>
 </body>
