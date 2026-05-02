@@ -1534,10 +1534,15 @@ async function fetchCookFor(dish) {
       body: JSON.stringify({ dish })
     });
     if (!res.ok) {
-      console.warn('fetchCookFor failed:', res.status);
+      const errText = await res.text();
+      console.warn('fetchCookFor HTTP error:', res.status, errText.slice(0, 200));
       return;
     }
     const data = await res.json();
+    if (data.error) {
+      console.warn('fetchCookFor API error:', data.error, data.detail);
+      return;
+    }
     if (data.tip) {
       state.customTips[dish] = data.tip;
     }
@@ -1545,8 +1550,18 @@ async function fetchCookFor(dish) {
       state.customRecipes[dish] = data.recipe;
     }
     saveState();
+    console.log('fetchCookFor success:', dish, 'tip=' + (data.tip || 'none'));
+
+    // 如果当前页面正显示这道菜，自动更新 tip
+    const resultEl = document.getElementById('result');
+    const tipEl = document.getElementById('result-tip');
+    if (resultEl && resultEl.textContent === dish && tipEl && tipEl.classList.contains('visible')) {
+      const newTip = state.customTips[dish] || '';
+      tipEl.innerHTML = '<span class="tip-main">' + newTip + '</span>' +
+        '<span class="tip-sub">' + getTimeTip() + ' · ' + getSolarTip() + '</span>';
+    }
   } catch (e) {
-    console.warn('fetchCookFor error:', e.message);
+    console.warn('fetchCookFor network error:', e.message);
   }
 }
 
