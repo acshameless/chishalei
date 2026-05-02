@@ -1277,19 +1277,35 @@ h1 {
 .category-list::-webkit-scrollbar-thumb { background: var(--paper-dark); border-radius: 2px; }
 .category-row {
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+  cursor: default;
+  transition: background 0.15s;
+  border-bottom: 1px solid transparent;
+}
+.category-row-main {
+  display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 13px 20px;
   cursor: pointer;
-  transition: background 0.15s;
-  border-bottom: 1px solid transparent;
 }
-.category-row:hover { background: rgba(184,84,56,0.03); }
+.category-row-main:hover { background: rgba(184,84,56,0.03); }
+.category-checkbox {
+  margin-right: 8px;
+  font-size: 14px;
+  color: var(--lacquer);
+  min-width: 18px;
+  text-align: center;
+  user-select: none;
+}
 .category-row-name {
   font-size: 14px;
   font-family: 'Shippori Mincho B1', serif;
   color: var(--ink);
   letter-spacing: 0.08em;
+  flex: 1;
 }
 .category-row-meta {
   display: flex;
@@ -1300,20 +1316,63 @@ h1 {
   font-size: 11px;
   font-family: 'Zen Kaku Gothic New', sans-serif;
   color: var(--ink-light);
+  white-space: nowrap;
 }
-.category-row-action {
+.category-expand {
+  background: none;
+  border: none;
   font-size: 11px;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
-  color: var(--lacquer);
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-.category-row:hover .category-row-action { opacity: 1; }
-.category-row.added .category-row-action {
-  opacity: 1;
   color: var(--ink-light);
+  cursor: pointer;
+  padding: 2px 8px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  margin-left: 4px;
+  transition: color 0.15s;
+  white-space: nowrap;
 }
-.category-row.added:hover .category-row-action { color: var(--lacquer); }
+.category-expand:hover { color: var(--lacquer); }
+.category-items {
+  padding: 0 20px 12px 48px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+}
+.category-item {
+  padding: 4px 10px;
+  font-size: 12px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  color: var(--ink-mid);
+  border: 1px solid var(--paper-dark);
+  background: var(--card);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  user-select: none;
+}
+.category-item.excluded {
+  opacity: 0.35;
+  text-decoration: line-through;
+  border-color: transparent;
+  background: transparent;
+}
+.category-item:hover {
+  border-color: var(--lacquer);
+  color: var(--lacquer);
+}
+.menu-grid-add-input {
+  border: 1px solid var(--paper-dark);
+  background: var(--card);
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  color: var(--ink);
+  width: 140px;
+  outline: none;
+  text-align: center;
+}
+.menu-grid-add-input:focus {
+  border-color: var(--lacquer);
+}
 
 .menu-grid-empty {
   width: 100%;
@@ -1536,7 +1595,7 @@ h1 {
 <div class="category-overlay" id="category-overlay" onclick="closeCategoryPicker(event)">
   <div class="category-panel">
     <div class="category-header">
-      <div class="category-title">加入我的菜单</div>
+      <div class="category-title">选择菜系</div>
       <button class="category-close" onclick="closeCategoryPicker()">关闭</button>
     </div>
     <div class="category-list" id="category-list"></div>
@@ -1549,7 +1608,7 @@ h1 {
    ═══════════════════════════════════════ */
 
 const STORAGE_KEY = 'chisha-state';
-const STATE_VERSION = 5;
+const STATE_VERSION = 6;
 
 const DEFAULT_FOODS = [];
 
@@ -1652,6 +1711,7 @@ function defaultState() {
   return {
     version: STATE_VERSION,
     myMenu: [],
+    selectedCategories: ['河南菜'],
     excludedFoods: [],
     customTips: {},
     customRecipes: {},
@@ -1703,6 +1763,12 @@ function migrateState(raw) {
     raw.version = 5;
   }
 
+  // v5 → v6: 引入 selectedCategories，默认河南菜；excludedFoods 语义变为「从选中分类排除」
+  if (raw.version < 6) {
+    raw.selectedCategories = ['河南菜'];
+    raw.version = 6;
+  }
+
   return raw;
 }
 
@@ -1729,8 +1795,22 @@ let currentPool = 'all'; // 'all' | 'myMenu'
 
 function getFoods() {
   if (currentPool === 'myMenu') return state.myMenu;
-  // 全部选项 = 所有预设菜 - 被排除的
-  return ALL_FOODS.filter(name => !state.excludedFoods.includes(name));
+  // 全部选项 = 选中分类的菜 - 被排除的 + myMenu
+  const all = [];
+  state.selectedCategories.forEach(catName => {
+    const cat = FOOD_CATEGORIES.find(c => c.name === catName);
+    if (cat) {
+      cat.items.forEach(item => {
+        if (!all.includes(item) && !state.excludedFoods.includes(item)) {
+          all.push(item);
+        }
+      });
+    }
+  });
+  state.myMenu.forEach(name => {
+    if (!all.includes(name)) all.push(name);
+  });
+  return all;
 }
 
 /* ═══════════════════════════════════════
@@ -1884,7 +1964,7 @@ function initSlotMachine() {
     container.innerHTML = '<div class="slot-empty">' +
       (currentPool === 'myMenu'
         ? '我的菜单是空的'
-        : state.excludedFoods.length > 0 ? '菜品已全部排除，点击「重」恢复' : '暂无可选菜品') +
+        : '暂无可选菜品') +
       '</div>';
     return;
   }
@@ -1893,7 +1973,7 @@ function initSlotMachine() {
   if (currentPool === 'myMenu') {
     container.className = 'menu-grid-container';
     if (foods.length === 0) {
-      container.innerHTML = '<div class="menu-grid-empty"><button class="menu-grid-add" onclick="promptAddToMyMenu()" title="添加菜品">＋</button></div>';
+      container.innerHTML = '<div class="menu-grid-empty"><button class="menu-grid-add" onclick="showAddInput()" title="添加菜品">＋</button></div>';
       return;
     }
     foods.forEach((name, idx) => {
@@ -2167,20 +2247,43 @@ function removeFood(index) {
   saveState();
 }
 
-function promptAddToMyMenu() {
-  const name = prompt('添加菜品到我的菜单');
-  if (name && name.trim()) {
-    const val = name.trim();
-    if (state.myMenu.includes(val) || ALL_FOODS.includes(val)) {
-      showToast('「' + val + '」已在菜单中');
-      return;
+function showAddInput() {
+  const container = document.querySelector('.menu-grid-empty');
+  if (!container) return;
+  container.innerHTML = '<input type="text" class="menu-grid-add-input" id="add-input" placeholder="菜名，回车添加" />';
+  const input = document.getElementById('add-input');
+  input.focus();
+
+  const handleAdd = () => {
+    const val = input.value.trim();
+    if (val) addToMyMenu(val);
+  };
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      handleAdd();
+    } else if (e.key === 'Escape') {
+      renderSlotMachine();
     }
-    state.myMenu.push(val);
-    saveState();
-    renderSlotMachine();
-    if (!DEFAULT_FOODS.includes(val)) {
-      fetchCookFor(val);
-    }
+  });
+
+  input.addEventListener('blur', () => {
+    setTimeout(() => {
+      if (document.activeElement !== input) renderSlotMachine();
+    }, 200);
+  });
+}
+
+function addToMyMenu(val) {
+  if (state.myMenu.includes(val)) {
+    showToast('「' + val + '」已在菜单中');
+    return;
+  }
+  state.myMenu.push(val);
+  saveState();
+  renderSlotMachine();
+  if (!DEFAULT_FOODS.includes(val)) {
+    fetchCookFor(val);
   }
 }
 
@@ -2229,18 +2332,6 @@ function switchPool(pool) {
   document.getElementById('tab-all').classList.toggle('active', pool === 'all');
   document.getElementById('tab-my').classList.toggle('active', pool === 'myMenu');
 
-  // 切换「选/重」按钮
-  const catBtn = document.getElementById('category-toggle');
-  if (pool === 'myMenu') {
-    catBtn.textContent = '选';
-    catBtn.title = '选菜入单';
-    catBtn.onclick = showCategoryPicker;
-  } else {
-    catBtn.textContent = '重';
-    catBtn.title = '重置排除';
-    catBtn.onclick = resetExcluded;
-  }
-
   // 切换后如果当前高亮的菜不在新池中，清除高亮
   const foods = getFoods();
   if (current !== -1 && (current >= foods.length || foods[current] !== document.getElementById('result').textContent)) {
@@ -2276,20 +2367,8 @@ function clearMyMenu() {
   renderSlotMachine();
 }
 
-function resetExcluded() {
-  if (state.excludedFoods.length === 0) {
-    showToast('没有排除的菜品');
-    return;
-  }
-  state.excludedFoods = [];
-  saveState();
-  renderSlotMachine();
-  showToast('已恢复全部菜品');
-}
-
 /* ── Category Picker ── */
-let categorySelectedIndex = 0;
-let categorySelectedItems = new Set();
+let expandedCategoryIndex = -1;
 
 function showCategoryPicker() {
   renderCategoryList();
@@ -2313,38 +2392,86 @@ document.addEventListener('keydown', e => {
 function renderCategoryList() {
   const list = document.getElementById('category-list');
   list.innerHTML = FOOD_CATEGORIES.map((cat, i) => {
-    const alreadyInMenu = cat.items.filter(n => state.myMenu.includes(n)).length;
-    const allInMenu = alreadyInMenu === cat.items.length;
-    const actionText = allInMenu ? '已全加入' : (alreadyInMenu > 0 ? '追加 +' + (cat.items.length - alreadyInMenu) : '加入 +' + cat.items.length);
-    return '<div class="category-row' + (allInMenu ? ' added' : '') + '" onclick="toggleCategoryToMyMenu(' + i + ')">' +
-      '<span class="category-row-name">' + cat.name + '</span>' +
-      '<span class="category-row-meta">' +
-        '<span class="category-row-count">' + cat.items.length + ' 道</span>' +
-        '<span class="category-row-action">' + actionText + '</span>' +
-      '</span>' +
+    const isSelected = state.selectedCategories.includes(cat.name);
+    const excludedCount = cat.items.filter(n => state.excludedFoods.includes(n)).length;
+    const inPoolCount = isSelected ? cat.items.length - excludedCount : 0;
+
+    let statusText = '';
+    if (!isSelected) {
+      statusText = '未选';
+    } else if (excludedCount === 0) {
+      statusText = '已全选';
+    } else {
+      statusText = '已选 ' + inPoolCount + '/' + cat.items.length;
+    }
+
+    const expanded = expandedCategoryIndex === i;
+    let itemsHtml = '';
+    if (expanded) {
+      itemsHtml = '<div class="category-items">' +
+        cat.items.map(name => {
+          const isExcluded = state.excludedFoods.includes(name);
+          const inPool = isSelected && !isExcluded;
+          return '<span class="category-item' + (inPool ? '' : ' excluded') + '" onclick="toggleFoodExclude(event, \'' + name + '\', ' + i + ')">' + name + '</span>';
+        }).join('') +
+      '</div>';
+    }
+
+    return '<div class="category-row' + (isSelected ? ' selected' : '') + '">' +
+      '<div class="category-row-main" onclick="toggleCategory(' + i + ')">' +
+        '<span class="category-checkbox">' + (isSelected ? '☑' : '☐') + '</span>' +
+        '<span class="category-row-name">' + cat.name + '</span>' +
+        '<span class="category-row-meta">' +
+          '<span class="category-row-count">' + statusText + '</span>' +
+          '<button class="category-expand" onclick="toggleExpandCategory(event, ' + i + ')">' + (expanded ? '收起' : '展开') + '</button>' +
+        '</span>' +
+      '</div>' +
+      itemsHtml +
     '</div>';
   }).join('');
 }
 
-function toggleCategoryToMyMenu(index) {
+function toggleCategory(index) {
   const cat = FOOD_CATEGORIES[index];
   if (!cat) return;
 
-  const allInMenu = cat.items.every(name => state.myMenu.includes(name));
-
-  if (allInMenu) {
-    // 从菜单中移除该分类所有菜
+  const idx = state.selectedCategories.indexOf(cat.name);
+  if (idx >= 0) {
+    state.selectedCategories.splice(idx, 1);
+    // 取消分类时，清空该分类在 excludedFoods 中的记录
     cat.items.forEach(name => {
-      const idx = state.myMenu.indexOf(name);
-      if (idx >= 0 && state.myMenu.length > 1) state.myMenu.splice(idx, 1);
+      const eIdx = state.excludedFoods.indexOf(name);
+      if (eIdx >= 0) state.excludedFoods.splice(eIdx, 1);
     });
   } else {
-    // 追加未在菜单中的菜
-    cat.items.forEach(name => {
-      if (!state.myMenu.includes(name)) {
-        state.myMenu.push(name);
-      }
-    });
+    state.selectedCategories.push(cat.name);
+  }
+
+  saveState();
+  renderSlotMachine();
+  renderCategoryList();
+}
+
+function toggleExpandCategory(event, index) {
+  event.stopPropagation();
+  expandedCategoryIndex = expandedCategoryIndex === index ? -1 : index;
+  renderCategoryList();
+}
+
+function toggleFoodExclude(event, name, catIndex) {
+  event.stopPropagation();
+  const cat = FOOD_CATEGORIES[catIndex];
+
+  // 如果分类未选中，先选中它
+  if (!state.selectedCategories.includes(cat.name)) {
+    state.selectedCategories.push(cat.name);
+  }
+
+  const idx = state.excludedFoods.indexOf(name);
+  if (idx >= 0) {
+    state.excludedFoods.splice(idx, 1);
+  } else {
+    state.excludedFoods.push(name);
   }
 
   saveState();
@@ -3198,11 +3325,11 @@ window.previewSolarTheme = function(term) {
   console.log('Previewing theme for:', term, 'paper:', papers[term] || '#F6F1E9');
 };
 
-// 初始化分类按钮状态（默认全部选项下显示「重」）
+// 初始化分类按钮状态（默认全部选项下显示「选」）
 const catBtnInit = document.getElementById('category-toggle');
-catBtnInit.textContent = '重';
-catBtnInit.title = '重置排除';
-catBtnInit.onclick = resetExcluded;
+catBtnInit.textContent = '选';
+catBtnInit.title = '选择菜系';
+catBtnInit.onclick = showCategoryPicker;
 
 renderSlotMachine();
 renderSoundToggle();
