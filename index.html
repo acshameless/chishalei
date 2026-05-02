@@ -30,7 +30,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 36px 24px 140px;
+  padding: 36px 24px 48px;
   position: relative;
   overflow-x: hidden;
   background-image: radial-gradient(circle, #CBC0AE 1px, transparent 1px);
@@ -321,44 +321,12 @@ h1 {
   border-bottom-color: var(--lacquer);
 }
 
-.add-input {
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid var(--paper-dark);
-  padding: 2px 6px 2px 4px;
-  font-size: 12px;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
-  font-weight: 300;
-  color: var(--ink);
-  outline: none;
-  width: 96px;
-  letter-spacing: 0.06em;
-  transition: border-color 0.2s;
-}
-.add-input::placeholder { color: var(--ink-light); }
-.add-input:focus { border-color: var(--lacquer); }
-
-.add-btn {
-  background: none;
-  border: 1px solid var(--paper-dark);
-  padding: 2px 10px;
-  font-size: 15px;
-  color: var(--ink-mid);
-  cursor: pointer;
-  line-height: 1.5;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
-  transition: border-color 0.15s, color 0.15s;
-}
-.add-btn:hover { border-color: var(--lacquer); color: var(--lacquer); }
-
 /* ── Food tags ── */
 .particle-container,
 .slot-container {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 48vh;
+  position: relative;
+  width: 100%;
+  height: 220px;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
@@ -366,13 +334,12 @@ h1 {
   justify-content: center;
   align-items: center;
   gap: 14px;
+  margin-top: 8px;
 }
 .menu-grid-container {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 48vh;
+  position: relative;
+  width: 100%;
+  height: 220px;
   z-index: 0;
   pointer-events: auto;
   overflow-y: auto;
@@ -384,6 +351,7 @@ h1 {
   gap: 10px 12px;
   mask-image: linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%);
+  margin-top: 8px;
 }
 .menu-grid-item {
   padding: 6px 14px;
@@ -1340,8 +1308,74 @@ h1 {
 }
 .category-row.added:hover .category-row-action { color: var(--lacquer); }
 
-@media (max-width: 420px) {
+.category-custom {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--paper-dark);
+  flex-shrink: 0;
+}
+.category-custom-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--paper-dark);
+  padding: 4px 6px;
+  font-size: 13px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  color: var(--ink);
+  outline: none;
+  letter-spacing: 0.06em;
+  transition: border-color 0.2s;
+}
+.category-custom-input::placeholder { color: var(--ink-light); }
+.category-custom-input:focus { border-color: var(--lacquer); }
+.category-custom-btn {
+  background: none;
+  border: 1px solid var(--paper-dark);
+  padding: 4px 14px;
+  font-size: 12px;
+  color: var(--ink-mid);
+  cursor: pointer;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  letter-spacing: 0.1em;
+  transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.category-custom-btn:hover { border-color: var(--lacquer); color: var(--lacquer); }
+
+@media (max-width: 480px) {
   .share-slider img { width: 100%; }
+  .control-row {
+    gap: 8px;
+    padding: 0 8px;
+  }
+  .pool-tab {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .control-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+  body {
+    padding: 24px 16px 32px;
+  }
+  .header {
+    margin-bottom: 16px;
+  }
+  .result-card {
+    padding: 18px 16px 16px;
+  }
+  .btn {
+    padding: 12px 36px;
+    font-size: 14px;
+  }
+  .particle-container,
+  .slot-container,
+  .menu-grid-container {
+    height: 180px;
+  }
 }
 </style>
 </head>
@@ -1391,8 +1425,6 @@ h1 {
       <span class="pool-tab active" id="tab-all" onclick="switchPool('all')">全部选项</span>
       <span class="pool-tab" id="tab-my" onclick="switchPool('myMenu')">我的菜单</span>
     </div>
-    <input class="add-input" id="add-input" type="text" placeholder="添加…" maxlength="12">
-    <button class="add-btn" onclick="addFood()">＋</button>
     <button class="control-btn" id="category-toggle" onclick="showCategoryPicker()" title="选菜入单">选</button>
     <button class="control-btn" id="history-toggle" onclick="showHistory()" title="抽签历史">历</button>
   </div>
@@ -1400,10 +1432,10 @@ h1 {
   <div class="cook-wrap" id="cook-wrap">
     <div class="cook-content" id="cook-content"></div>
   </div>
-</div>
 
-<!-- Particle cloud (floating food tags) -->
-<div class="particle-container" id="particle-container"></div>
+  <!-- Slot machine / Menu grid -->
+  <div class="particle-container" id="particle-container"></div>
+</div>
 
 <!-- Share overlay -->
 <div class="share-overlay" id="share-overlay" onclick="closeShareOverlay(event)">
@@ -1466,6 +1498,10 @@ h1 {
       <button class="category-close" onclick="closeCategoryPicker()">关闭</button>
     </div>
     <div class="category-list" id="category-list"></div>
+    <div class="category-custom">
+      <input class="category-custom-input" id="category-custom-input" type="text" placeholder="自定义菜品…" maxlength="12">
+      <button class="category-custom-btn" onclick="addFoodFromPicker()">添加</button>
+    </div>
   </div>
 </div>
 
@@ -2066,8 +2102,12 @@ function removeFood(index) {
   saveState();
 }
 
-function addFood() {
-  const input = document.getElementById('add-input');
+function addFoodFromPicker() {
+  addFoodFromInput(document.getElementById('category-custom-input'));
+}
+
+function addFoodFromInput(input) {
+  if (!input) return;
   const val = input.value.trim();
   if (!val) {
     input.style.borderColor = 'var(--lacquer)';
@@ -2254,8 +2294,8 @@ function showToast(msg) {
   setTimeout(() => el.classList.remove('visible'), 2200);
 }
 
-document.getElementById('add-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') addFood();
+document.getElementById('category-custom-input')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') addFoodFromPicker();
 });
 
 /* ═══════════════════════════════════════
