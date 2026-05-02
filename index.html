@@ -403,6 +403,10 @@ h1 {
   text-shadow: 0 0 14px rgba(184,84,56,0.18);
   transition: all 0.35s cubic-bezier(0.22, 0.8, 0.3, 1);
 }
+.slot-item.in-my-menu {
+  opacity: 0.75;
+  color: var(--lacquer-dim);
+}
 
 /* 横向贯穿的中心高亮条 */
 .slot-container::after {
@@ -794,10 +798,9 @@ h1 {
 /* ── Hidden share cards (for html2canvas) ── */
 .share-card-wrapper {
   position: absolute;
-  left: 0;
+  left: -9999px;
   top: 0;
-  width: 0;
-  height: 0;
+  width: 540px;
   overflow: hidden;
 }
 
@@ -1563,9 +1566,10 @@ function initSlotMachine() {
     for (let r = 0; r < 8; r++) {
       foods.forEach((name, idx) => {
         const item = document.createElement('div');
-        item.className = 'slot-item';
+        item.className = 'slot-item' + (state.myMenu.includes(name) ? ' in-my-menu' : '');
         item.textContent = name;
         item.dataset.index = idx;
+        item.ondblclick = () => { toggleMyMenu(name); };
         strip.appendChild(item);
       });
     }
@@ -1751,17 +1755,6 @@ function removeFood(index) {
   // 从当前池中删除
   foods.splice(index, 1);
 
-  // 同步删除另一个池
-  if (currentPool === 'all') {
-    // 从全部选项删除，同步从我的菜单删除
-    const myMenuIdx = state.myMenu.indexOf(dishName);
-    if (myMenuIdx >= 0) state.myMenu.splice(myMenuIdx, 1);
-  } else {
-    // 从我的菜单删除，同步从全部选项删除
-    const foodsIdx = state.foods.indexOf(dishName);
-    if (foodsIdx >= 0) state.foods.splice(foodsIdx, 1);
-  }
-
   if (current === index) {
     current = -1;
     const el = document.getElementById('result');
@@ -1794,10 +1787,12 @@ function addFood() {
     setTimeout(() => { input.style.borderColor = ''; }, 400);
     return;
   }
-  // 添加到全部选项
-  state.foods.push(val);
-  // 自动加入我的菜单
-  state.myMenu.push(val);
+  // 只添加到当前激活的池子
+  if (currentPool === 'all') {
+    state.foods.push(val);
+  } else {
+    state.myMenu.push(val);
+  }
   input.value = '';
   renderSlotMachine();
   saveState();
@@ -2654,7 +2649,25 @@ renderSoundToggle();
 renderSignNumber();
 renderFortune();
 
-// 窗口大小变化时重新分布粒子
+/* ── 触摸滑动切换池子 ── */
+let touchStartX = 0;
+let touchStartY = 0;
+const containerEl = document.querySelector('.container');
+if (containerEl) {
+  containerEl.addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  containerEl.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 60) {
+      switchPool(currentPool === 'all' ? 'myMenu' : 'all');
+    }
+  }, { passive: true });
+}
+
+// 窗口大小变化时重新渲染老虎机
 let resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
