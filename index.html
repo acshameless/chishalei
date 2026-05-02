@@ -1712,21 +1712,68 @@ function getCookFallback(dish) {
 }
 
 function getCookMock(dish) {
-  // localhost 测试用的高质量 mock 数据
+  // localhost 测试用：按菜名关键词返回对应的 mock 数据
+  if (/烩面|卤面|板面|臊子面|三鲜/.test(dish)) {
+    return {
+      materials: [{name:'面条',amount:'300克'},{name:'五花肉',amount:'150克'},{name:'黄豆芽',amount:'100克'},{name:'葱姜蒜',amount:'适量'},{name:'老抽生抽',amount:'各1勺'}],
+      steps: [{title:'蒸面',desc:'细面拌油，上锅蒸15分钟至八分熟',heat:'大火蒸15分钟'},{title:'炒肉',desc:'五花肉煸出油，加葱姜蒜爆香',heat:'中火煸炒5分钟'},{title:'拌面',desc:'蒸好的面倒入菜汤中拌匀，再蒸5分钟',heat:'大火蒸5分钟'}],
+      tips: ['面条拌点油再蒸，不容易粘连','菜汤要多一点，面才能吸饱味儿']
+    };
+  }
+  if (/胡辣汤|羊肉汤|周口/.test(dish)) {
+    return {
+      materials: [{name:'羊肉/牛肉',amount:'300克'},{name:'面筋',amount:'100克'},{name:'粉条',amount:'1把'},{name:'香料包',amount:'1个'},{name:'胡椒粉',amount:'2勺'}],
+      steps: [{title:'熬汤',desc:'骨头熬汤2小时，滤出清汤',heat:'小火熬2小时'},{title:'下面',desc:'面筋撕块、粉条泡软下锅',heat:'中火煮10分钟'},{title:'勾芡',desc:'水淀粉勾薄芡，撒胡椒葱花',heat:'小火搅匀'}],
+      tips: ['胡辣汤要勾薄芡，太稠容易坨','胡椒粉最后放，香气更冲']
+    };
+  }
+  if (/灌汤包|水煎包|蒸饺|煎包/.test(dish)) {
+    return {
+      materials: [{name:'面粉',amount:'300克'},{name:'猪肉馅',amount:'250克'},{name:'肉皮冻',amount:'100克'},{name:'葱姜水',amount:'3勺'},{name:'香油',amount:'1勺'}],
+      steps: [{title:'调馅',desc:'肉馅加葱姜水搅上劲，拌入肉皮冻丁',heat:'手工调拌'},{title:'擀皮',desc:'面剂擀成中间厚边缘薄的圆皮',heat:'擀面杖手工擀'},{title:'包制',desc:'捏褶包入馅料，上锅蒸/煎',heat:'中火蒸15分钟或煎8分钟'}],
+      tips: ['肉皮冻是灌汤的关键，化了才有汁','包子收口要捏紧，蒸时不能漏汤']
+    };
+  }
+  if (/道口烧鸡|桶子鸡|焖罐/.test(dish)) {
+    return {
+      materials: [{name:'整鸡',amount:'1只（约1.5斤）'},{name:'八角桂皮',amount:'各2块'},{name:'老汤',amount:'2000毫升'},{name:'蜂蜜',amount:'2勺'},{name:'盐',amount:'3勺'}],
+      steps: [{title:'焯水',desc:'整鸡冷水下锅，加料酒焯去血沫',heat:'大火烧开3分钟'},{title:'上色',desc:'蜂蜜加水刷鸡皮，晾干后油炸至金黄',heat:'六成油温炸2分钟'},{title:'卤制',desc:'入老汤加香料，小火卤2小时',heat:'小火慢卤2小时'}],
+      tips: ['老汤是烧鸡的灵魂，越老越香','炸皮时油温不能太高，容易糊']
+    };
+  }
+  if (/鲤鱼|焙面/.test(dish)) {
+    return {
+      materials: [{name:'鲤鱼',amount:'1条（约1斤）'},{name:'面粉',amount:'100克'},{name:'糖醋汁',amount:'半碗'},{name:'龙须面',amount:'1把'},{name:'葱姜蒜',amount:'适量'}],
+      steps: [{title:'炸鱼',desc:'鲤鱼改花刀，裹面粉炸至金黄酥脆',heat:'七成热油炸8分钟'},{title:'浇汁',desc:'糖醋汁熬浓，趁热浇在炸好的鱼上',heat:'中火熬汁至起泡'},{title:'焙面',desc:'龙须面炸至蓬松盖在鱼上',heat:'八成油温炸10秒'}],
+      tips: ['炸鱼要炸透，浇汁时才滋滋响','焙面要最后炸，放久了不酥']
+    };
+  }
+  if (/炒凉粉|豆腐脑|萝卜丝/.test(dish)) {
+    return {
+      materials: [{name:'凉粉/豆腐',amount:'300克'},{name:'蒜泥',amount:'2勺'},{name:'辣椒油',amount:'1勺'},{name:'香醋',amount:'2勺'},{name:'榨菜/香菜',amount:'适量'}],
+      steps: [{title:'切配',desc:'凉粉切方块或豆腐划薄片',heat:'刀工处理'},{title:'煎炒',desc:'少许油将凉粉煎至两面焦黄',heat:'中火煎5分钟'},{title:'调味',desc:'加蒜泥辣椒油香醋拌匀',heat:'小火翻匀'}],
+      tips: ['凉粉切厚一点，煎时不容易碎','豆腐脑要趁热吃，凉了发酸']
+    };
+  }
+  if (/炸紫酥|焦饼|葱油饼|烧饼/.test(dish)) {
+    return {
+      materials: [{name:'面粉',amount:'300克'},{name:'猪油/食用油',amount:'50克'},{name:'葱花',amount:'适量'},{name:'盐',amount:'1勺'},{name:'芝麻',amount:'少许'}],
+      steps: [{title:'和面',desc:'开水烫一半面，再加冷水和成软面团',heat:'常温醒30分钟'},{title:'擀饼',desc:'面团擀薄，抹油撒盐葱花，卷起来再擀平',heat:'擀面杖手工擀'},{title:'烙制',desc:'平底锅少油，两面烙至金黄酥脆',heat:'中小火烙8分钟'}],
+      tips: ['烫面做的饼外酥里软','葱要最后撒，烙时香气才足']
+    };
+  }
+  if (/红焖|羊肉|牛肉|黄牛肉/.test(dish)) {
+    return {
+      materials: [{name:'羊肉/牛肉',amount:'500克'},{name:'胡萝卜/土豆',amount:'200克'},{name:'葱姜',amount:'适量'},{name:'料酒生抽',amount:'各2勺'},{name:'干辣椒',amount:'3个'}],
+      steps: [{title:'焯水',desc:'肉块冷水下锅，加料酒焯去血沫',heat:'大火烧开3分钟'},{title:'煸炒',desc:'少许油炒香葱姜辣椒，下肉块煸炒',heat:'中火煸炒5分钟'},{title:'焖煮',desc:'加开水没过肉，小火焖1小时至软烂',heat:'小火焖1小时'}],
+      tips: ['红焖要用开水，肉才不发柴','胡萝卜后放，煮烂了不好吃']
+    };
+  }
+  // 默认
   return {
-    materials: [
-      { name: '面粉', amount: '300克' },
-      { name: '五花肉', amount: '200克' },
-      { name: '黄豆芽', amount: '150克' },
-      { name: '葱姜蒜', amount: '适量' },
-      { name: '老抽生抽', amount: '各1勺' }
-    ],
-    steps: [
-      { title: '蒸面', desc: '细面拌油，上锅蒸15分钟至八分熟', heat: '大火蒸15分钟' },
-      { title: '炒肉', desc: '五花肉煸出油，加葱姜蒜爆香', heat: '中火煸炒5分钟' },
-      { title: '拌面', desc: '蒸好的面倒入菜汤中拌匀，再蒸5分钟', heat: '大火蒸5分钟' }
-    ],
-    tips: ['面条拌点油再蒸，不容易粘连', '菜汤要多一点，面才能吸饱味儿']
+    materials: [{name:'主料',amount:'300克'},{name:'配菜',amount:'适量'},{name:'葱姜蒜',amount:'适量'},{name:'调料',amount:'适量'}],
+    steps: [{title:'备料',desc:'食材洗净切配，调料备好',heat:'刀工处理'},{title:'烹制',desc:'按火候要求烹饪至熟',heat:'中火翻炒'},{title:'调味',desc:'加盐酱油等调味出锅',heat:'小火拌匀'}],
+    tips: ['火候到位，味道自然好','调味分两次，中间尝咸淡']
   };
 }
 
