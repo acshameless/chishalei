@@ -1571,6 +1571,7 @@ function initParticles() {
   const foods = getFoods();
   const w = window.innerWidth;
   const h = window.innerHeight;
+  const zoneTop = h * 0.52; // 控制栏下方区域
   foods.forEach((name, i) => {
     const el = makeParticle(name, i);
     container.appendChild(el);
@@ -1582,15 +1583,15 @@ function initParticles() {
 
     const margin = 40;
 
-    // 全屏分布
+    // 限制在控制栏下方区域
     const x = margin + Math.random() * (w - pw - margin * 2);
-    const y = margin + Math.random() * (h - ph - margin * 2);
+    const y = zoneTop + Math.random() * (h - zoneTop - ph - margin);
 
     particles.push({
       name, index: i,
       x, y,
-      vx: (Math.random() - 0.5) * 2.0,
-      vy: (Math.random() - 0.5) * 2.0,
+      vx: (Math.random() - 0.5) * 3.0,
+      vy: (Math.random() - 0.5) * 3.0,
       el, width: pw, height: ph
     });
   });
@@ -1603,30 +1604,31 @@ function triggerParticleStorm() {
   stormTimer = 0;
 
   particles.forEach(p => {
-    // 向外爆发，像签筒炸裂
+    // 剧烈爆发，像签筒被猛摇
     const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight * 0.75;
+    const centerY = window.innerHeight * 0.8;
     const px = p.x + p.width / 2;
     const py = p.y + p.height / 2;
     const dx = px - centerX;
     const dy = py - centerY;
-    const angle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 1.0;
-    const speed = 7 + Math.random() * 10;
+    const angle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 1.2;
+    const speed = 10 + Math.random() * 14;
     p.vx = Math.cos(angle) * speed;
-    p.vy = Math.sin(angle) * speed - 4;
+    p.vy = Math.sin(angle) * speed - 6;
   });
 }
 
 function updateParticles() {
   const w = window.innerWidth;
   const h = window.innerHeight;
+  const zoneTop = h * 0.52;
   const repelRadius = 100;
   const repelForce = 0.12;
 
   // 风暴状态更新
   if (stormActive) {
     stormTimer++;
-    if (stormTimer > 100) stormActive = false;
+    if (stormTimer > 90) stormActive = false;
   }
 
   particles.forEach(p => {
@@ -1634,28 +1636,30 @@ function updateParticles() {
     p.x += p.vx;
     p.y += p.vy;
 
-    // 边界反弹（全屏）
+    // 边界反弹（限制在下半区）
     if (p.x < 0) { p.x = 0; p.vx = Math.abs(p.vx) * 0.8; }
     if (p.x > w - p.width) { p.x = w - p.width; p.vx = -Math.abs(p.vx) * 0.8; }
-    if (p.y < 0) { p.y = 0; p.vy = Math.abs(p.vy) * 0.8; }
+    if (p.y < zoneTop) { p.y = zoneTop; p.vy = Math.abs(p.vy) * 0.8; }
     if (p.y > h - p.height) { p.y = h - p.height; p.vy = -Math.abs(p.vy) * 0.8; }
 
-    // 风暴：签筒炸裂，签向全屏飞散
+    // 风暴：签筒内剧烈翻腾
     if (stormActive) {
       const centerX = w / 2;
-      const centerY = h * 0.75;
+      const centerY = h * 0.8;
       const px = p.x + p.width / 2;
       const py = p.y + p.height / 2;
       const dx = px - centerX;
       const dy = py - centerY;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist > 1) {
-        // 离心力：向外甩
-        p.vx += (dx / dist) * 0.15;
-        p.vy += (dy / dist) * 0.15;
+        // 离心力向外甩
+        p.vx += (dx / dist) * 0.25;
+        p.vy += (dy / dist) * 0.25;
       }
-      // 轻微重力
-      p.vy += 0.04;
+      // 底部强反弹，像筒底
+      if (p.y > h - p.height - 10) {
+        p.vy = -Math.abs(p.vy) * 0.9;
+      }
     }
 
     // 鼠标/触摸推开
@@ -1677,14 +1681,14 @@ function updateParticles() {
       p.vx *= 0.96;
       p.vy *= 0.96;
     } else {
-      p.vx *= 0.995;
-      p.vy *= 0.995;
+      p.vx *= 0.994;
+      p.vy *= 0.994;
     }
-    if (Math.abs(p.vx) < 0.2) p.vx += (Math.random() - 0.5) * 0.08;
-    if (Math.abs(p.vy) < 0.2) p.vy += (Math.random() - 0.5) * 0.08;
+    if (Math.abs(p.vx) < 0.3) p.vx += (Math.random() - 0.5) * 0.12;
+    if (Math.abs(p.vy) < 0.3) p.vy += (Math.random() - 0.5) * 0.12;
 
     // 限制最大速度
-    const maxSpeed = stormActive ? 14 : 3.0;
+    const maxSpeed = stormActive ? 16 : 5.0;
     if (speed > maxSpeed) {
       p.vx = (p.vx / speed) * maxSpeed;
       p.vy = (p.vy / speed) * maxSpeed;
