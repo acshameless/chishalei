@@ -1999,6 +1999,13 @@ function initSlotMachine() {
       item.onclick = () => removeFood(idx);
       container.appendChild(item);
     });
+    // 非空也显示 + 按钮
+    const addBtn = document.createElement('button');
+    addBtn.className = 'menu-grid-add';
+    addBtn.textContent = '＋';
+    addBtn.title = '添加菜品';
+    addBtn.onclick = () => showAddInput();
+    container.appendChild(addBtn);
     return;
   }
 
@@ -2245,9 +2252,14 @@ function removeFood(index) {
   const foods = getFoods();
   const dishName = foods[index];
 
-  if (currentPool === 'myMenu' && foods.length <= 1) return;
+  if (currentPool === 'myMenu') {
+    state.myMenu.splice(index, 1);
+  }
 
-  foods.splice(index, 1);
+  // 安全 fallback：如果直接操作 foods 数组也能生效（myMenu 模式下 foods 是 state.myMenu 引用）
+  if (!currentPool || currentPool !== 'myMenu') {
+    foods.splice(index, 1);
+  }
 
   if (current === index) {
     current = -1;
@@ -2269,9 +2281,25 @@ function removeFood(index) {
 }
 
 function showAddInput() {
-  const container = document.querySelector('.menu-grid-empty');
-  if (!container) return;
-  container.innerHTML = '<input type="text" class="menu-grid-add-input" id="add-input" placeholder="菜名，回车添加" />';
+  // 空状态：.menu-grid-empty 容器
+  let container = document.querySelector('.menu-grid-empty');
+  if (container) {
+    container.innerHTML = '<input type="text" class="menu-grid-add-input" id="add-input" placeholder="菜名，回车添加" />';
+  } else {
+    // 非空状态：找到 + 按钮并替换为 input
+    container = document.querySelector('.menu-grid-container');
+    if (!container) return;
+    const addBtn = container.querySelector('.menu-grid-add');
+    if (!addBtn) return;
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'menu-grid-add-input';
+    input.id = 'add-input';
+    input.placeholder = '菜名，回车添加';
+    addBtn.replaceWith(input);
+  }
+
   const input = document.getElementById('add-input');
   input.focus();
 
