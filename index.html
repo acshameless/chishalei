@@ -846,6 +846,30 @@ h1 {
   opacity: 1;
 }
 
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  padding: 8px 18px;
+  border-radius: 20px;
+  background: rgba(35, 32, 27, 0.82);
+  color: #F6F1E9;
+  font-size: 13px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  letter-spacing: 0.04em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  z-index: 200;
+  white-space: nowrap;
+}
+.toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
 /* ── Hidden share cards (for html2canvas) ── */
 .share-card-wrapper {
   position: absolute;
@@ -2532,6 +2556,7 @@ function toggleFoodExclude(event, name, catIndex) {
 }
 
 /* ── Toast ── */
+let toastTimer = null;
 function showToast(msg) {
   let el = document.getElementById('toast');
   if (!el) {
@@ -2542,7 +2567,11 @@ function showToast(msg) {
   }
   el.textContent = msg;
   el.classList.add('visible');
-  setTimeout(() => el.classList.remove('visible'), 2200);
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    el.classList.remove('visible');
+    toastTimer = null;
+  }, 2000);
 }
 
 
