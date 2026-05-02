@@ -1625,12 +1625,12 @@ function updateParticles() {
     const t = stormTimer;
     if (t < 20) {
       stormIntensity = t / 20 * 0.3;          // 启动：缓升到 0.3
-    } else if (t < 50) {
-      stormIntensity = 0.3 + (t - 20) / 30 * 0.7; // 加速：升到 1.0
-    } else if (t < 70) {
-      stormIntensity = 1.0;                   // 峰值：保持最大
-    } else if (t < 100) {
-      stormIntensity = 1.0 - (t - 70) / 30;   // 衰减：缓降
+    } else if (t < 40) {
+      stormIntensity = 0.3 + (t - 20) / 20 * 0.7; // 加速：升到 1.0
+    } else if (t < 130) {
+      stormIntensity = 1.0;                   // 峰值：保持最大直到抽签结束
+    } else if (t < 160) {
+      stormIntensity = 1.0 - (t - 130) / 30;  // 衰减：缓降
     } else {
       stormActive = false;
       stormIntensity = 0;
@@ -1752,9 +1752,13 @@ function pick(index) {
   showSignNumber();
   showShareRow();
 
-  // 中签飞行：被选中的签飞到结果卡片
+  // 中签飞行：被选中的签保持高速飞到结果卡片
   const chosen = particles[index];
   if (chosen) {
+    // 给原始粒子一个向上的爆发，保持高速
+    chosen.vy -= 10;
+    chosen.vx += (Math.random() - 0.5) * 6;
+
     const card = document.getElementById('result-card');
     const tagRect = chosen.el.getBoundingClientRect();
     const cardRect = card.getBoundingClientRect();
@@ -1766,7 +1770,7 @@ function pick(index) {
     clone.style.margin = '0';
     clone.style.zIndex = '200';
     clone.style.pointerEvents = 'none';
-    clone.style.transition = 'all 0.7s cubic-bezier(0.22, 1, 0.36, 1)';
+    clone.style.transition = 'all 0.28s cubic-bezier(0.05, 0.7, 0.1, 1)';
     document.body.appendChild(clone);
 
     void clone.offsetWidth;
@@ -1776,10 +1780,10 @@ function pick(index) {
 
     clone.style.left = targetX + 'px';
     clone.style.top = targetY + 'px';
-    clone.style.transform = 'scale(1.4) rotate(4deg)';
-    clone.style.opacity = '0.15';
+    clone.style.transform = 'scale(1.5) rotate(8deg)';
+    clone.style.opacity = '0.1';
 
-    setTimeout(() => clone.remove(), 750);
+    setTimeout(() => clone.remove(), 320);
   }
 
   // 切换菜品时 reset 做法区域
