@@ -30,6 +30,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-height: 100dvh;
+  box-sizing: border-box;
   padding: 20px 20px 40px;
   position: relative;
   overflow-x: hidden;
@@ -52,7 +54,7 @@ body::before {
   z-index: 1;
   width: 100%;
   max-width: 640px;
-  min-height: 100dvh;
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -835,7 +837,7 @@ h1 {
 /* ── Hidden share cards (for html2canvas) ── */
 .share-card-wrapper {
   position: absolute;
-  left: 0;
+  left: -100%;
   top: 0;
   width: 540px;
   opacity: 0;
@@ -1960,14 +1962,6 @@ function initSlotMachine() {
   container.innerHTML = '';
 
   const foods = getFoods();
-  if (foods.length === 0) {
-    container.innerHTML = '<div class="slot-empty">' +
-      (currentPool === 'myMenu'
-        ? '我的菜单是空的'
-        : '暂无可选菜品') +
-      '</div>';
-    return;
-  }
 
   // 我的菜单模式下显示简洁网格列表
   if (currentPool === 'myMenu') {
@@ -1984,6 +1978,12 @@ function initSlotMachine() {
       item.onclick = () => removeFood(idx);
       container.appendChild(item);
     });
+    return;
+  }
+
+  // 全部选项模式
+  if (foods.length === 0) {
+    container.innerHTML = '<div class="slot-empty">暂无可选菜品</div>';
     return;
   }
 
