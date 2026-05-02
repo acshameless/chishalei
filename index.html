@@ -44,15 +44,6 @@ body::before {
   pointer-events: none;
   z-index: 0;
 }
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: var(--seasonal-tint, transparent);
-  pointer-events: none;
-  z-index: 0;
-  transition: background 1.2s ease;
-}
 
 .container {
   position: relative;
@@ -186,19 +177,6 @@ h1 {
 /* Border tint while spinning */
 .result-card.spinning { border-color: var(--lacquer-lt); }
 
-.solar-term-mark {
-  font-size: 9px;
-  color: var(--ink-light);
-  letter-spacing: 0.22em;
-  margin-top: 10px;
-  opacity: 0;
-  transition: opacity 0.5s ease 0.4s;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
-  font-weight: 300;
-}
-.solar-term-mark.visible {
-  opacity: 0.35;
-}
 .sign-number {
   position: absolute;
   bottom: 10px;
@@ -400,18 +378,18 @@ h1 {
   letter-spacing: 0.18em;
   line-height: 1.9;
 }
-.food-sign-inner {
+.fortune-columns {
+  display: flex;
+  gap: 18px;
+  justify-content: center;
+  align-items: center;
+}
+.fc-col {
   writing-mode: vertical-rl;
   text-orientation: upright;
-  letter-spacing: 0.12em;
-  font-size: 14px;
-  line-height: 1.3;
-}
-.food-sign-inner span {
-  display: inline-block;
-}
-.fj-gap {
-  height: 16px;
+  letter-spacing: 0.22em;
+  font-size: 13.5px;
+  line-height: 1.4;
 }
 
 /* ── Share buttons ── */
@@ -647,7 +625,6 @@ h1 {
       <div class="corner-bl"></div>
       <div class="result-label">今儿个吃这个</div>
       <div class="result-food" id="result">待君问签</div>
-      <div class="solar-term-mark" id="solar-term-mark"></div>
       <div class="sign-number" id="sign-number"></div>
     </div>
   </div>
@@ -942,7 +919,6 @@ function pick(index) {
   el.classList.add('landing');
   el.textContent = getFoods()[index];
   showFortune();
-  showSolarTermMark();
   showSignNumber();
   showShareRow();
 }
@@ -956,7 +932,6 @@ function removeFood(index) {
     const el = document.getElementById('result');
     el.classList.remove('landing');
     el.textContent = '待君问签';
-    hideSolarTermMark();
     hideSignNumber();
   } else if (current > index) current--;
   renderTags();
@@ -1228,18 +1203,6 @@ function getSignNumber() {
   return (seed % FORTUNES.length) + 1;
 }
 
-function renderSolarTermMark() {
-  const el = document.getElementById('solar-term-mark');
-  const term = getCurrentSolarTerm();
-  el.textContent = '今日 · ' + term;
-}
-function showSolarTermMark() {
-  document.getElementById('solar-term-mark').classList.add('visible');
-}
-function hideSolarTermMark() {
-  document.getElementById('solar-term-mark').classList.remove('visible');
-}
-
 function renderSignNumber() {
   const el = document.getElementById('sign-number');
   const num = getSignNumber();
@@ -1251,7 +1214,7 @@ function renderFortune() {
   const el = document.getElementById('fortune-text');
   if (fortune.type === 'food') {
     // 竖排：忌在左，宜在右，从右到左读
-    el.innerHTML = '<div class="food-sign-inner"><span>' + fortune.yi + '</span><span class="fj-gap">&ensp;</span><span>' + fortune.ji + '</span></div>';
+    el.innerHTML = '<div class="fortune-columns"><div class="fc-col">' + fortune.ji + '</div><div class="fc-col">' + fortune.yi + '</div></div>';
   } else {
     el.innerHTML = '';
     el.textContent = fortune.text;
@@ -1369,23 +1332,24 @@ function shareFortune() {
 
 function applySeasonalTheme() {
   const term = getCurrentSolarTerm();
-  const colors = {
-    '立春': 'rgba(232,216,179,0.05)', '雨水': 'rgba(232,224,216,0.05)',
-    '惊蛰': 'rgba(212,160,136,0.04)', '春分': 'rgba(200,216,208,0.05)',
-    '清明': 'rgba(184,200,184,0.05)', '谷雨': 'rgba(200,184,168,0.04)',
-    '立夏': 'rgba(216,160,120,0.04)', '小满': 'rgba(216,152,128,0.04)',
-    '芒种': 'rgba(216,192,136,0.04)', '夏至': 'rgba(216,128,104,0.04)',
-    '小暑': 'rgba(216,112,88,0.04)',  '大暑': 'rgba(216,104,80,0.04)',
-    '立秋': 'rgba(232,224,208,0.05)', '处暑': 'rgba(224,208,176,0.05)',
-    '白露': 'rgba(224,216,200,0.05)', '秋分': 'rgba(216,208,192,0.05)',
-    '寒露': 'rgba(208,200,184,0.05)', '霜降': 'rgba(200,192,176,0.05)',
-    '立冬': 'rgba(200,192,176,0.05)', '小雪': 'rgba(192,184,168,0.05)',
-    '大雪': 'rgba(184,176,160,0.05)', '冬至': 'rgba(176,168,152,0.05)',
-    '小寒': 'rgba(168,160,144,0.05)', '大寒': 'rgba(160,152,136,0.05)'
+  // 24 节气 subtle 背景色调（修改 --paper，效果更明显且稳定）
+  const papers = {
+    '立春': '#F0EEE6', '雨水': '#F0EDE8',
+    '惊蛰': '#F2EDE8', '春分': '#EEF0EA',
+    '清明': '#EAF0E8', '谷雨': '#F0EEE8',
+    '立夏': '#F6F0E6', '小满': '#F6EEE6',
+    '芒种': '#F6F0E0', '夏至': '#F8F0E4',
+    '小暑': '#FAF0E4', '大暑': '#FAEEE2',
+    '立秋': '#F2EEE4', '处暑': '#F0EEE2',
+    '白露': '#EEEEE0', '秋分': '#EEEDE0',
+    '寒露': '#F0EDE0', '霜降': '#F0EBDE',
+    '立冬': '#EEEBE0', '小雪': '#ECE9DE',
+    '大雪': '#EAE7DC', '冬至': '#E8E5DA',
+    '小寒': '#EAE7DC', '大寒': '#E8E5DA'
   };
-  const c = colors[term];
-  if (c) {
-    document.documentElement.style.setProperty('--seasonal-tint', c);
+  const p = papers[term];
+  if (p) {
+    document.documentElement.style.setProperty('--paper', p);
   }
 }
 applySeasonalTheme();
@@ -1393,28 +1357,27 @@ applySeasonalTheme();
 // Debug helper: preview any solar term theme in console
 // e.g. previewSolarTheme('夏至')
 window.previewSolarTheme = function(term) {
-  const colors = {
-    '立春': 'rgba(232,216,179,0.05)', '雨水': 'rgba(232,224,216,0.05)',
-    '惊蛰': 'rgba(212,160,136,0.04)', '春分': 'rgba(200,216,208,0.05)',
-    '清明': 'rgba(184,200,184,0.05)', '谷雨': 'rgba(200,184,168,0.04)',
-    '立夏': 'rgba(216,160,120,0.04)', '小满': 'rgba(216,152,128,0.04)',
-    '芒种': 'rgba(216,192,136,0.04)', '夏至': 'rgba(216,128,104,0.04)',
-    '小暑': 'rgba(216,112,88,0.04)',  '大暑': 'rgba(216,104,80,0.04)',
-    '立秋': 'rgba(232,224,208,0.05)', '处暑': 'rgba(224,208,176,0.05)',
-    '白露': 'rgba(224,216,200,0.05)', '秋分': 'rgba(216,208,192,0.05)',
-    '寒露': 'rgba(208,200,184,0.05)', '霜降': 'rgba(200,192,176,0.05)',
-    '立冬': 'rgba(200,192,176,0.05)', '小雪': 'rgba(192,184,168,0.05)',
-    '大雪': 'rgba(184,176,160,0.05)', '冬至': 'rgba(176,168,152,0.05)',
-    '小寒': 'rgba(168,160,144,0.05)', '大寒': 'rgba(160,152,136,0.05)'
+  const papers = {
+    '立春': '#F0EEE6', '雨水': '#F0EDE8',
+    '惊蛰': '#F2EDE8', '春分': '#EEF0EA',
+    '清明': '#EAF0E8', '谷雨': '#F0EEE8',
+    '立夏': '#F6F0E6', '小满': '#F6EEE6',
+    '芒种': '#F6F0E0', '夏至': '#F8F0E4',
+    '小暑': '#FAF0E4', '大暑': '#FAEEE2',
+    '立秋': '#F2EEE4', '处暑': '#F0EEE2',
+    '白露': '#EEEEE0', '秋分': '#EEEDE0',
+    '寒露': '#F0EDE0', '霜降': '#F0EBDE',
+    '立冬': '#EEEBE0', '小雪': '#ECE9DE',
+    '大雪': '#EAE7DC', '冬至': '#E8E5DA',
+    '小寒': '#EAE7DC', '大寒': '#E8E5DA'
   };
-  document.documentElement.style.setProperty('--seasonal-tint', colors[term] || 'transparent');
-  console.log('Previewing theme for:', term);
+  document.documentElement.style.setProperty('--paper', papers[term] || '#F6F1E9');
+  console.log('Previewing theme for:', term, 'paper:', papers[term] || '#F6F1E9');
 };
 
 renderTags();
 renderSoundToggle();
 renderFortune();
-renderSolarTermMark();
 renderSignNumber();
 </script>
 </body>
