@@ -1580,7 +1580,7 @@ const FOOD_TIPS = {
 function defaultState() {
   return {
     version: STATE_VERSION,
-    foods: [...ALL_FOODS],
+    foods: [...DEFAULT_FOODS],
     myMenu: [],
     customTips: {},
     customRecipes: {},
@@ -1617,15 +1617,6 @@ function migrateState(raw) {
   if (!raw.customRecipes) raw.customRecipes = {};
   if (!raw.history.draws) raw.history.draws = [];
   if (!raw.settings) raw.settings = { sound: true };
-
-  // v3 升级：旧版 foods 只有 35 道中原菜，自动扩展为全部菜品
-  if (raw.foods && raw.foods.length <= 35) {
-    const oldSet = new Set(DEFAULT_FOODS);
-    const currentSet = new Set(raw.foods);
-    if (currentSet.size === raw.foods.length && [...currentSet].every(x => oldSet.has(x))) {
-      raw.foods = [...ALL_FOODS];
-    }
-  }
 
   return raw;
 }
@@ -1796,7 +1787,7 @@ function initSlotMachine() {
   if (foods.length === 0) {
     container.innerHTML = '<div class="slot-empty">' +
       (currentPool === 'myMenu'
-        ? '我的菜单是空的，在"全部选项"中单击菜品即可加入'
+        ? '我的菜单是空的'
         : '暂无可选菜品') +
       '</div>';
     return;
@@ -1818,6 +1809,8 @@ function initSlotMachine() {
 
   container.className = 'slot-container';
   const columns = Math.min(5, Math.max(3, Math.floor(window.innerWidth / 130)));
+  // 根据菜品数量动态调整重复次数，防止 DOM 过多导致卡顿
+  const repeatCount = Math.min(8, Math.max(3, Math.floor(600 / foods.length)));
 
   for (let i = 0; i < columns; i++) {
     const col = document.createElement('div');
@@ -1825,17 +1818,16 @@ function initSlotMachine() {
     const strip = document.createElement('div');
     strip.className = 'slot-strip';
     strip.dataset.col = i;
+    strip.dataset.repeat = repeatCount;
 
-    // 重复 8 遍菜品列表，确保滚动不会超出范围
-    for (let r = 0; r < 8; r++) {
+    for (let r = 0; r < repeatCount; r++) {
       foods.forEach((name, idx) => {
         const item = document.createElement('div');
-        const inMyMenu = state.myMenu.includes(name);
-        item.className = 'slot-item' + (inMyMenu ? ' in-my-menu' : '');
+        item.className = 'slot-item';
         item.textContent = name;
         item.dataset.index = idx;
-        item.title = inMyMenu ? '单击移出我的菜单' : '单击加入我的菜单';
-        item.onclick = (e) => { e.stopPropagation(); toggleMyMenu(name); };
+        item.title = '单击移出';
+        item.onclick = (e) => { e.stopPropagation(); toggleFoodInPool(name); };
         strip.appendChild(item);
       });
     }
@@ -1847,6 +1839,19 @@ function initSlotMachine() {
     const initialOffset = Math.floor(Math.random() * foods.length) * 44;
     strip.style.transform = `translateY(-${initialOffset}px)`;
   }
+}
+
+function toggleFoodInPool(name) {
+  const foods = getFoods();
+  const idx = foods.indexOf(name);
+  if (idx >= 0) {
+    if (foods.length <= 1) return;
+    foods.splice(idx, 1);
+  } else {
+    foods.push(name);
+  }
+  saveState();
+  renderSlotMachine();
 }
 
 function triggerSlotSpin(targetIndex) {
@@ -1878,13 +1883,14 @@ function triggerSlotSpin(targetIndex) {
   }, maxDuration * 1000 + 100);
 
   // 开始滚动
+  const repeatCount = parseInt(strips[0]?.dataset.repeat || 8);
+  const targetCycle = Math.floor(repeatCount / 2);
   strips.forEach((strip, i) => {
     const colHeight = strip.parentElement.offsetHeight;
     const centerOffset = colHeight / 2 - itemHeight / 2;
     const cycleHeight = foods.length * itemHeight;
 
-    // 目标：让 targetIndex 出现在第 5 圈的中心（在 8 遍中间）
-    const targetCycle = 4;
+    // 目标：让 targetIndex 出现在中间圈
     const baseY = -(targetCycle * cycleHeight + targetIndex * itemHeight) + centerOffset;
 
     // 额外滚动圈数（中间列少转，两侧多转）
@@ -2177,9 +2183,9 @@ document.addEventListener('keydown', e => {
 function renderCategoryList() {
   const list = document.getElementById('category-list');
   list.innerHTML = FOOD_CATEGORIES.map((cat, i) => {
-    const alreadyInMenu = cat.items.filter(n => state.myMenu.includes(n)).length;
-    const isFull = alreadyInMenu === cat.items.length;
-    const actionText = isFull ? '已全加入' : (alreadyInMenu > 0 ? '追加 +' + (cat.items.length - alreadyInMenu) : '加入 +' + cat.items.length);
+    const alreadyInPool = cat.items.filter(n => state.foods.includes(n)).length;
+    const isFull = alreadyInPool === cat.items.length;
+    const actionText = isFull ? '已全加入' : (alreadyInPool > 0 ? '追加 +' + (cat.items.length - alreadyInPool) : '加入 +' + cat.items.length);
     return '<div class="category-row' + (isFull ? ' added' : '') + '" onclick="toggleCategoryToMyMenu(' + i + ')">' +
       '<span class="category-row-name">' + cat.name + '</span>' +
       '<span class="category-row-meta">' +
@@ -2195,16 +2201,15 @@ function toggleCategoryToMyMenu(index) {
   if (!cat) return;
   let added = 0;
   cat.items.forEach(name => {
-    if (!state.myMenu.includes(name)) {
-      state.myMenu.push(name);
+    if (!state.foods.includes(name)) {
+      state.foods.push(name);
       added++;
     }
-    if (!state.foods.includes(name)) state.foods.push(name);
   });
   saveState();
   renderSlotMachine();
   renderCategoryList();
-  if (added > 0) showToast('「' + cat.name + '」已加入 ' + added + ' 道菜');
+  if (added > 0) showToast('「' + cat.name + '」已加入 ' + added + ' 道菜到全部选项');
 }
 
 /* ── Toast ── */
@@ -2643,7 +2648,6 @@ async function generateFortuneImage() {
   if (typeof html2canvas === 'undefined') return null;
   const card = document.getElementById('share-card');
   try {
-    await document.fonts.ready;
     const canvas = await html2canvas(card, {
       backgroundColor: '#F6F1E9',
       scale: 2,
@@ -2661,7 +2665,6 @@ async function generateCookImage() {
   if (typeof html2canvas === 'undefined') return null;
   const card = document.getElementById('cook-share-card');
   try {
-    await document.fonts.ready;
     const canvas = await html2canvas(card, {
       backgroundColor: '#F6F1E9',
       scale: 2,
