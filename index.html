@@ -1648,25 +1648,39 @@ function updateParticles() {
     if (p.y < zoneTop) { p.y = zoneTop; p.vy = Math.abs(p.vy) * 0.8; }
     if (p.y > h - p.height) { p.y = h - p.height; p.vy = -Math.abs(p.vy) * 0.8; }
 
-    // 风暴：签筒摇晃，先加速后减速
+    // 风暴：双色球搅拌筒效果
     if (stormActive) {
-      const centerX = w / 2;
-      const centerY = h * 0.85;
       const px = p.x + p.width / 2;
       const py = p.y + p.height / 2;
-      const dx = px - centerX;
-      const dy = py - centerY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist > 1) {
-        // 离心力随强度增强
-        p.vx += (dx / dist) * 0.6 * stormIntensity;
-        p.vy += (dy / dist) * 0.6 * stormIntensity;
+      const centerX = w / 2;
+
+      // 1. 筒壁软性约束：越靠外越被推回中间
+      const tubeHalfWidth = w * 0.36;
+      const distFromCenter = px - centerX;
+      if (Math.abs(distFromCenter) > tubeHalfWidth) {
+        const overflow = Math.abs(distFromCenter) - tubeHalfWidth;
+        const pushDir = distFromCenter > 0 ? -1 : 1;
+        p.vx += pushDir * overflow * 0.02 * stormIntensity;
       }
-      // 上下震荡（摇筒感）
-      p.vy += Math.sin(stormTimer * 0.35) * 1.2 * stormIntensity;
-      // 底部反弹随强度增强
+
+      // 2. 底部搅拌力：越靠下被推得越高
+      const bottomProximity = Math.max(0, 1 - py / (h * 0.75));
+      p.vy -= bottomProximity * 1.0 * stormIntensity;
+
+      // 3. 顶部轻微回落
+      if (py < h * 0.6) {
+        p.vy += 0.12 * stormIntensity;
+      }
+
+      // 4. 随机脉冲（搅拌不规则性）
+      if (stormTimer % 5 === 0) {
+        p.vx += (Math.random() - 0.5) * 5 * stormIntensity;
+        p.vy += (Math.random() - 0.5) * 5 * stormIntensity - 1.5 * stormIntensity;
+      }
+
+      // 5. 底部强反弹
       if (p.y > h - p.height - 10) {
-        p.vy = -Math.abs(p.vy) * (0.85 + 0.12 * stormIntensity);
+        p.vy = -Math.abs(p.vy) * (0.9 + 0.08 * stormIntensity);
       }
     }
 
