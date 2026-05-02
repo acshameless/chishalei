@@ -1534,8 +1534,6 @@ let mouseX = -1000;
 let mouseY = -1000;
 let stormActive = false;
 let stormTimer = 0;
-let stormShake = 0;
-let stormGravity = 0;
 
 function makeParticle(name, index) {
   const tag = document.createElement('span');
@@ -1605,14 +1603,11 @@ function initParticles() {
 function triggerParticleStorm() {
   stormActive = true;
   stormTimer = 0;
-  stormShake = 5.5;   // 初始震荡幅度
-  stormGravity = 0;   // 初始无重力
 
   particles.forEach(p => {
-    const angle = Math.random() * Math.PI * 2;
-    const speed = 4 + Math.random() * 8;
-    p.vx += Math.cos(angle) * speed;
-    p.vy += Math.sin(angle) * speed;
+    // 向上爆发，像签被抛起
+    p.vx = (Math.random() - 0.5) * 10;
+    p.vy = -6 - Math.random() * 10;
   });
 }
 
@@ -1625,12 +1620,7 @@ function updateParticles() {
   // 风暴状态更新
   if (stormActive) {
     stormTimer++;
-    stormShake *= 0.94;
-    if (stormGravity < 0.25) stormGravity += 0.012;
-    if (stormShake < 0.05 && stormGravity >= 0.24) {
-      stormActive = false;
-      stormGravity = 0;
-    }
+    if (stormTimer > 80) stormActive = false;
   }
 
   particles.forEach(p => {
@@ -1644,10 +1634,18 @@ function updateParticles() {
     if (p.y < 0) { p.y = 0; p.vy = Math.abs(p.vy) * 0.8; }
     if (p.y > h - p.height) { p.y = h - p.height; p.vy = -Math.abs(p.vy) * 0.8; }
 
-    // 风暴：摇筒震荡 + 倾倒重力
+    // 风暴：签筒内翻飞
     if (stormActive) {
-      p.vy += Math.sin(stormTimer * 0.5) * stormShake * 0.25;
-      p.vy += stormGravity;
+      const centerX = w / 2;
+      const px = p.x + p.width / 2;
+      // 向中心线聚拢（筒壁约束）
+      p.vx += (centerX - px) * 0.004;
+      // 轻微重力让签回落
+      p.vy += 0.07;
+      // 底部增强反弹，像筒底
+      if (p.y > h - p.height - 10) {
+        p.vy = -Math.abs(p.vy) * 0.85;
+      }
     }
 
     // 鼠标/触摸推开
@@ -1665,9 +1663,9 @@ function updateParticles() {
 
     // 速度衰减 + 扰动
     const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-    if (stormActive && speed > 2.5) {
-      p.vx *= 0.94;
-      p.vy *= 0.94;
+    if (stormActive && speed > 3) {
+      p.vx *= 0.96;
+      p.vy *= 0.96;
     } else {
       p.vx *= 0.995;
       p.vy *= 0.995;
@@ -1676,7 +1674,7 @@ function updateParticles() {
     if (Math.abs(p.vy) < 0.2) p.vy += (Math.random() - 0.5) * 0.08;
 
     // 限制最大速度
-    const maxSpeed = stormActive ? 12 : 3.0;
+    const maxSpeed = stormActive ? 14 : 3.0;
     if (speed > maxSpeed) {
       p.vx = (p.vx / speed) * maxSpeed;
       p.vy = (p.vy / speed) * maxSpeed;
@@ -1718,11 +1716,34 @@ function pick(index) {
   showSignNumber();
   showShareRow();
 
-  // 中签弹出：被选中的签向上跳一下
+  // 中签飞行：被选中的签飞到结果卡片
   const chosen = particles[index];
   if (chosen) {
-    chosen.vy -= 5 + Math.random() * 3;
-    chosen.vx += (Math.random() - 0.5) * 3;
+    const card = document.getElementById('result-card');
+    const tagRect = chosen.el.getBoundingClientRect();
+    const cardRect = card.getBoundingClientRect();
+
+    const clone = chosen.el.cloneNode(true);
+    clone.style.position = 'fixed';
+    clone.style.left = tagRect.left + 'px';
+    clone.style.top = tagRect.top + 'px';
+    clone.style.margin = '0';
+    clone.style.zIndex = '200';
+    clone.style.pointerEvents = 'none';
+    clone.style.transition = 'all 0.7s cubic-bezier(0.22, 1, 0.36, 1)';
+    document.body.appendChild(clone);
+
+    void clone.offsetWidth;
+
+    const targetX = cardRect.left + cardRect.width / 2 - tagRect.width / 2;
+    const targetY = cardRect.top + cardRect.height / 2 - tagRect.height / 2;
+
+    clone.style.left = targetX + 'px';
+    clone.style.top = targetY + 'px';
+    clone.style.transform = 'scale(1.4) rotate(4deg)';
+    clone.style.opacity = '0.15';
+
+    setTimeout(() => clone.remove(), 750);
   }
 
   // 切换菜品时 reset 做法区域
@@ -1951,8 +1972,6 @@ function stopSpin() {
   setSpinState(false);
   // 快速平息风暴
   stormActive = false;
-  stormShake = 0;
-  stormGravity = 0;
   playStamp();
   pick(lastShown);
   addToRecent(getFoods()[lastShown]);
