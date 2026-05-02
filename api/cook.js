@@ -9,43 +9,38 @@ export default async function handler(req, res) {
   const { dish } = req.body;
   if (!dish) return res.status(400).json({ error: 'Missing dish' });
 
-  const provider = process.env.LLM_PROVIDER || 'openai';
   const apiKey = process.env.LLM_API_KEY;
   const model = process.env.LLM_MODEL || 'gpt-4o-mini';
+  const baseUrl = process.env.LLM_BASE_URL;
 
   if (!apiKey) return res.status(500).json({ error: 'LLM API key not configured' });
 
-  const prompt = `你是一位在河南做了四十年饭的老师傅，擅长家常中原菜。请为"${dish}"写一份详细但简洁的家庭做法。
+  const prompt = `你是一位中原（河南）菜系的家庭烹饪专家，擅长把复杂的馆子菜变成厨房小白也能上手做的家常版。
+
+请为"${dish}"写一份家庭做法，输出必须是合法的 JSON，不要加 markdown 代码块标记，不要加任何解释文字。
+
+JSON 结构严格如下：
+{
+  "materials": [
+    {"name": "食材名", "amount": "具体用量（如300克、2勺）"}
+  ],
+  "steps": [
+    {"title": "步骤小标题（不超过4个字）", "desc": "详细操作，控制在25字以内", "heat": "火候/时间（如中火3分钟、小火慢炖1小时）"}
+  ],
+  "tips": ["小贴士1", "小贴士2"]
+}
 
 要求：
-1. 【材料】列出所需食材和用量（家庭常见食材，用量明确）
-2. 【步骤】分步骤说明，每步不超过30字，共3-5步
-3. 【火候】说明关键火候/时间（如"中火炸3分钟"、"小火慢炖1小时"）
-4. 【小贴士】1-2句老师傅的私房建议
-5. 总字数控制在250字以内
-6. 语气亲切，像老师傅面对面教徒弟
-
-注意：
-- 汤面类要说明汤底做法
-- 油炸类要说明油温（几成热）
-- 面食要说明和面/醒面要点
-- 肉类要说明去腥/腌制方法`;
+1. 食材用量必须具体，禁止写"适量""少许"
+2. 步骤控制在3-5步，每步标题不超过4个字，描述不超过25字
+3. 突出河南地方特色和家常做法
+4. 汤面类必须说明汤底做法；油炸类必须说明油温（几成热）；面食必须说明和面/醒面要点
+5. 语气朴实，像邻居阿姨教你做菜`;
 
   try {
-    let endpoint;
-    switch (provider) {
-      case 'openai':
-        endpoint = 'https://api.openai.com/v1/chat/completions';
-        break;
-      case 'deepseek':
-        endpoint = 'https://api.deepseek.com/v1/chat/completions';
-        break;
-      case 'siliconflow':
-        endpoint = 'https://api.siliconflow.cn/v1/chat/completions';
-        break;
-      default:
-        endpoint = process.env.LLM_BASE_URL || 'https://api.openai.com/v1/chat/completions';
-    }
+    const endpoint = baseUrl
+      ? baseUrl.replace(/\/$/, '') + '/chat/completions'
+      : 'https://api.openai.com/v1/chat/completions';
 
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -56,8 +51,8 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model,
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 500
+        temperature: 0.6,
+        max_tokens: 600
       })
     });
 
@@ -67,7 +62,19 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
-    const recipe = data.choices?.[0]?.message?.content || '';
+    const raw = data.choices?.[0]?.message?.content || '';
+
+    // 尝试解析 JSON，如果失败返回原始文本让前端处理
+    let recipe;
+    try {
+      recipe = JSON.parse(raw);
+    } catch {
+      // 尝试提取 JSON 块
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (match) recipe = JSON.parse(match[0]);
+      else recipe = raw;
+    }
+
     res.status(200).json({ recipe });
   } catch (e) {
     res.status(500).json({ error: 'Failed to fetch recipe', detail: e.message });
