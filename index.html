@@ -352,41 +352,50 @@ h1 {
 .add-btn:hover { border-color: var(--lacquer); color: var(--lacquer); }
 
 /* ── Food tags ── */
-.foods-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: center;
-  width: 100%;
-  max-height: 72px;
-  overflow-y: auto;
+.particle-container {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
 }
-.foods-grid::-webkit-scrollbar { width: 2px; }
-.foods-grid::-webkit-scrollbar-thumb { background: var(--paper-dark); border-radius: 1px; }
-
-.food-tag {
+.particle-tag {
+  position: absolute;
   background: var(--card);
   border: 1px solid var(--paper-dark);
   padding: 4px 12px;
   font-size: 12.5px;
   color: var(--ink-mid);
   cursor: pointer;
-  transition: all 0.16s ease;
+  transition: background 0.16s, border-color 0.16s, color 0.16s, transform 0.1s;
   font-family: 'Shippori Mincho B1', serif;
   font-weight: 400;
   letter-spacing: 0.05em;
   user-select: none;
   display: inline-flex;
   align-items: center;
+  pointer-events: auto;
+  white-space: nowrap;
+  opacity: 0.85;
 }
+.particle-tag:hover {
+  background: var(--lacquer-lt);
+  border-color: var(--lacquer-lt);
+  color: var(--lacquer-dim);
+  opacity: 1;
+  z-index: 10;
+}
+.particle-tag.active {
+  background: var(--lacquer);
+  border-color: var(--lacquer);
+  color: #FDF8F2;
+  opacity: 1;
+  z-index: 10;
+}
+.particle-tag.new-pop { animation: stamp 0.38s cubic-bezier(0.22,1,0.36,1); }
 
-.food-tag:hover { background: var(--lacquer-lt); border-color: var(--lacquer-lt); color: var(--lacquer-dim); }
-.food-tag.active { background: var(--lacquer); border-color: var(--lacquer); color: #FDF8F2; }
-
-.food-tag.new-pop { animation: stamp 0.38s cubic-bezier(0.22,1,0.36,1); }
-
-.del-btn {
-  margin-left: 7px;
+.particle-del-btn {
+  margin-left: 6px;
   font-size: 10px;
   color: inherit;
   opacity: 0;
@@ -395,11 +404,11 @@ h1 {
   flex-shrink: 0;
   line-height: 1;
 }
-.food-tag:hover .del-btn { opacity: 0.45; }
-.del-btn:hover { opacity: 1 !important; }
+.particle-tag:hover .particle-del-btn { opacity: 0.45; }
+.particle-del-btn:hover { opacity: 1 !important; }
 
-.star-btn {
-  margin-left: 5px;
+.particle-star-btn {
+  margin-left: 4px;
   font-size: 11px;
   color: var(--lacquer);
   opacity: 0;
@@ -408,9 +417,9 @@ h1 {
   flex-shrink: 0;
   line-height: 1;
 }
-.food-tag:hover .star-btn { opacity: 0.4; }
-.star-btn:hover { opacity: 1 !important; }
-.star-btn.in-menu { opacity: 0.6; }
+.particle-tag:hover .particle-star-btn { opacity: 0.4; }
+.particle-star-btn:hover { opacity: 1 !important; }
+.particle-star-btn.in-menu { opacity: 0.6; }
 
 /* ── Fortune slip ── */
 .fortune-wrap {
@@ -1256,11 +1265,12 @@ h1 {
         <input class="add-input" id="add-input" type="text" placeholder="添加…" maxlength="12">
         <button class="add-btn" onclick="addFood()">＋</button>
       </div>
-      <div class="foods-grid" id="grid"></div>
-      <div class="float-footer">每顿饭都将就不得</div>
     </div>
   </div>
 </div>
+
+<!-- Particle cloud (floating food tags) -->
+<div class="particle-container" id="particle-container"></div>
 
 <!-- Share overlay -->
 <div class="share-overlay" id="share-overlay" onclick="closeShareOverlay(event)">
@@ -1568,17 +1578,25 @@ function toggleSound() {
 
 let current = -1;
 
-function makeTag(name, index) {
+/* ═══════════════════════════════════════
+   Particle Cloud System
+   ═══════════════════════════════════════ */
+
+let particles = [];
+let particleRAF = null;
+let mouseX = -1000;
+let mouseY = -1000;
+
+function makeParticle(name, index) {
   const tag = document.createElement('span');
-  tag.className = 'food-tag';
+  tag.className = 'particle-tag';
   const label = document.createElement('span');
   label.textContent = name;
   tag.appendChild(label);
 
-  // 全部选项模式下显示 star（加入/移出我的菜单）
   if (currentPool === 'all') {
     const star = document.createElement('span');
-    star.className = 'star-btn';
+    star.className = 'particle-star-btn';
     const isInMenu = state.myMenu.includes(name);
     star.textContent = isInMenu ? '★' : '☆';
     if (isInMenu) star.classList.add('in-menu');
@@ -1587,7 +1605,7 @@ function makeTag(name, index) {
   }
 
   const del = document.createElement('span');
-  del.className = 'del-btn';
+  del.className = 'particle-del-btn';
   del.textContent = '✕';
   del.onclick = e => { e.stopPropagation(); removeFood(index); };
   tag.appendChild(del);
@@ -1595,32 +1613,126 @@ function makeTag(name, index) {
   return tag;
 }
 
-function renderTags() {
-  const grid = document.getElementById('grid');
-  grid.innerHTML = '';
+function initParticles() {
+  if (particleRAF) cancelAnimationFrame(particleRAF);
+  particles = [];
+
+  const container = document.getElementById('particle-container');
+  container.innerHTML = '';
+
   const foods = getFoods();
-  if (foods.length === 0) {
-    const empty = document.createElement('div');
-    empty.style.cssText = 'width:100%;text-align:center;color:var(--ink-light);font-size:12px;letter-spacing:0.08em;padding:24px 0;';
-    empty.textContent = currentPool === 'myMenu'
-      ? '从"全部选项"里选几道菜放进来'
-      : '暂无选项';
-    grid.appendChild(empty);
-    return;
-  }
-  foods.forEach((f, i) => grid.appendChild(makeTag(f, i)));
-  if (current !== -1 && current < foods.length)
-    grid.querySelectorAll('.food-tag')[current].classList.add('active');
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+
+  foods.forEach((name, i) => {
+    const el = makeParticle(name, i);
+    container.appendChild(el);
+
+    // 先渲染到 DOM 获取尺寸
+    const rect = el.getBoundingClientRect();
+    const pw = rect.width || 80;
+    const ph = rect.height || 28;
+
+    // 随机位置，避开中间主内容区域
+    let x, y;
+    const margin = 60; // 避开边缘
+    const centerTop = h * 0.22;
+    const centerBottom = h * 0.72;
+
+    if (Math.random() > 0.5) {
+      // 放在上方或下方区域
+      x = margin + Math.random() * (w - pw - margin * 2);
+      y = Math.random() < 0.5
+        ? margin + Math.random() * (centerTop - margin * 2)
+        : centerBottom + Math.random() * (h - centerBottom - margin - ph);
+    } else {
+      // 放在左侧或右侧区域
+      x = Math.random() < 0.5
+        ? margin + Math.random() * (w * 0.18 - margin)
+        : w * 0.82 + Math.random() * (w * 0.18 - margin - pw);
+      y = margin + Math.random() * (h - ph - margin * 2);
+    }
+
+    particles.push({
+      name, index: i,
+      x, y,
+      vx: (Math.random() - 0.5) * 0.5,
+      vy: (Math.random() - 0.5) * 0.5,
+      el, width: pw, height: ph
+    });
+  });
+
+  updateParticles();
+}
+
+function updateParticles() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const repelRadius = 100;
+  const repelForce = 0.12;
+
+  particles.forEach(p => {
+    // 基础运动
+    p.x += p.vx;
+    p.y += p.vy;
+
+    // 边界反弹
+    if (p.x < 0) { p.x = 0; p.vx = Math.abs(p.vx) * 0.8; }
+    if (p.x > w - p.width) { p.x = w - p.width; p.vx = -Math.abs(p.vx) * 0.8; }
+    if (p.y < 0) { p.y = 0; p.vy = Math.abs(p.vy) * 0.8; }
+    if (p.y > h - p.height) { p.y = h - p.height; p.vy = -Math.abs(p.vy) * 0.8; }
+
+    // 鼠标/触摸推开
+    const cx = p.x + p.width / 2;
+    const cy = p.y + p.height / 2;
+    const dx = cx - mouseX;
+    const dy = cy - mouseY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist < repelRadius && dist > 1) {
+      const force = (repelRadius - dist) / repelRadius * repelForce;
+      p.vx += (dx / dist) * force;
+      p.vy += (dy / dist) * force;
+    }
+
+    // 速度衰减 + 扰动（保持持续运动）
+    p.vx *= 0.998;
+    p.vy *= 0.998;
+    if (Math.abs(p.vx) < 0.08) p.vx += (Math.random() - 0.5) * 0.04;
+    if (Math.abs(p.vy) < 0.08) p.vy += (Math.random() - 0.5) * 0.04;
+
+    // 限制最大速度
+    const maxSpeed = 1.2;
+    const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+    if (speed > maxSpeed) {
+      p.vx = (p.vx / speed) * maxSpeed;
+      p.vy = (p.vy / speed) * maxSpeed;
+    }
+
+    p.el.style.left = p.x + 'px';
+    p.el.style.top = p.y + 'px';
+  });
+
+  particleRAF = requestAnimationFrame(updateParticles);
+}
+
+// 鼠标/触摸追踪
+document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+document.addEventListener('touchmove', e => { if (e.touches.length > 0) { mouseX = e.touches[0].clientX; mouseY = e.touches[0].clientY; } }, { passive: true });
+document.addEventListener('mouseleave', () => { mouseX = -1000; mouseY = -1000; });
+
+function renderParticles() {
+  // 延迟一帧确保 DOM 尺寸正确
+  requestAnimationFrame(() => initParticles());
 }
 
 function pick(index) {
   const el = document.getElementById('result');
   const tipEl = document.getElementById('result-tip');
-  const tags = document.querySelectorAll('.food-tag');
+  const tags = document.querySelectorAll('.particle-tag');
   if (current !== -1 && tags[current]) tags[current].classList.remove('active');
   current = index;
   tags[current].classList.add('active');
-  tags[current].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   el.classList.remove('landing');
   void el.offsetWidth;
   el.classList.add('landing');
@@ -1687,7 +1799,7 @@ function removeFood(index) {
   } else if (current > index) {
     current--;
   }
-  renderTags();
+  renderParticles();
   saveState();
 }
 
@@ -1710,9 +1822,9 @@ function addFood() {
   // 自动加入我的菜单
   state.myMenu.push(val);
   input.value = '';
-  renderTags();
+  renderParticles();
   saveState();
-  const tags = document.querySelectorAll('.food-tag');
+  const tags = document.querySelectorAll('.particle-tag');
   const newTag = tags[tags.length - 1];
   newTag.classList.add('new-pop');
   newTag.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -1781,7 +1893,7 @@ function switchPool(pool) {
     document.getElementById('share-row').classList.remove('visible');
     document.getElementById('cook-wrap').classList.remove('visible');
   }
-  renderTags();
+  renderParticles();
 }
 
 function toggleMyMenu(name) {
@@ -1792,7 +1904,7 @@ function toggleMyMenu(name) {
     state.myMenu.push(name);
   }
   saveState();
-  renderTags();
+  renderParticles();
 }
 
 document.getElementById('add-input').addEventListener('keydown', e => {
@@ -2555,9 +2667,17 @@ window.previewSolarTheme = function(term) {
   console.log('Previewing theme for:', term, 'paper:', papers[term] || '#F6F1E9');
 };
 
-renderTags();
+renderParticles();
 renderSoundToggle();
 renderSignNumber();
+renderFortune();
+
+// 窗口大小变化时重新分布粒子
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => renderParticles(), 300);
+});
 </script>
 </body>
 </html>
