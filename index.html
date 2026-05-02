@@ -2325,7 +2325,10 @@ function showAddInput() {
 
 function addToMyMenu(val) {
   if (state.myMenu.includes(val)) {
-    // 静默忽略重复添加
+    // 仅在「我的菜单」页内闪现提示，其他页面静默
+    if (currentPool === 'myMenu') {
+      showToast('「' + val + '」已在菜单中');
+    }
     return;
   }
   state.myMenu.push(val);
