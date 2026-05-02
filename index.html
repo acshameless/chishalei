@@ -1527,8 +1527,8 @@ function initSlotMachine() {
     strip.className = 'slot-strip';
     strip.dataset.col = i;
 
-    // 重复 4 遍菜品列表
-    for (let r = 0; r < 4; r++) {
+    // 重复 8 遍菜品列表，确保滚动不会超出范围
+    for (let r = 0; r < 8; r++) {
       foods.forEach((name, idx) => {
         const item = document.createElement('div');
         item.className = 'slot-item';
@@ -1567,14 +1567,14 @@ function triggerSlotSpin(targetIndex) {
     const centerOffset = colHeight / 2 - itemHeight / 2;
     const cycleHeight = foods.length * itemHeight;
 
-    // 目标：让 targetIndex 出现在第 2 圈的中心
-    const targetCycle = 2;
+    // 目标：让 targetIndex 出现在第 5 圈的中心（在 8 遍中间）
+    const targetCycle = 4;
     const baseY = -(targetCycle * cycleHeight + targetIndex * itemHeight) + centerOffset;
 
     // 额外滚动圈数（中间列少转，两侧多转）
     const mid = Math.floor(strips.length / 2);
     const distFromMid = Math.abs(i - mid);
-    const extraRounds = 2 + distFromMid;
+    const extraRounds = distFromMid;
     const finalY = baseY - extraRounds * cycleHeight;
 
     const delay = distFromMid * 0.12;
