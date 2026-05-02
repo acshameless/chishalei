@@ -1376,6 +1376,31 @@ h1 {
   .menu-grid-container {
     height: 180px;
   }
+  /* overlay 移动端适配 */
+  .share-overlay,
+  .history-overlay,
+  .category-overlay {
+    padding: 12px;
+  }
+  .share-preview {
+    padding: 16px;
+    max-width: 100%;
+  }
+  .history-panel,
+  .category-panel {
+    max-width: 100%;
+    max-height: 85vh;
+  }
+  .history-header,
+  .category-header {
+    padding: 12px 14px;
+  }
+  .category-row {
+    padding: 11px 14px;
+  }
+  .category-custom {
+    padding: 10px 14px;
+  }
 }
 </style>
 </head>
@@ -1676,7 +1701,13 @@ const state = loadState();
 let currentPool = 'all'; // 'all' | 'myMenu'
 
 function getFoods() {
-  return currentPool === 'myMenu' ? state.myMenu : state.foods;
+  if (currentPool === 'myMenu') return state.myMenu;
+  // 全部选项 = foods + myMenu 叠加，去重
+  const all = [...state.foods];
+  state.myMenu.forEach(name => {
+    if (!all.includes(name)) all.push(name);
+  });
+  return all;
 }
 
 /* ═══════════════════════════════════════
@@ -1850,7 +1881,7 @@ function initSlotMachine() {
   }
 
   container.className = 'slot-container';
-  const columns = Math.min(5, Math.max(3, Math.floor(window.innerWidth / 130)));
+  const columns = 3;
   // 根据菜品数量动态调整重复次数，防止 DOM 过多导致卡顿
   const repeatCount = Math.min(8, Math.max(3, Math.floor(600 / foods.length)));
 
@@ -1888,13 +1919,23 @@ function initSlotMachine() {
 }
 
 function toggleFoodInPool(name) {
-  const foods = getFoods();
-  const idx = foods.indexOf(name);
-  if (idx >= 0) {
-    if (foods.length <= 1) return;
-    foods.splice(idx, 1);
+  if (currentPool === 'myMenu') {
+    const idx = state.myMenu.indexOf(name);
+    if (idx >= 0) {
+      if (state.myMenu.length <= 1) return;
+      state.myMenu.splice(idx, 1);
+    } else {
+      state.myMenu.push(name);
+    }
   } else {
-    foods.push(name);
+    // 全部选项模式下只操作 state.foods
+    const idx = state.foods.indexOf(name);
+    if (idx >= 0) {
+      if (state.foods.length <= 1 && state.myMenu.length === 0) return;
+      state.foods.splice(idx, 1);
+    } else {
+      state.foods.push(name);
+    }
   }
   saveState();
   renderSlotMachine();
@@ -2080,8 +2121,19 @@ function removeFood(index) {
   // 全部选项至少保留一道菜；我的菜单可以清空
   if (currentPool === 'all' && foods.length <= 1) return;
 
-  // 从当前池中删除
-  foods.splice(index, 1);
+  if (currentPool === 'all') {
+    // 优先从 foods 移除，不在 foods 则从 myMenu 移除
+    const fIdx = state.foods.indexOf(dishName);
+    if (fIdx >= 0) {
+      state.foods.splice(fIdx, 1);
+    } else {
+      const mIdx = state.myMenu.indexOf(dishName);
+      if (mIdx >= 0) state.myMenu.splice(mIdx, 1);
+    }
+  } else {
+    // 从当前池中删除
+    foods.splice(index, 1);
+  }
 
   if (current === index) {
     current = -1;
