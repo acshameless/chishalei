@@ -480,7 +480,7 @@ h1 {
   transition: max-height 0.5s ease, opacity 0.5s ease 0.2s, margin 0.4s ease;
 }
 .cook-wrap.visible {
-  max-height: 600px;
+  max-height: none;
   margin-top: 8px;
   margin-bottom: 8px;
   opacity: 1;
@@ -492,15 +492,11 @@ h1 {
   letter-spacing: 0.04em;
   max-width: 100%;
   width: 100%;
-  max-height: 540px;
-  overflow-y: auto;
   background: var(--card);
   border: 1px solid var(--paper-dark);
   padding: 24px 28px;
   position: relative;
 }
-.cook-content::-webkit-scrollbar { width: 3px; }
-.cook-content::-webkit-scrollbar-thumb { background: var(--paper-dark); border-radius: 2px; }
 .cook-content::before, .cook-content::after {
   content: '';
   position: absolute;
@@ -675,6 +671,30 @@ h1 {
 }
 .share-close:hover { border-color: var(--lacquer); color: var(--lacquer); }
 
+.share-tabs {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.share-tab {
+  background: none;
+  border: 1px solid var(--paper-dark);
+  padding: 4px 16px;
+  font-size: 11px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  color: var(--ink-light);
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.share-tab:hover { border-color: var(--lacquer); color: var(--lacquer); }
+.share-tab.active {
+  background: var(--lacquer);
+  border-color: var(--lacquer);
+  color: #FDF8F2;
+}
+
 /* ── Hidden share card (for html2canvas) ── */
 .share-card-wrapper {
   position: absolute;
@@ -750,6 +770,164 @@ h1 {
 }
 .sc-date {
   margin-top: 24px;
+  font-size: 10px;
+  color: #CBC0AE;
+  letter-spacing: 0.15em;
+  font-family: 'Shippori Mincho B1', serif;
+}
+
+/* ── Hidden cook share card (for html2canvas) ── */
+.cook-share-card {
+  width: 540px;
+  background: #F6F1E9;
+  background-image: radial-gradient(circle, #CBC0AE 0.8px, transparent 0.8px);
+  background-size: 20px 20px;
+  font-family: 'Shippori Mincho B1', serif;
+  color: #23201B;
+  padding: 40px 48px;
+  box-sizing: border-box;
+}
+.csc-header {
+  text-align: center;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #E8DFD0;
+}
+.csc-title {
+  font-size: 36px;
+  font-weight: 600;
+  color: #8A3D27;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+.csc-subtitle {
+  font-size: 12px;
+  color: #A89F94;
+  letter-spacing: 0.3em;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-weight: 300;
+}
+.csc-content {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #6B6055;
+}
+.csc-content .cook-section { margin-bottom: 24px; }
+.csc-content .cook-section:last-child { margin-bottom: 0; }
+.csc-content .cook-section-title {
+  font-size: 11px;
+  color: #B85438;
+  letter-spacing: 0.22em;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+.csc-content .cook-materials-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+.csc-content .cook-material-item {
+  font-size: 12.5px;
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+.csc-content .cook-material-name { color: #23201B; font-weight: 500; }
+.csc-content .cook-material-amount { color: #A89F94; font-size: 11px; }
+.csc-content .cook-step {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px dashed #E8DFD0;
+}
+.csc-content .cook-step:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+.csc-content .cook-step-num {
+  font-family: 'Shippori Mincho B1', serif;
+  font-size: 18px;
+  color: #B85438;
+  line-height: 1.2;
+  flex-shrink: 0;
+  min-width: 26px;
+  text-align: center;
+  opacity: 0.8;
+}
+.csc-content .cook-step-body { flex: 1; }
+.csc-content .cook-step-title {
+  font-size: 13.5px;
+  color: #23201B;
+  font-weight: 600;
+  margin-bottom: 4px;
+  letter-spacing: 0.04em;
+}
+.csc-content .cook-step-desc {
+  font-size: 12.5px;
+  color: #6B6055;
+  line-height: 1.7;
+}
+.csc-content .cook-step-why {
+  font-size: 11.5px;
+  color: #A89F94;
+  margin-top: 4px;
+  font-style: italic;
+  letter-spacing: 0.03em;
+}
+.csc-content .cook-step-why::before { content: '→ '; color: #E8C4AE; }
+.csc-content .cook-step-heat {
+  font-size: 11px;
+  color: #8A3D27;
+  margin-top: 6px;
+  letter-spacing: 0.05em;
+  display: inline-block;
+  padding: 2px 8px;
+  background: #FDFAF5;
+  border-radius: 2px;
+  border: 1px solid #E8DFD0;
+}
+.csc-content .cook-tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.csc-content .cook-tips-item {
+  font-size: 12px;
+  color: #6B6055;
+  line-height: 1.7;
+  padding-left: 16px;
+  position: relative;
+}
+.csc-content .cook-tips-item::before {
+  content: '·';
+  position: absolute;
+  left: 2px;
+  color: #B85438;
+  font-weight: 600;
+}
+.csc-footer {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid #E8DFD0;
+  text-align: center;
+}
+.csc-brand {
+  font-size: 13px;
+  color: #A89F94;
+  letter-spacing: 0.18em;
+  margin-bottom: 4px;
+}
+.csc-url {
+  font-size: 10px;
+  color: #CBC0AE;
+  letter-spacing: 0.12em;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-weight: 300;
+}
+.csc-date {
+  margin-top: 12px;
   font-size: 10px;
   color: #CBC0AE;
   letter-spacing: 0.15em;
@@ -867,8 +1045,12 @@ h1 {
 <!-- Share overlay -->
 <div class="share-overlay" id="share-overlay" onclick="closeShareOverlay(event)">
   <div class="share-preview">
+    <div class="share-tabs">
+      <button class="share-tab active" data-tab="fortune" onclick="switchShareTab('fortune')">签签图</button>
+      <button class="share-tab" data-tab="cook" onclick="switchShareTab('cook')">做法图</button>
+    </div>
     <img id="share-preview-img" src="" alt="分享图预览">
-    <div class="share-hint">长按图片保存 · 分享给朋友</div>
+    <div class="share-hint" id="share-hint">长按图片保存 · 分享给朋友</div>
     <button class="share-close" onclick="closeShareOverlay()">关闭</button>
   </div>
 </div>
@@ -883,6 +1065,18 @@ h1 {
     <div class="sc-brand">吃啥嘞</div>
     <div class="sc-url">chisha.shameless.top</div>
     <div class="sc-date" id="sc-date"></div>
+  </div>
+  <div class="cook-share-card" id="cook-share-card">
+    <div class="csc-header">
+      <div class="csc-title" id="csc-title"></div>
+      <div class="csc-subtitle">做法</div>
+    </div>
+    <div class="csc-content" id="csc-content"></div>
+    <div class="csc-footer">
+      <div class="csc-brand">吃啥嘞</div>
+      <div class="csc-url">chisha.shameless.top</div>
+      <div class="csc-date" id="csc-date"></div>
+    </div>
   </div>
 </div>
 
@@ -1193,7 +1387,8 @@ function pick(index) {
   el.classList.add('landing');
   el.textContent = getFoods()[index];
   const foodName = getFoods()[index];
-  tipEl.innerHTML = '<span class="tip-main">' + (FOOD_TIPS[foodName] || '') + '</span>' +
+  const tipText = FOOD_TIPS[foodName] || state.customTips[foodName] || '';
+  tipEl.innerHTML = '<span class="tip-main">' + tipText + '</span>' +
     '<span class="tip-sub">' + getTimeTip() + ' · ' + getSolarTip() + '</span>';
   tipEl.classList.add('visible');
   showSignNumber();
@@ -1675,33 +1870,41 @@ function showShareRow() {
    Share / 分享图系统 (v1.2)
    ═══════════════════════════════════════ */
 
-function prepareShareCard(type) {
-  const card = document.getElementById('share-card');
+let shareImages = { fortune: null, cook: null };
+let currentShareTab = 'fortune';
+
+function prepareFortuneCard(dish) {
   const label = document.getElementById('sc-label');
   const food = document.getElementById('sc-food');
   const fortune = document.getElementById('sc-fortune');
   const dateEl = document.getElementById('sc-date');
 
-  // Date stamp: 2026.05.01
   const d = new Date();
   dateEl.textContent = d.getFullYear() + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0');
 
-  const resultText = document.getElementById('result').textContent;
   label.textContent = '今儿个吃这个';
-  food.textContent = resultText;
-  const foodTip = FOOD_TIPS[resultText] || '';
+  food.textContent = dish;
+  const foodTip = FOOD_TIPS[dish] || state.customTips[dish] || '';
   fortune.innerHTML = foodTip +
     '<span class="sc-tip-sub">' + getTimeTip() + ' · ' + getSolarTip() + '</span>';
 }
 
-async function generateShareImage(type) {
-  if (typeof html2canvas === 'undefined') {
-    alert('分享功能加载中，请稍后再试');
-    return;
-  }
-  prepareShareCard(type);
-  const card = document.getElementById('share-card');
+function prepareCookShareCard(dish, recipe) {
+  const title = document.getElementById('csc-title');
+  const content = document.getElementById('csc-content');
+  const dateEl = document.getElementById('csc-date');
 
+  title.textContent = dish;
+
+  const d = new Date();
+  dateEl.textContent = d.getFullYear() + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0');
+
+  renderCook(recipe, content);
+}
+
+async function generateFortuneImage() {
+  if (typeof html2canvas === 'undefined') return null;
+  const card = document.getElementById('share-card');
   try {
     const canvas = await html2canvas(card, {
       backgroundColor: '#F6F1E9',
@@ -1709,29 +1912,120 @@ async function generateShareImage(type) {
       useCORS: true,
       logging: false
     });
-    const dataUrl = canvas.toDataURL('image/png');
-    showShareOverlay(dataUrl);
+    return canvas.toDataURL('image/png');
   } catch(e) {
-    console.error('Share image generation failed:', e);
+    console.error('Fortune image generation failed:', e);
+    return null;
   }
 }
 
-function showShareOverlay(imgSrc) {
-  const overlay = document.getElementById('share-overlay');
+async function generateCookImage() {
+  if (typeof html2canvas === 'undefined') return null;
+  const card = document.getElementById('cook-share-card');
+  try {
+    const canvas = await html2canvas(card, {
+      backgroundColor: '#F6F1E9',
+      scale: 2,
+      useCORS: true,
+      logging: false
+    });
+    return canvas.toDataURL('image/png');
+  } catch(e) {
+    console.error('Cook image generation failed:', e);
+    return null;
+  }
+}
+
+function updateSharePreview() {
   const img = document.getElementById('share-preview-img');
-  img.src = imgSrc;
+  const hint = document.getElementById('share-hint');
+  const tabs = document.querySelectorAll('.share-tab');
+
+  img.src = shareImages[currentShareTab] || '';
+  hint.textContent = currentShareTab === 'fortune'
+    ? '长按图片保存 · 分享给朋友'
+    : '长按保存做法长图';
+
+  tabs.forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.tab === currentShareTab);
+  });
+}
+
+function switchShareTab(tab) {
+  if (!shareImages[tab]) return;
+  currentShareTab = tab;
+  updateSharePreview();
+}
+
+function showShareOverlay() {
+  const overlay = document.getElementById('share-overlay');
   overlay.classList.add('active');
 }
 
 function closeShareOverlay(e) {
   if (e && e.target !== document.getElementById('share-overlay') && !e.target.closest('.share-close')) return;
   document.getElementById('share-overlay').classList.remove('active');
+  // Reset state
+  shareImages = { fortune: null, cook: null };
+  currentShareTab = 'fortune';
+  document.getElementById('share-preview-img').src = '';
 }
 
-function shareFood() {
-  const resultText = document.getElementById('result').textContent;
-  if (resultText === '待君问签') return;
-  generateShareImage('food');
+async function shareFood() {
+  const dish = document.getElementById('result').textContent;
+  if (dish === '待君问签') return;
+
+  // Show overlay with loading state
+  const img = document.getElementById('share-preview-img');
+  const hint = document.getElementById('share-hint');
+  img.src = '';
+  hint.textContent = '生成中…';
+  showShareOverlay();
+
+  // 1. Generate fortune image
+  prepareFortuneCard(dish);
+  const fortuneImg = await generateFortuneImage();
+
+  // 2. Prepare cook content (fetch if not cached)
+  let recipe = state.customRecipes[dish] || getCookCache(dish);
+  if (!recipe) {
+    try {
+      const res = await fetch('/api/cook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dish })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.tip) {
+          state.customTips[dish] = data.tip;
+          // Update displayed tip if visible
+          const tipEl = document.getElementById('result-tip');
+          if (tipEl.classList.contains('visible')) {
+            const tipText = FOOD_TIPS[dish] || state.customTips[dish] || '';
+            tipEl.innerHTML = '<span class="tip-main">' + escapeHtml(tipText) + '</span>' +
+              '<span class="tip-sub">' + getTimeTip() + ' · ' + getSolarTip() + '</span>';
+          }
+        }
+        if (data.recipe) {
+          recipe = data.recipe;
+          state.customRecipes[dish] = recipe;
+          setCookCache(dish, recipe);
+        }
+        saveState();
+      }
+    } catch (e) {
+      // Silent fail
+    }
+  }
+  if (!recipe) recipe = getCookFallback(dish);
+
+  prepareCookShareCard(dish, recipe);
+  const cookImg = await generateCookImage();
+
+  shareImages = { fortune: fortuneImg, cook: cookImg };
+  currentShareTab = 'fortune';
+  updateSharePreview();
 }
 
 /* ═══════════════════════════════════════
