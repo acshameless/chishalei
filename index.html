@@ -1607,8 +1607,8 @@ function triggerParticleStorm() {
 
   particles.forEach(p => {
     // 初始轻微晃动，随后逐渐加速
-    p.vx = (Math.random() - 0.5) * 4;
-    p.vy = (Math.random() - 0.5) * 4;
+    p.vx = (Math.random() - 0.5) * 8;
+    p.vy = (Math.random() - 0.5) * 8;
   });
 }
 
@@ -1660,27 +1660,27 @@ function updateParticles() {
       if (Math.abs(distFromCenter) > tubeHalfWidth) {
         const overflow = Math.abs(distFromCenter) - tubeHalfWidth;
         const pushDir = distFromCenter > 0 ? -1 : 1;
-        p.vx += pushDir * overflow * 0.02 * stormIntensity;
+        p.vx += pushDir * overflow * 0.04 * stormIntensity;
       }
 
       // 2. 底部搅拌力：越靠下被推得越高
       const bottomProximity = Math.max(0, 1 - py / (h * 0.75));
-      p.vy -= bottomProximity * 1.0 * stormIntensity;
+      p.vy -= bottomProximity * 2.0 * stormIntensity;
 
       // 3. 顶部轻微回落
       if (py < h * 0.6) {
-        p.vy += 0.12 * stormIntensity;
+        p.vy += 0.24 * stormIntensity;
       }
 
       // 4. 随机脉冲（搅拌不规则性）
       if (stormTimer % 5 === 0) {
-        p.vx += (Math.random() - 0.5) * 5 * stormIntensity;
-        p.vy += (Math.random() - 0.5) * 5 * stormIntensity - 1.5 * stormIntensity;
+        p.vx += (Math.random() - 0.5) * 10 * stormIntensity;
+        p.vy += (Math.random() - 0.5) * 10 * stormIntensity - 3.0 * stormIntensity;
       }
 
       // 5. 底部强反弹
       if (p.y > h - p.height - 10) {
-        p.vy = -Math.abs(p.vy) * (0.9 + 0.08 * stormIntensity);
+        p.vy = -Math.abs(p.vy) * (0.9 + 0.15 * stormIntensity);
       }
     }
 
@@ -1756,8 +1756,8 @@ function pick(index) {
   const chosen = particles[index];
   if (chosen) {
     // 给原始粒子一个向上的爆发，保持高速
-    chosen.vy -= 10;
-    chosen.vx += (Math.random() - 0.5) * 6;
+    chosen.vy -= 18;
+    chosen.vx += (Math.random() - 0.5) * 10;
 
     const card = document.getElementById('result-card');
     const tagRect = chosen.el.getBoundingClientRect();
@@ -1770,7 +1770,7 @@ function pick(index) {
     clone.style.margin = '0';
     clone.style.zIndex = '200';
     clone.style.pointerEvents = 'none';
-    clone.style.transition = 'all 0.28s cubic-bezier(0.05, 0.7, 0.1, 1)';
+    clone.style.transition = 'all 0.15s cubic-bezier(0.05, 0.7, 0.1, 1)';
     document.body.appendChild(clone);
 
     void clone.offsetWidth;
