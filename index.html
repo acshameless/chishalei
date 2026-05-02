@@ -2325,7 +2325,7 @@ function showAddInput() {
 
 function addToMyMenu(val) {
   if (state.myMenu.includes(val)) {
-    showToast('「' + val + '」已在菜单中');
+    // 静默忽略重复添加
     return;
   }
   state.myMenu.push(val);
@@ -2983,22 +2983,38 @@ async function generateFortuneImage() {
 async function generateCookImage() {
   if (typeof html2canvas === 'undefined') return null;
   const card = document.getElementById('cook-share-card');
+  const wrapper = document.querySelector('.share-card-wrapper');
+
+  // 临时展开 wrapper，防止 height:0 导致 html2canvas 截断内容
+  const originalHeight = wrapper.style.height;
+  const originalOverflow = wrapper.style.overflow;
+  wrapper.style.height = 'auto';
+  wrapper.style.overflow = 'visible';
+
   try {
-    const renderHeight = Math.max(card.scrollHeight, 960);
+    const contentHeight = card.scrollHeight;
+    // 内容超长时降低 scale，避免图片过大且保证完整渲染
+    let scale = 2;
+    if (contentHeight > 2400) scale = 1;
+    else if (contentHeight > 1600) scale = 1.5;
+
     const canvas = await html2canvas(card, {
       backgroundColor: '#F6F1E9',
-      scale: 2,
+      scale,
       useCORS: true,
       logging: false,
       width: card.offsetWidth,
-      height: renderHeight,
-      windowHeight: renderHeight + 1000,
+      height: contentHeight,
+      windowHeight: contentHeight + 500,
       windowWidth: 540
     });
     return canvas.toDataURL('image/png');
   } catch(e) {
     console.error('Cook image generation failed:', e);
     return null;
+  } finally {
+    wrapper.style.height = originalHeight;
+    wrapper.style.overflow = originalOverflow;
   }
 }
 
