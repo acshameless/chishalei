@@ -1338,8 +1338,11 @@ function toChineseUpper(n) {
 }
 
 function getSignNumber() {
-  // 每次问签随机生成签数（1-100），保持仪式感
-  return Math.floor(Math.random() * 100) + 1;
+  // 基于食物名 + 当前时间戳的组合，每次点击签数不同但有根有据
+  const food = getFoods()[lastShown] || '';
+  const now = Date.now();
+  const seed = Math.abs(hashCode(food + now));
+  return (seed % 100) + 1;
 }
 
 function renderSignNumber() {
@@ -1365,7 +1368,9 @@ function showFortune() {
 }
 
 function showSignNumber() {
-  document.getElementById('sign-number').classList.add('visible');
+  const el = document.getElementById('sign-number');
+  el.textContent = '第' + toChineseUpper(getSignNumber()) + '签';
+  el.classList.add('visible');
 }
 
 function hideSignNumber() {
