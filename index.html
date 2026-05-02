@@ -55,10 +55,10 @@ body::before {
   width: 100%;
   max-width: 640px;
   flex: 1;
-  display: grid;
-  grid-template-rows: 0.382fr auto 0.618fr;
-  align-items: stretch;
-  justify-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .upper-content {
@@ -67,6 +67,7 @@ body::before {
   justify-content: flex-end;
   align-items: center;
   width: 100%;
+  flex-shrink: 0;
 }
 
 .lower-content {
@@ -75,6 +76,7 @@ body::before {
   justify-content: flex-start;
   align-items: center;
   width: 100%;
+  flex-shrink: 0;
 }
 
 /* ── Header ── */
@@ -853,7 +855,7 @@ h1 {
   position: absolute;
   left: -100%;
   top: 0;
-  width: 0;
+  width: 540px;
   height: 0;
   overflow: visible;
   opacity: 0;
@@ -2229,6 +2231,7 @@ function pick(index) {
   document.getElementById('cook-wrap').classList.remove('visible');
   document.getElementById('cook-btn').textContent = '做法';
   document.getElementById('cook-content').innerHTML = '';
+  applyGoldenLayout();
 
   // 自定义菜如果没有描述，自动请求 LLM 并更新显示
   if (!tipText && !DEFAULT_FOODS.includes(foodName)) {
@@ -2373,6 +2376,7 @@ function switchPool(pool) {
     document.getElementById('cook-btn').textContent = '做法';
   }
   renderSlotMachine();
+  applyGoldenLayout();
 }
 
 function toggleMyMenu(name) {
@@ -2904,6 +2908,7 @@ function hideSignNumber() {
 
 function showShareRow() {
   document.getElementById('share-row').classList.add('visible');
+  applyGoldenLayout();
 }
 
 /* ═══════════════════════════════════════
@@ -3249,6 +3254,7 @@ async function askCook() {
     renderCook(state.customRecipes[dish], content);
     wrap.classList.add('visible');
     btn.textContent = '导出';
+    applyGoldenLayout();
     return;
   }
 
@@ -3258,6 +3264,7 @@ async function askCook() {
     renderCook(cached, content);
     wrap.classList.add('visible');
     btn.textContent = '导出';
+    applyGoldenLayout();
     return;
   }
 
@@ -3294,6 +3301,7 @@ async function askCook() {
     renderCook(getCookFallback(dish), content);
   } finally {
     btn.textContent = '导出';
+    applyGoldenLayout();
   }
 }
 
@@ -3360,6 +3368,7 @@ renderSlotMachine();
 renderSoundToggle();
 renderSignNumber();
 renderFortune();
+applyGoldenLayout();
 
 /* ── 触摸滑动切换池子 ── */
 let touchStartX = 0;
@@ -3392,11 +3401,38 @@ if (shareOverlayEl) {
   }, { passive: true });
 }
 
-// 窗口大小变化时重新渲染老虎机
+/* ── 黄金比例布局：默认状态下按钮位于视口 38.2% 处 ── */
+function applyGoldenLayout() {
+  const upper = document.querySelector('.upper-content');
+  const btn = document.querySelector('.btn-wrap');
+  const lower = document.querySelector('.lower-content');
+  if (!upper || !btn || !lower) return;
+
+  const bodyStyles = getComputedStyle(document.body);
+  const padTop = parseFloat(bodyStyles.paddingTop);
+  const padBottom = parseFloat(bodyStyles.paddingBottom);
+  const available = window.innerHeight - padTop - padBottom;
+
+  const upperH = upper.scrollHeight;
+  const btnH = btn.offsetHeight;
+  const lowerH = lower.scrollHeight;
+
+  if (upperH + btnH + lowerH <= available) {
+    const target = available * 0.382;
+    btn.style.marginTop = Math.max(0, target - upperH) + 'px';
+  } else {
+    btn.style.marginTop = '0px';
+  }
+}
+
+// 窗口大小变化时重新渲染老虎机并调整布局
 let resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => renderSlotMachine(), 300);
+  resizeTimer = setTimeout(() => {
+    renderSlotMachine();
+    applyGoldenLayout();
+  }, 300);
 });
 </script>
 </body>
