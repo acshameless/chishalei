@@ -490,11 +490,13 @@ h1 {
 
 /* 滚动时的动态模拟效果 */
 .slot-column.spinning .slot-item {
-  opacity: 0.2;
-  filter: blur(0.8px);
-  transform: scaleY(0.88);
-  transition: opacity 0.1s, filter 0.1s, transform 0.1s;
+  opacity: 0.15;
+  transform: scaleY(0.9);
 }
+/* 注意：不在每个 item 上加 filter: blur 和 transition，
+   否则 300+ 道菜 × 3~5 列 × 重复次数 = 数千个 DOM 节点同时 blur，
+   是 GPU 性能杀手，会导致严重掉帧。 */
+
 
 /* ── Fortune slip ── */
 .fortune-wrap {
@@ -869,7 +871,7 @@ h1 {
 /* 签签分享卡 */
 .share-card-hidden {
   width: 540px;
-  min-height: 320px;
+  height: 405px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -877,10 +879,11 @@ h1 {
   background: #F6F1E9;
   background-image: radial-gradient(circle, #CBC0AE 0.8px, transparent 0.8px);
   background-size: 20px 20px;
-  font-family: 'Shippori Mincho B1', serif;
+  font-family: 'Shippori Mincho B1', 'Noto Serif SC', 'Songti SC', serif;
   color: #23201B;
   padding: 36px 48px;
   box-sizing: border-box;
+  overflow: hidden;
 }
 .sc-food {
   font-size: 48px;
@@ -938,10 +941,11 @@ h1 {
   background: #F6F1E9;
   background-image: radial-gradient(circle, #CBC0AE 0.8px, transparent 0.8px);
   background-size: 20px 20px;
-  font-family: 'Shippori Mincho B1', serif;
+  font-family: 'Shippori Mincho B1', 'Noto Serif SC', 'Songti SC', serif;
   color: #23201B;
   padding: 40px 48px;
   box-sizing: border-box;
+  overflow: visible;
 }
 .csc-header {
   text-align: center;
@@ -1779,6 +1783,15 @@ let stormActive = false;
 let stormTimer = 0;
 let stormDecayStart = -1;
 
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function initSlotMachine() {
   const container = document.getElementById('particle-container');
   container.innerHTML = '';
@@ -1820,8 +1833,12 @@ function initSlotMachine() {
     strip.dataset.col = i;
     strip.dataset.repeat = repeatCount;
 
+    // 每列独立随机排列，确保结束后只有目标行对齐
+    const colOrder = shuffleArray(foods.map((name, idx) => ({name, idx})));
+    strip.dataset.order = JSON.stringify(colOrder.map(x => x.idx));
+
     for (let r = 0; r < repeatCount; r++) {
-      foods.forEach((name, idx) => {
+      colOrder.forEach(({name, idx}) => {
         const item = document.createElement('div');
         item.className = 'slot-item';
         item.textContent = name;
@@ -1890,8 +1907,13 @@ function triggerSlotSpin(targetIndex) {
     const centerOffset = colHeight / 2 - itemHeight / 2;
     const cycleHeight = foods.length * itemHeight;
 
+    // 找到 targetIndex 在该列随机排列中的位置
+    const order = JSON.parse(strip.dataset.order || '[]');
+    let posInCol = order.indexOf(targetIndex);
+    if (posInCol === -1) posInCol = targetIndex; // fallback
+
     // 目标：让 targetIndex 出现在中间圈
-    const baseY = -(targetCycle * cycleHeight + targetIndex * itemHeight) + centerOffset;
+    const baseY = -(targetCycle * cycleHeight + posInCol * itemHeight) + centerOffset;
 
     // 额外滚动圈数（中间列少转，两侧多转）
     const mid = Math.floor(strips.length / 2);
@@ -2184,9 +2206,9 @@ function renderCategoryList() {
   const list = document.getElementById('category-list');
   list.innerHTML = FOOD_CATEGORIES.map((cat, i) => {
     const alreadyInPool = cat.items.filter(n => state.foods.includes(n)).length;
-    const isFull = alreadyInPool === cat.items.length;
-    const actionText = isFull ? '已全加入' : (alreadyInPool > 0 ? '追加 +' + (cat.items.length - alreadyInPool) : '加入 +' + cat.items.length);
-    return '<div class="category-row' + (isFull ? ' added' : '') + '" onclick="toggleCategoryToMyMenu(' + i + ')">' +
+    const allInPool = alreadyInPool === cat.items.length;
+    const actionText = allInPool ? '已全加入' : (alreadyInPool > 0 ? '追加 +' + (cat.items.length - alreadyInPool) : '加入 +' + cat.items.length);
+    return '<div class="category-row' + (allInPool ? ' added' : '') + '" onclick="toggleCategoryToMyMenu(' + i + ')">' +
       '<span class="category-row-name">' + cat.name + '</span>' +
       '<span class="category-row-meta">' +
         '<span class="category-row-count">' + cat.items.length + ' 道</span>' +
@@ -2199,17 +2221,31 @@ function renderCategoryList() {
 function toggleCategoryToMyMenu(index) {
   const cat = FOOD_CATEGORIES[index];
   if (!cat) return;
-  let added = 0;
-  cat.items.forEach(name => {
-    if (!state.foods.includes(name)) {
-      state.foods.push(name);
-      added++;
-    }
-  });
+
+  const allInPool = cat.items.every(name => state.foods.includes(name));
+
+  if (allInPool) {
+    // 全部已在池子中，点击取消加入
+    cat.items.forEach(name => {
+      const idx = state.foods.indexOf(name);
+      if (idx >= 0 && state.foods.length > 1) state.foods.splice(idx, 1);
+    });
+    showToast('「' + cat.name + '」已从全部选项移除');
+  } else {
+    // 追加未在池子中的菜
+    let added = 0;
+    cat.items.forEach(name => {
+      if (!state.foods.includes(name)) {
+        state.foods.push(name);
+        added++;
+      }
+    });
+    if (added > 0) showToast('「' + cat.name + '」已加入 ' + added + ' 道菜到全部选项');
+  }
+
   saveState();
   renderSlotMachine();
   renderCategoryList();
-  if (added > 0) showToast('「' + cat.name + '」已加入 ' + added + ' 道菜到全部选项');
 }
 
 /* ── Toast ── */
@@ -2647,13 +2683,25 @@ function prepareCookShareCard(dish, recipe) {
 async function generateFortuneImage() {
   if (typeof html2canvas === 'undefined') return null;
   const card = document.getElementById('share-card');
+  const wrapper = document.querySelector('.share-card-wrapper');
   try {
+    // 临时让 wrapper 可见以确保正确渲染
+    const origOpacity = wrapper.style.opacity;
+    const origZIndex = wrapper.style.zIndex;
+    wrapper.style.opacity = '1';
+    wrapper.style.zIndex = '9999';
+
     const canvas = await html2canvas(card, {
       backgroundColor: '#F6F1E9',
       scale: 2,
       useCORS: true,
-      logging: false
+      logging: false,
+      width: card.offsetWidth,
+      height: card.offsetHeight
     });
+
+    wrapper.style.opacity = origOpacity;
+    wrapper.style.zIndex = origZIndex;
     return canvas.toDataURL('image/png');
   } catch(e) {
     console.error('Fortune image generation failed:', e);
@@ -2664,13 +2712,27 @@ async function generateFortuneImage() {
 async function generateCookImage() {
   if (typeof html2canvas === 'undefined') return null;
   const card = document.getElementById('cook-share-card');
+  const wrapper = document.querySelector('.share-card-wrapper');
   try {
+    // 临时让 wrapper 可见并展开，防止内容被截断
+    const origOpacity = wrapper.style.opacity;
+    const origZIndex = wrapper.style.zIndex;
+    wrapper.style.opacity = '1';
+    wrapper.style.zIndex = '9999';
+
+    const renderHeight = Math.max(card.offsetHeight, card.scrollHeight);
     const canvas = await html2canvas(card, {
       backgroundColor: '#F6F1E9',
       scale: 2,
       useCORS: true,
-      logging: false
+      logging: false,
+      width: card.offsetWidth,
+      height: renderHeight,
+      windowHeight: renderHeight + 200
     });
+
+    wrapper.style.opacity = origOpacity;
+    wrapper.style.zIndex = origZIndex;
     return canvas.toDataURL('image/png');
   } catch(e) {
     console.error('Cook image generation failed:', e);
