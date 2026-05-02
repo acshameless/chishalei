@@ -622,6 +622,25 @@ h1 {
 .cook-material-name { color: var(--ink); font-weight: 500; }
 .cook-material-amount { color: var(--ink-light); font-size: 11px; }
 
+.cook-export-btn {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  background: var(--card);
+  border: 1px solid var(--paper-dark);
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 12px;
+  color: var(--ink-mid);
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.cook-export-btn:hover {
+  border-color: var(--lacquer);
+  color: var(--lacquer);
+}
+
 .cook-step {
   display: flex;
   gap: 14px;
@@ -871,7 +890,7 @@ h1 {
 /* 签签分享卡 */
 .share-card-hidden {
   width: 540px;
-  height: 405px;
+  height: 960px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -938,14 +957,15 @@ h1 {
 /* 做法分享卡 */
 .cook-share-card {
   width: 540px;
+  height: 960px;
   background: #F6F1E9;
   background-image: radial-gradient(circle, #CBC0AE 0.8px, transparent 0.8px);
   background-size: 20px 20px;
   font-family: 'Shippori Mincho B1', 'Noto Serif SC', 'Songti SC', serif;
   color: #23201B;
-  padding: 40px 48px;
+  padding: 32px 36px;
   box-sizing: border-box;
-  overflow: visible;
+  overflow: hidden;
 }
 .csc-header {
   text-align: center;
@@ -1381,7 +1401,7 @@ h1 {
   </div>
 
   <div class="share-row" id="share-row">
-    <button class="share-btn" onclick="shareFood()">分享这道菜</button>
+    <button class="share-btn" onclick="shareFood()">分享</button>
     <button class="share-btn" id="cook-btn" onclick="askCook()">做法</button>
   </div>
 
@@ -1398,6 +1418,7 @@ h1 {
 
   <div class="cook-wrap" id="cook-wrap">
     <div class="cook-content" id="cook-content"></div>
+    <button class="cook-export-btn" onclick="exportCookCard()">导出做法图</button>
   </div>
 </div>
 
@@ -2230,17 +2251,13 @@ function toggleCategoryToMyMenu(index) {
       const idx = state.foods.indexOf(name);
       if (idx >= 0 && state.foods.length > 1) state.foods.splice(idx, 1);
     });
-    showToast('「' + cat.name + '」已从全部选项移除');
   } else {
     // 追加未在池子中的菜
-    let added = 0;
     cat.items.forEach(name => {
       if (!state.foods.includes(name)) {
         state.foods.push(name);
-        added++;
       }
     });
-    if (added > 0) showToast('「' + cat.name + '」已加入 ' + added + ' 道菜到全部选项');
   }
 
   saveState();
@@ -2720,15 +2737,15 @@ async function generateCookImage() {
     wrapper.style.opacity = '1';
     wrapper.style.zIndex = '9999';
 
-    const renderHeight = Math.max(card.offsetHeight, card.scrollHeight);
+    const targetHeight = 960;
     const canvas = await html2canvas(card, {
       backgroundColor: '#F6F1E9',
       scale: 2,
       useCORS: true,
       logging: false,
       width: card.offsetWidth,
-      height: renderHeight,
-      windowHeight: renderHeight + 200
+      height: targetHeight,
+      windowHeight: targetHeight + 200
     });
 
     wrapper.style.opacity = origOpacity;
@@ -2762,6 +2779,14 @@ function closeShareOverlay(e) {
   document.getElementById('share-overlay').classList.remove('active');
   document.getElementById('share-img-1').src = '';
   document.getElementById('share-img-2').src = '';
+  // 恢复默认显示
+  document.getElementById('share-img-1').style.display = '';
+  document.getElementById('share-img-2').style.display = '';
+  const prev = document.querySelector('.share-nav.prev');
+  const next = document.querySelector('.share-nav.next');
+  if (prev) prev.style.display = '';
+  if (next) next.style.display = '';
+  document.getElementById('share-dots').style.display = '';
 }
 
 /* ═══════════════════════════════════════
@@ -2815,29 +2840,64 @@ async function shareFood() {
   const img2 = document.getElementById('share-img-2');
   const hint = document.getElementById('share-hint');
   const slider = document.getElementById('share-slider');
+  const dots = document.getElementById('share-dots');
+  const prev = document.querySelector('.share-nav.prev');
+  const next = document.querySelector('.share-nav.next');
   img1.src = '';
   img2.src = '';
   hint.textContent = '生成中…';
-  updateShareDots(0);
-  showShareOverlay();
 
-  // Prepare both cards
+  // 单图模式：隐藏第二张图和导航
+  img2.style.display = 'none';
+  if (prev) prev.style.display = 'none';
+  if (next) next.style.display = 'none';
+  dots.style.display = 'none';
+
+  showShareOverlay();
   prepareFortuneCard(dish);
+  const fortuneImg = await generateFortuneImage();
+
+  if (fortuneImg) {
+    img1.src = fortuneImg;
+    hint.textContent = '长按保存';
+    slider.scrollLeft = 0;
+  } else {
+    hint.textContent = '生成失败，请重试';
+  }
+}
+
+async function exportCookCard() {
+  const dish = document.getElementById('result').textContent;
+  if (dish === '待君问签') return;
+
+  const img1 = document.getElementById('share-img-1');
+  const img2 = document.getElementById('share-img-2');
+  const hint = document.getElementById('share-hint');
+  const slider = document.getElementById('share-slider');
+  const dots = document.getElementById('share-dots');
+  const prev = document.querySelector('.share-nav.prev');
+  const next = document.querySelector('.share-nav.next');
+  img1.src = '';
+  img2.src = '';
+  hint.textContent = '生成中…';
+
+  // 单图模式：隐藏第一张图和导航
+  img1.style.display = 'none';
+  if (prev) prev.style.display = 'none';
+  if (next) next.style.display = 'none';
+  dots.style.display = 'none';
+
+  showShareOverlay();
 
   let recipe = state.customRecipes[dish] || getCookCache(dish);
   if (!recipe) recipe = getCookFallback(dish);
   prepareCookShareCard(dish, recipe);
 
-  // Generate both images in parallel
-  const [fortuneImg, cookImg] = await Promise.all([
-    generateFortuneImage(),
-    generateCookImage()
-  ]);
+  const cookImg = await generateCookImage();
 
-  if (fortuneImg) {
-    img1.src = fortuneImg;
-    img2.src = cookImg || '';
-    hint.textContent = '左右滑动切换 · 长按保存';
+  if (cookImg) {
+    img2.src = cookImg;
+    hint.textContent = '长按保存';
     slider.scrollLeft = 0;
   } else {
     hint.textContent = '生成失败，请重试';
