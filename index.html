@@ -1641,45 +1641,55 @@ function updateParticles() {
     if (p.y < zoneTop) { p.y = zoneTop; p.vy = Math.abs(p.vy) * 0.8; }
     if (p.y > h - p.height) { p.y = h - p.height; p.vy = -Math.abs(p.vy) * 0.8; }
 
-    // 风暴：保持峰值翻腾，pick() 后才开始衰减
+    // 风暴：圆筒内壁滚动效果
     if (stormActive) {
       const px = p.x + p.width / 2;
       const py = p.y + p.height / 2;
-      const centerX = w / 2;
+      const tubeCenterX = w / 2;
 
       // pick() 前保持峰值，pick() 后开始衰减
-      const agitation = stormDecayStart === -1 ? 1.0 : Math.max(0, 1 - (stormTimer - stormDecayStart) / 50);
+      const agitation = stormDecayStart === -1 ? 1.0 : Math.max(0, 1 - (stormTimer - stormDecayStart) / 60);
 
-      // 1. 筒壁约束
-      const tubeHalfWidth = w * 0.36;
-      const distFromCenter = px - centerX;
-      if (Math.abs(distFromCenter) > tubeHalfWidth) {
-        const overflow = Math.abs(distFromCenter) - tubeHalfWidth;
-        const pushDir = distFromCenter > 0 ? -1 : 1;
-        p.vx += pushDir * overflow * 0.06 * agitation;
+      // 圆筒半径
+      const tubeRadius = w * 0.30;
+      const distFromCenter = Math.abs(px - tubeCenterX);
+
+      // 1. 筒壁约束：标签在筒壁内侧滚动，不能穿过中心，也不能飞出筒外
+      if (distFromCenter < tubeRadius * 0.35) {
+        // 太靠近中心 → 向外推到筒壁（内侧）
+        const pushDir = px > tubeCenterX ? 1 : -1;
+        p.vx += pushDir * 2.0 * agitation;
+      } else if (distFromCenter > tubeRadius) {
+        // 超出筒壁 → 向内拉回
+        const pushDir = px > tubeCenterX ? -1 : 1;
+        p.vx += pushDir * 1.0 * agitation;
       }
 
-      // 2. 底部搅拌力
-      const bottomProximity = Math.max(0, 1 - py / (h * 0.75));
-      p.vy -= bottomProximity * 4.0 * agitation;
+      // 2. 切向滚动感：沿筒壁有旋转趋势
+      const side = px > tubeCenterX ? 1 : -1;
+      p.vy += side * (py / h - 0.5) * 2.0 * agitation;
 
-      // 3. 顶部回落
-      if (py < h * 0.6) {
-        p.vy += 0.3 * agitation;
+      // 3. 底部搅拌力（向上推）
+      const bottomProximity = Math.max(0, 1 - py / (h * 0.78));
+      p.vy -= bottomProximity * 2.5 * agitation;
+
+      // 4. 顶部强回落（防止挤到上面）
+      if (py < h * 0.65) {
+        p.vy += 0.5 * agitation;
       }
 
-      // 4. 随机脉冲（每3帧一次）
-      if (stormTimer % 3 === 0) {
-        p.vx += (Math.random() - 0.5) * 14 * agitation;
-        p.vy += (Math.random() - 0.5) * 14 * agitation - 5 * agitation;
+      // 5. 随机脉冲（模拟搅拌不规则性）
+      if (stormTimer % 4 === 0) {
+        p.vx += (Math.random() - 0.5) * 8 * agitation;
+        p.vy += (Math.random() - 0.5) * 6 * agitation - 2 * agitation;
       }
 
-      // 5. 底部强反弹
+      // 6. 底部强反弹
       if (p.y > h - p.height - 10) {
-        p.vy = -Math.abs(p.vy) * (0.92 + 0.18 * agitation);
+        p.vy = -Math.abs(p.vy) * (0.9 + 0.12 * agitation);
       }
 
-      // 6. 速度衰减（pick() 后加速衰减）
+      // 7. 速度衰减
       const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
       const decayRate = stormDecayStart === -1 ? 0.97 : 0.94;
       if (speed > 3) {
@@ -1765,8 +1775,8 @@ function pick(index) {
   const chosen = particles[index];
   if (chosen) {
     // 给原始粒子一个向上的爆发，保持高速
-    chosen.vy -= 18;
-    chosen.vx += (Math.random() - 0.5) * 10;
+    chosen.vy -= 12;
+    chosen.vx += (Math.random() - 0.5) * 6;
 
     const card = document.getElementById('result-card');
     const tagRect = chosen.el.getBoundingClientRect();
@@ -1779,7 +1789,7 @@ function pick(index) {
     clone.style.margin = '0';
     clone.style.zIndex = '200';
     clone.style.pointerEvents = 'none';
-    clone.style.transition = 'all 0.15s cubic-bezier(0.05, 0.7, 0.1, 1)';
+    clone.style.transition = 'all 0.45s cubic-bezier(0.15, 0.5, 0.2, 1)';
     document.body.appendChild(clone);
 
     void clone.offsetWidth;
