@@ -1477,8 +1477,25 @@ function pick(index) {
 
 function removeFood(index) {
   const foods = getFoods();
-  if (foods.length <= 1) return;
+  const dishName = foods[index];
+
+  // 全部选项至少保留一道菜；我的菜单可以清空
+  if (currentPool === 'all' && foods.length <= 1) return;
+
+  // 从当前池中删除
   foods.splice(index, 1);
+
+  // 同步删除另一个池
+  if (currentPool === 'all') {
+    // 从全部选项删除，同步从我的菜单删除
+    const myMenuIdx = state.myMenu.indexOf(dishName);
+    if (myMenuIdx >= 0) state.myMenu.splice(myMenuIdx, 1);
+  } else {
+    // 从我的菜单删除，同步从全部选项删除
+    const foodsIdx = state.foods.indexOf(dishName);
+    if (foodsIdx >= 0) state.foods.splice(foodsIdx, 1);
+  }
+
   if (current === index) {
     current = -1;
     const el = document.getElementById('result');
@@ -1488,7 +1505,11 @@ function removeFood(index) {
     tipEl.classList.remove('visible');
     tipEl.textContent = '';
     hideSignNumber();
-  } else if (current > index) current--;
+    document.getElementById('share-row').classList.remove('visible');
+    document.getElementById('cook-wrap').classList.remove('visible');
+  } else if (current > index) {
+    current--;
+  }
   renderTags();
   saveState();
 }
