@@ -1590,8 +1590,8 @@ function initParticles() {
     particles.push({
       name, index: i,
       x, y,
-      vx: (Math.random() - 0.5) * 3.0,
-      vy: (Math.random() - 0.5) * 3.0,
+      vx: (Math.random() - 0.5) * 5.0,
+      vy: (Math.random() - 0.5) * 5.0,
       el, width: pw, height: ph
     });
   });
@@ -1612,9 +1612,9 @@ function triggerParticleStorm() {
     const dx = px - centerX;
     const dy = py - centerY;
     const angle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 1.2;
-    const speed = 10 + Math.random() * 14;
+    const speed = 15 + Math.random() * 20;
     p.vx = Math.cos(angle) * speed;
-    p.vy = Math.sin(angle) * speed - 6;
+    p.vy = Math.sin(angle) * speed - 8;
   });
 }
 
@@ -1653,8 +1653,8 @@ function updateParticles() {
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist > 1) {
         // 离心力向外甩
-        p.vx += (dx / dist) * 0.25;
-        p.vy += (dy / dist) * 0.25;
+        p.vx += (dx / dist) * 0.4;
+        p.vy += (dy / dist) * 0.4;
       }
       // 底部强反弹，像筒底
       if (p.y > h - p.height - 10) {
@@ -1678,17 +1678,17 @@ function updateParticles() {
     // 速度衰减 + 扰动
     const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
     if (stormActive && speed > 3) {
-      p.vx *= 0.96;
-      p.vy *= 0.96;
+      p.vx *= 0.97;
+      p.vy *= 0.97;
     } else {
-      p.vx *= 0.994;
-      p.vy *= 0.994;
+      p.vx *= 0.992;
+      p.vy *= 0.992;
     }
-    if (Math.abs(p.vx) < 0.3) p.vx += (Math.random() - 0.5) * 0.12;
-    if (Math.abs(p.vy) < 0.3) p.vy += (Math.random() - 0.5) * 0.12;
+    if (Math.abs(p.vx) < 0.4) p.vx += (Math.random() - 0.5) * 0.2;
+    if (Math.abs(p.vy) < 0.4) p.vy += (Math.random() - 0.5) * 0.2;
 
     // 限制最大速度
-    const maxSpeed = stormActive ? 16 : 5.0;
+    const maxSpeed = stormActive ? 24 : 8.0;
     if (speed > maxSpeed) {
       p.vx = (p.vx / speed) * maxSpeed;
       p.vy = (p.vy / speed) * maxSpeed;
