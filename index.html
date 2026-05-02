@@ -1456,6 +1456,10 @@ function pick(index) {
   showSignNumber();
   showShareRow();
 
+  // 切换菜品时 reset 做法区域
+  document.getElementById('cook-wrap').classList.remove('visible');
+  document.getElementById('cook-content').innerHTML = '';
+
   // 自定义菜如果没有描述，自动请求 LLM 并更新显示
   if (!tipText && !DEFAULT_FOODS.includes(foodName)) {
     fetchCookFor(foodName).then(() => {
