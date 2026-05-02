@@ -367,13 +367,14 @@ h1 {
   font-size: 12.5px;
   color: var(--ink-mid);
   cursor: pointer;
-  transition: background 0.16s, border-color 0.16s, color 0.16s, transform 0.1s;
+  transition: background 0.16s, border-color 0.16s, color 0.16s, opacity 0.1s;
   font-family: 'Shippori Mincho B1', serif;
   font-weight: 400;
   letter-spacing: 0.05em;
   user-select: none;
   display: inline-flex;
   align-items: center;
+  transform: translate(-50%, -50%);
   pointer-events: auto;
   white-space: nowrap;
   opacity: 0.85;
@@ -1535,6 +1536,8 @@ let mouseY = -1000;
 let stormActive = false;
 let stormTimer = 0;
 let stormDecayStart = -1;
+let globalRotX = 0;
+let globalRotY = 0;
 
 function makeParticle(name, index) {
   const tag = document.createElement('span');
@@ -1565,6 +1568,8 @@ function makeParticle(name, index) {
 function initParticles() {
   if (particleRAF) cancelAnimationFrame(particleRAF);
   particles = [];
+  globalRotX = 0;
+  globalRotY = 0;
 
   const container = document.getElementById('particle-container');
   container.innerHTML = '';
@@ -1572,27 +1577,23 @@ function initParticles() {
   const foods = getFoods();
   const w = window.innerWidth;
   const h = window.innerHeight;
-  const zoneTop = h * 0.52; // 控制栏下方区域
+  const sphereRadius = Math.min(w, h) * 0.32;
+
   foods.forEach((name, i) => {
     const el = makeParticle(name, i);
     container.appendChild(el);
 
-    // 先渲染到 DOM 获取尺寸
     const rect = el.getBoundingClientRect();
     const pw = rect.width || 80;
     const ph = rect.height || 28;
 
-    const margin = 40;
-
-    // 限制在控制栏下方区域
-    const x = margin + Math.random() * (w - pw - margin * 2);
-    const y = zoneTop + Math.random() * (h - zoneTop - ph - margin);
-
     particles.push({
       name, index: i,
-      x, y,
-      vx: (Math.random() - 0.5) * 5.0,
-      vy: (Math.random() - 0.5) * 5.0,
+      theta: Math.random() * Math.PI * 2,
+      phi: Math.random() * Math.PI * 0.5,
+      r: sphereRadius + (Math.random() - 0.5) * 50,
+      vTheta: (Math.random() - 0.5) * 0.004,
+      vPhi: (Math.random() - 0.5) * 0.002,
       el, width: pw, height: ph
     });
   });
@@ -1606,20 +1607,16 @@ function triggerParticleStorm() {
   stormDecayStart = -1;
 
   particles.forEach(p => {
-    // 瞬间剧烈爆发
-    const angle = Math.random() * Math.PI * 2;
-    const speed = 18 + Math.random() * 22;
-    p.vx = Math.cos(angle) * speed;
-    p.vy = Math.sin(angle) * speed - 12;
+    p.vTheta += (Math.random() - 0.5) * 0.08;
+    p.vPhi += (Math.random() - 0.5) * 0.05;
   });
 }
 
 function updateParticles() {
   const w = window.innerWidth;
   const h = window.innerHeight;
-  const zoneTop = h * 0.52;
-  const repelRadius = 100;
-  const repelForce = 0.12;
+  const centerX = w / 2;
+  const centerY = h * 0.85;
 
   // 风暴状态：保持峰值直到 pick() 触发衰减
   if (stormActive) {
@@ -1630,108 +1627,45 @@ function updateParticles() {
     }
   }
 
+  // 全局旋转速度
+  let rotX = 0.002;
+  let rotY = 0.004;
+  if (stormActive) {
+    const agitation = stormDecayStart === -1 ? 1.0 : Math.max(0, 1 - (stormTimer - stormDecayStart) / 60);
+    rotX = 0.002 + 0.14 * agitation;
+    rotY = 0.004 + 0.20 * agitation;
+  }
+  globalRotX += rotX;
+  globalRotY += rotY;
+
   particles.forEach(p => {
-    // 基础运动
-    p.x += p.vx;
-    p.y += p.vy;
+    // 更新球坐标
+    p.theta += p.vTheta + rotY;
+    p.phi += p.vPhi + rotX;
 
-    // 边界反弹（限制在下半区）
-    if (p.x < 0) { p.x = 0; p.vx = Math.abs(p.vx) * 0.8; }
-    if (p.x > w - p.width) { p.x = w - p.width; p.vx = -Math.abs(p.vx) * 0.8; }
-    if (p.y < zoneTop) { p.y = zoneTop; p.vy = Math.abs(p.vy) * 0.8; }
-    if (p.y > h - p.height) { p.y = h - p.height; p.vy = -Math.abs(p.vy) * 0.8; }
+    // 限制 phi 范围
+    if (p.phi < 0.05) { p.phi = 0.05; p.vPhi = Math.abs(p.vPhi) * 0.5; }
+    if (p.phi > Math.PI * 0.55) { p.phi = Math.PI * 0.55; p.vPhi = -Math.abs(p.vPhi) * 0.5; }
 
-    // 风暴：圆筒内壁滚动效果
-    if (stormActive) {
-      const px = p.x + p.width / 2;
-      const py = p.y + p.height / 2;
-      const tubeCenterX = w / 2;
+    // 球坐标转笛卡尔
+    const x3d = Math.sin(p.theta) * Math.sin(p.phi);
+    const y3d = Math.cos(p.phi);
+    const z3d = Math.cos(p.theta) * Math.sin(p.phi);
 
-      // pick() 前保持峰值，pick() 后开始衰减
-      const agitation = stormDecayStart === -1 ? 1.0 : Math.max(0, 1 - (stormTimer - stormDecayStart) / 60);
+    // 投影到屏幕
+    const screenX = centerX + x3d * p.r;
+    const screenY = centerY - y3d * p.r;
 
-      // 圆筒半径
-      const tubeRadius = w * 0.30;
-      const distFromCenter = Math.abs(px - tubeCenterX);
+    // 深度感：近大远小，近实远虚
+    const scale = 0.65 + (z3d + 1) / 2 * 0.5;
+    const opacity = 0.35 + (z3d + 1) / 2 * 0.65;
+    const zIdx = Math.floor((z3d + 1) * 100);
 
-      // 1. 筒壁约束：标签在筒壁内侧滚动，不能穿过中心，也不能飞出筒外
-      if (distFromCenter < tubeRadius * 0.35) {
-        // 太靠近中心 → 向外推到筒壁（内侧）
-        const pushDir = px > tubeCenterX ? 1 : -1;
-        p.vx += pushDir * 2.0 * agitation;
-      } else if (distFromCenter > tubeRadius) {
-        // 超出筒壁 → 向内拉回
-        const pushDir = px > tubeCenterX ? -1 : 1;
-        p.vx += pushDir * 1.0 * agitation;
-      }
-
-      // 2. 切向滚动感：沿筒壁有旋转趋势
-      const side = px > tubeCenterX ? 1 : -1;
-      p.vy += side * (py / h - 0.5) * 2.0 * agitation;
-
-      // 3. 底部搅拌力（向上推）
-      const bottomProximity = Math.max(0, 1 - py / (h * 0.78));
-      p.vy -= bottomProximity * 2.5 * agitation;
-
-      // 4. 顶部强回落（防止挤到上面）
-      if (py < h * 0.65) {
-        p.vy += 0.5 * agitation;
-      }
-
-      // 5. 随机脉冲（模拟搅拌不规则性）
-      if (stormTimer % 4 === 0) {
-        p.vx += (Math.random() - 0.5) * 8 * agitation;
-        p.vy += (Math.random() - 0.5) * 6 * agitation - 2 * agitation;
-      }
-
-      // 6. 底部强反弹
-      if (p.y > h - p.height - 10) {
-        p.vy = -Math.abs(p.vy) * (0.9 + 0.12 * agitation);
-      }
-
-      // 7. 速度衰减
-      const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-      const decayRate = stormDecayStart === -1 ? 0.97 : 0.94;
-      if (speed > 3) {
-        p.vx *= decayRate;
-        p.vy *= decayRate;
-      }
-    }
-
-    // 鼠标/触摸推开
-    const cx = p.x + p.width / 2;
-    const cy = p.y + p.height / 2;
-    const dx = cx - mouseX;
-    const dy = cy - mouseY;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-
-    if (dist < repelRadius && dist > 1) {
-      const force = (repelRadius - dist) / repelRadius * repelForce;
-      p.vx += (dx / dist) * force;
-      p.vy += (dy / dist) * force;
-    }
-
-    // 速度衰减 + 扰动
-    const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-    if (stormActive && speed > 3) {
-      p.vx *= 0.97;
-      p.vy *= 0.97;
-    } else {
-      p.vx *= 0.992;
-      p.vy *= 0.992;
-    }
-    if (Math.abs(p.vx) < 0.4) p.vx += (Math.random() - 0.5) * 0.2;
-    if (Math.abs(p.vy) < 0.4) p.vy += (Math.random() - 0.5) * 0.2;
-
-    // 限制最大速度
-    const maxSpeed = stormActive ? 24 : 8.0;
-    if (speed > maxSpeed) {
-      p.vx = (p.vx / speed) * maxSpeed;
-      p.vy = (p.vy / speed) * maxSpeed;
-    }
-
-    p.el.style.left = p.x + 'px';
-    p.el.style.top = p.y + 'px';
+    p.el.style.left = screenX + 'px';
+    p.el.style.top = screenY + 'px';
+    p.el.style.transform = `translate(-50%, -50%) scale(${scale.toFixed(3)})`;
+    p.el.style.opacity = opacity.toFixed(3);
+    p.el.style.zIndex = zIdx;
   });
 
   particleRAF = requestAnimationFrame(updateParticles);
@@ -1771,38 +1705,46 @@ function pick(index) {
     stormDecayStart = stormTimer;
   }
 
-  // 中签飞行：被选中的签保持高速飞到结果卡片
+  // 中签飞行：从3D球面投影位置飞到结果卡片
   const chosen = particles[index];
   if (chosen) {
-    // 给原始粒子一个向上的爆发，保持高速
-    chosen.vy -= 12;
-    chosen.vx += (Math.random() - 0.5) * 6;
+    // 计算当前3D投影位置
+    const x3d = Math.sin(chosen.theta) * Math.sin(chosen.phi);
+    const y3d = Math.cos(chosen.phi);
+    const z3d = Math.cos(chosen.theta) * Math.sin(chosen.phi);
+    const w2 = window.innerWidth;
+    const h2 = window.innerHeight;
+    const cx = w2 / 2;
+    const cy = h2 * 0.85;
+    const startX = cx + x3d * chosen.r;
+    const startY = cy - y3d * chosen.r;
+    const startScale = 0.65 + (z3d + 1) / 2 * 0.5;
 
     const card = document.getElementById('result-card');
-    const tagRect = chosen.el.getBoundingClientRect();
     const cardRect = card.getBoundingClientRect();
 
     const clone = chosen.el.cloneNode(true);
     clone.style.position = 'fixed';
-    clone.style.left = tagRect.left + 'px';
-    clone.style.top = tagRect.top + 'px';
+    clone.style.left = startX + 'px';
+    clone.style.top = startY + 'px';
     clone.style.margin = '0';
     clone.style.zIndex = '200';
     clone.style.pointerEvents = 'none';
-    clone.style.transition = 'all 0.45s cubic-bezier(0.15, 0.5, 0.2, 1)';
+    clone.style.transition = 'all 0.5s cubic-bezier(0.2, 0.5, 0.2, 1)';
+    clone.style.transform = `translate(-50%, -50%) scale(${startScale.toFixed(3)})`;
     document.body.appendChild(clone);
 
     void clone.offsetWidth;
 
-    const targetX = cardRect.left + cardRect.width / 2 - tagRect.width / 2;
-    const targetY = cardRect.top + cardRect.height / 2 - tagRect.height / 2;
+    const targetX = cardRect.left + cardRect.width / 2;
+    const targetY = cardRect.top + cardRect.height / 2;
 
     clone.style.left = targetX + 'px';
     clone.style.top = targetY + 'px';
-    clone.style.transform = 'scale(1.5) rotate(8deg)';
+    clone.style.transform = 'translate(-50%, -50%) scale(1.5)';
     clone.style.opacity = '0.1';
 
-    setTimeout(() => clone.remove(), 320);
+    setTimeout(() => clone.remove(), 550);
   }
 
   // 切换菜品时 reset 做法区域
