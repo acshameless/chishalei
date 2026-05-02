@@ -348,9 +348,7 @@ h1 {
 .slot-container {
   position: relative;
   width: 100%;
-  height: auto;
-  flex: 1;
-  min-height: 180px;
+  height: 240px;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
@@ -362,9 +360,7 @@ h1 {
 .menu-grid-container {
   position: relative;
   width: 100%;
-  height: auto;
-  flex: 1;
-  min-height: 180px;
+  height: 240px;
   z-index: 0;
   pointer-events: auto;
   overflow-y: auto;
@@ -400,7 +396,7 @@ h1 {
 .slot-column {
   flex: 1;
   min-width: 0;
-  align-self: stretch;
+  height: 100%;
   overflow: hidden;
   position: relative;
   mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
@@ -1470,9 +1466,7 @@ h1 {
   .particle-container,
   .slot-container,
   .menu-grid-container {
-    height: auto;
-    flex: 1;
-    min-height: 120px;
+    height: 180px;
     gap: 8px;
   }
   /* overlay 移动端适配 */
