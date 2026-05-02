@@ -400,6 +400,14 @@ h1 {
   font-size: 14px;
 }
 
+/* 滚动时的动态模拟效果 */
+.slot-column.spinning .slot-item {
+  opacity: 0.2;
+  filter: blur(0.8px);
+  transform: scaleY(0.88);
+  transition: opacity 0.1s, filter 0.1s, transform 0.1s;
+}
+
 /* ── Fortune slip ── */
 .fortune-wrap {
   width: 100%;
@@ -1561,6 +1569,16 @@ function triggerSlotSpin(targetIndex) {
 
   void document.body.offsetWidth;
 
+  // 添加滚动动态效果
+  document.querySelectorAll('.slot-column').forEach(col => col.classList.add('spinning'));
+
+  // 计算最外侧列的总动画时间，用于结束后移除效果
+  const maxDist = Math.floor(strips.length / 2);
+  const maxDuration = 1.8 + maxDist * 0.35 + maxDist * 0.12;
+  setTimeout(() => {
+    document.querySelectorAll('.slot-column').forEach(col => col.classList.remove('spinning'));
+  }, maxDuration * 1000 + 100);
+
   // 开始滚动
   strips.forEach((strip, i) => {
     const colHeight = strip.parentElement.offsetHeight;
@@ -1643,7 +1661,7 @@ function pick(index) {
       clone.style.margin = '0';
       clone.style.zIndex = '200';
       clone.style.pointerEvents = 'none';
-      clone.style.transition = 'all 0.5s cubic-bezier(0.2, 0.5, 0.2, 1)';
+      clone.style.transition = 'all 0.18s cubic-bezier(0.08, 0.9, 0.15, 1)';
       document.body.appendChild(clone);
 
       void clone.offsetWidth;
