@@ -1477,7 +1477,15 @@ h1 {
 const STORAGE_KEY = 'chisha-state';
 const STATE_VERSION = 3;
 
-const DEFAULT_FOODS = [];
+const DEFAULT_FOODS = [
+  '烩面','胡辣汤','灌汤包','羊肉汤','浆面条',
+  '道口烧鸡','鲤鱼焙面','水煎包','炒凉粉','杠子馍',
+  '菜馍','油茶','豆腐脑','红焖羊肉','卤面',
+  '炸紫酥肉','桶子鸡','烧饼夹肉','焦饼','葱油饼',
+  '蒸饺','煎包','板面','扁粉菜','臊子面',
+  '信阳焖罐肉','南阳黄牛肉','周口羊肉汤','许昌卤面','新乡烧饼',
+  '洛阳水席','开封炒凉粉','逍遥胡辣汤','三鲜烩面','萝卜丝饼'
+];
 
 const FOOD_CATEGORIES = [
   {
@@ -2981,7 +2989,7 @@ async function askCook() {
   if (state.customRecipes[dish]) {
     renderCook(state.customRecipes[dish], content);
     wrap.classList.add('visible');
-    btn.textContent = '导出做法图';
+    btn.textContent = '导出';
     return;
   }
 
@@ -2990,7 +2998,7 @@ async function askCook() {
   if (cached) {
     renderCook(cached, content);
     wrap.classList.add('visible');
-    btn.textContent = '导出做法图';
+    btn.textContent = '导出';
     return;
   }
 
@@ -3026,7 +3034,7 @@ async function askCook() {
   } catch (e) {
     renderCook(getCookFallback(dish), content);
   } finally {
-    btn.textContent = '导出做法图';
+    btn.textContent = '导出';
   }
 }
 
