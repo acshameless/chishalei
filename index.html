@@ -622,25 +622,6 @@ h1 {
 .cook-material-name { color: var(--ink); font-weight: 500; }
 .cook-material-amount { color: var(--ink-light); font-size: 11px; }
 
-.cook-export-btn {
-  display: block;
-  width: 100%;
-  margin-top: 12px;
-  padding: 10px;
-  background: var(--card);
-  border: 1px solid var(--paper-dark);
-  font-family: 'Zen Kaku Gothic New', sans-serif;
-  font-size: 12px;
-  color: var(--ink-mid);
-  letter-spacing: 0.12em;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.cook-export-btn:hover {
-  border-color: var(--lacquer);
-  color: var(--lacquer);
-}
-
 .cook-step {
   display: flex;
   gap: 14px;
@@ -1418,7 +1399,6 @@ h1 {
 
   <div class="cook-wrap" id="cook-wrap">
     <div class="cook-content" id="cook-content"></div>
-    <button class="cook-export-btn" onclick="exportCookCard()">导出做法图</button>
   </div>
 </div>
 
@@ -1497,15 +1477,7 @@ h1 {
 const STORAGE_KEY = 'chisha-state';
 const STATE_VERSION = 3;
 
-const DEFAULT_FOODS = [
-  '烩面','胡辣汤','灌汤包','羊肉汤','浆面条',
-  '道口烧鸡','鲤鱼焙面','水煎包','炒凉粉','杠子馍',
-  '菜馍','油茶','豆腐脑','红焖羊肉','卤面',
-  '炸紫酥肉','桶子鸡','烧饼夹肉','焦饼','葱油饼',
-  '蒸饺','煎包','板面','扁粉菜','臊子面',
-  '信阳焖罐肉','南阳黄牛肉','周口羊肉汤','许昌卤面','新乡烧饼',
-  '洛阳水席','开封炒凉粉','逍遥胡辣汤','三鲜烩面','萝卜丝饼'
-];
+const DEFAULT_FOODS = [];
 
 const FOOD_CATEGORIES = [
   {
@@ -2047,6 +2019,7 @@ function pick(index) {
 
   // 切换菜品时 reset 做法区域
   document.getElementById('cook-wrap').classList.remove('visible');
+  document.getElementById('cook-btn').textContent = '做法';
   document.getElementById('cook-content').innerHTML = '';
 
   // 自定义菜如果没有描述，自动请求 LLM 并更新显示
@@ -2085,6 +2058,7 @@ function removeFood(index) {
     hideSignNumber();
     document.getElementById('share-row').classList.remove('visible');
     document.getElementById('cook-wrap').classList.remove('visible');
+    document.getElementById('cook-btn').textContent = '做法';
   } else if (current > index) {
     current--;
   }
@@ -2179,6 +2153,7 @@ function switchPool(pool) {
     hideSignNumber();
     document.getElementById('share-row').classList.remove('visible');
     document.getElementById('cook-wrap').classList.remove('visible');
+    document.getElementById('cook-btn').textContent = '做法';
   }
   renderSlotMachine();
 }
@@ -2354,6 +2329,8 @@ function spin() {
   if (isSpinning) { stopSpin(); return; }
 
   const foods = getFoods();
+  if (foods.length === 0) return;
+
   const el = document.getElementById('result');
   let rounds = 0;
   const total = 14 + Math.floor(Math.random() * 5); // 14~18轮，更紧凑
@@ -2365,6 +2342,7 @@ function spin() {
   document.getElementById('result-tip').classList.remove('visible');
   document.getElementById('share-row').classList.remove('visible');
   document.getElementById('cook-wrap').classList.remove('visible');
+  document.getElementById('cook-btn').textContent = '做法';
   document.querySelector('.slot-container')?.classList.remove('has-winner');
   setSpinState(true);
   playWoodblock();
@@ -2700,14 +2678,7 @@ function prepareCookShareCard(dish, recipe) {
 async function generateFortuneImage() {
   if (typeof html2canvas === 'undefined') return null;
   const card = document.getElementById('share-card');
-  const wrapper = document.querySelector('.share-card-wrapper');
   try {
-    // 临时让 wrapper 可见以确保正确渲染
-    const origOpacity = wrapper.style.opacity;
-    const origZIndex = wrapper.style.zIndex;
-    wrapper.style.opacity = '1';
-    wrapper.style.zIndex = '9999';
-
     const canvas = await html2canvas(card, {
       backgroundColor: '#F6F1E9',
       scale: 2,
@@ -2716,9 +2687,6 @@ async function generateFortuneImage() {
       width: card.offsetWidth,
       height: card.offsetHeight
     });
-
-    wrapper.style.opacity = origOpacity;
-    wrapper.style.zIndex = origZIndex;
     return canvas.toDataURL('image/png');
   } catch(e) {
     console.error('Fortune image generation failed:', e);
@@ -2729,14 +2697,7 @@ async function generateFortuneImage() {
 async function generateCookImage() {
   if (typeof html2canvas === 'undefined') return null;
   const card = document.getElementById('cook-share-card');
-  const wrapper = document.querySelector('.share-card-wrapper');
   try {
-    // 临时让 wrapper 可见并展开，防止内容被截断
-    const origOpacity = wrapper.style.opacity;
-    const origZIndex = wrapper.style.zIndex;
-    wrapper.style.opacity = '1';
-    wrapper.style.zIndex = '9999';
-
     const targetHeight = 960;
     const canvas = await html2canvas(card, {
       backgroundColor: '#F6F1E9',
@@ -2747,9 +2708,6 @@ async function generateCookImage() {
       height: targetHeight,
       windowHeight: targetHeight + 200
     });
-
-    wrapper.style.opacity = origOpacity;
-    wrapper.style.zIndex = origZIndex;
     return canvas.toDataURL('image/png');
   } catch(e) {
     console.error('Cook image generation failed:', e);
@@ -3013,10 +2971,17 @@ async function askCook() {
   const content = document.getElementById('cook-content');
   const btn = document.getElementById('cook-btn');
 
+  // 如果做法已显示，直接导出图片
+  if (wrap.classList.contains('visible')) {
+    exportCookCard();
+    return;
+  }
+
   // 优先从 state.customRecipes 获取
   if (state.customRecipes[dish]) {
     renderCook(state.customRecipes[dish], content);
     wrap.classList.add('visible');
+    btn.textContent = '导出做法图';
     return;
   }
 
@@ -3025,6 +2990,7 @@ async function askCook() {
   if (cached) {
     renderCook(cached, content);
     wrap.classList.add('visible');
+    btn.textContent = '导出做法图';
     return;
   }
 
@@ -3060,7 +3026,7 @@ async function askCook() {
   } catch (e) {
     renderCook(getCookFallback(dish), content);
   } finally {
-    btn.textContent = '做法';
+    btn.textContent = '导出做法图';
   }
 }
 
