@@ -471,29 +471,19 @@ h1 {
   opacity: 1;
 }
 
-/* ── Cook / 老师傅教做 ── */
+/* ── Cook / 做法 ── */
 .cook-wrap {
   width: 100%;
   max-height: 0;
   overflow: hidden;
   opacity: 0;
   transition: max-height 0.5s ease, opacity 0.5s ease 0.2s, margin 0.4s ease;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 .cook-wrap.visible {
-  max-height: 500px;
+  max-height: 600px;
   margin-top: 8px;
   margin-bottom: 8px;
   opacity: 1;
-}
-.cook-label {
-  font-size: 11px;
-  color: var(--ink-light);
-  letter-spacing: 0.3em;
-  margin-bottom: 10px;
-  font-weight: 300;
 }
 .cook-content {
   font-size: 12.5px;
@@ -502,89 +492,113 @@ h1 {
   letter-spacing: 0.04em;
   max-width: 100%;
   width: 100%;
+  max-height: 540px;
+  overflow-y: auto;
   background: var(--card);
   border: 1px solid var(--paper-dark);
-  padding: 20px 24px;
+  padding: 24px 28px;
   position: relative;
-  white-space: pre-line;
 }
+.cook-content::-webkit-scrollbar { width: 3px; }
+.cook-content::-webkit-scrollbar-thumb { background: var(--paper-dark); border-radius: 2px; }
 .cook-content::before, .cook-content::after {
   content: '';
   position: absolute;
-  width: 12px; height: 12px;
+  width: 14px; height: 14px;
   border-color: var(--lacquer);
   border-style: solid;
-  opacity: 0.35;
+  opacity: 0.3;
 }
 .cook-content::before { top: -1px; left: -1px; border-width: 1.5px 0 0 1.5px; }
 .cook-content::after  { bottom: -1px; right: -1px; border-width: 0 1.5px 1.5px 0; }
 
-.cook-section { margin-bottom: 18px; }
+.cook-section { margin-bottom: 20px; }
 .cook-section:last-child { margin-bottom: 0; }
 .cook-section-title {
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--lacquer);
-  letter-spacing: 0.18em;
-  margin-bottom: 8px;
+  letter-spacing: 0.22em;
+  margin-bottom: 10px;
   font-weight: 600;
+  text-transform: uppercase;
 }
 .cook-materials-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 18px;
+  gap: 8px 20px;
 }
 .cook-material-item {
   font-size: 12px;
   display: flex;
   gap: 6px;
+  align-items: baseline;
 }
-.cook-material-name { color: var(--ink); }
-.cook-material-amount { color: var(--ink-light); }
+.cook-material-name { color: var(--ink); font-weight: 500; }
+.cook-material-amount { color: var(--ink-light); font-size: 11px; }
 
 .cook-step {
   display: flex;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed var(--paper-dark);
 }
-.cook-step:last-child { margin-bottom: 0; }
+.cook-step:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
 .cook-step-num {
   font-family: 'Shippori Mincho B1', serif;
-  font-size: 16px;
+  font-size: 18px;
   color: var(--lacquer);
-  line-height: 1.3;
+  line-height: 1.2;
   flex-shrink: 0;
-  min-width: 22px;
+  min-width: 26px;
   text-align: center;
+  opacity: 0.8;
 }
 .cook-step-body { flex: 1; }
 .cook-step-title {
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--ink);
   font-weight: 600;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
   letter-spacing: 0.04em;
 }
 .cook-step-desc {
   font-size: 12px;
   color: var(--ink-mid);
-  line-height: 1.6;
+  line-height: 1.7;
 }
+.cook-step-why {
+  font-size: 11px;
+  color: var(--ink-light);
+  margin-top: 4px;
+  font-style: italic;
+  letter-spacing: 0.03em;
+}
+.cook-step-why::before { content: '→ '; color: var(--lacquer-lt); }
 .cook-step-heat {
   font-size: 11px;
   color: var(--lacquer-dim);
-  margin-top: 3px;
+  margin-top: 6px;
   letter-spacing: 0.05em;
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--paper);
+  border-radius: 2px;
 }
 .cook-tips-list {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
 }
 .cook-tips-item {
   font-size: 11.5px;
   color: var(--ink-mid);
-  line-height: 1.6;
-  padding-left: 14px;
+  line-height: 1.7;
+  padding-left: 16px;
   position: relative;
 }
 .cook-tips-item::before {
@@ -829,7 +843,6 @@ h1 {
   </div>
 
   <div class="cook-wrap" id="cook-wrap">
-    <div class="cook-label">做法</div>
     <div class="cook-content" id="cook-content"></div>
   </div>
 
@@ -881,7 +894,7 @@ h1 {
    ═══════════════════════════════════════ */
 
 const STORAGE_KEY = 'chisha-state';
-const STATE_VERSION = 2;
+const STATE_VERSION = 3;
 
 const DEFAULT_FOODS = [
   '烩面','胡辣汤','灌汤包','羊肉汤','浆面条',
@@ -936,6 +949,8 @@ function defaultState() {
     version: STATE_VERSION,
     foods: [...DEFAULT_FOODS],
     myMenu: [],
+    customTips: {},
+    customRecipes: {},
     history: {
       recent: [],
       favorites: [],
@@ -964,6 +979,8 @@ function migrateState(raw) {
   if (!('todayFortune' in raw.history)) raw.history.todayFortune = null;
   if (!('todayPick' in raw.history)) raw.history.todayPick = null;
   if (!raw.myMenu) raw.myMenu = [];
+  if (!raw.customTips) raw.customTips = {};
+  if (!raw.customRecipes) raw.customRecipes = {};
   if (!raw.settings) raw.settings = { sound: true };
   return raw;
 }
@@ -1209,8 +1226,6 @@ function addFood() {
     setTimeout(() => { input.style.borderColor = ''; }, 400);
     return;
   }
-  // 全部选项模式下：添加到全部选项池
-  // 我的菜单模式下：添加到我的菜单（如果全部选项中没有则同时添加）
   if (currentPool === 'all') {
     if (state.foods.includes(val)) {
       input.value = '';
@@ -1226,7 +1241,6 @@ function addFood() {
       setTimeout(() => { input.style.borderColor = ''; }, 400);
       return;
     }
-    // 如果不在全部选项中，先加入全部选项
     if (!state.foods.includes(val)) state.foods.push(val);
     state.myMenu.push(val);
   }
@@ -1237,6 +1251,33 @@ function addFood() {
   const newTag = tags[tags.length - 1];
   newTag.classList.add('new-pop');
   newTag.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  // 自定义菜（不在 DEFAULT_FOODS 中）自动请求 LLM 获取描述和做法
+  if (!DEFAULT_FOODS.includes(val)) {
+    fetchCookFor(val);
+  }
+}
+
+async function fetchCookFor(dish) {
+  // 异步获取 tip + recipe，不阻塞 UI
+  try {
+    const res = await fetch('/api/cook', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dish })
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.tip) {
+      state.customTips[dish] = data.tip;
+    }
+    if (data.recipe) {
+      state.customRecipes[dish] = data.recipe;
+    }
+    saveState();
+  } catch (e) {
+    // 静默失败，不影响用户体验
+  }
 }
 
 function switchPool(pool) {
@@ -1552,7 +1593,8 @@ function getSolarTip() {
 }
 
 function getTip(foodName) {
-  const food = FOOD_TIPS[foodName] || '';
+  // 优先从硬编码或自定义缓存获取食物描述
+  const food = FOOD_TIPS[foodName] || state.customTips[foodName] || '';
   const time = getTimeTip();
   const solar = getSolarTip();
   const parts = [food, time, solar].filter(Boolean);
@@ -1698,17 +1740,17 @@ function shareFood() {
 
 function getCookFallback(dish) {
   const patterns = [
-    { p: /面|条|粉|烩|卤/, m: [{n:'面粉',a:'300克'},{n:'五花肉',a:'200克'},{n:'黄豆芽',a:'150克'},{n:'葱姜蒜',a:'适量'},{n:'老抽生抽',a:'各1勺'}], s: [{t:'蒸面',d:'细面拌油，上锅蒸15分钟至八分熟',h:'大火蒸15分钟'},{t:'炒肉',d:'五花肉煸出油，加葱姜蒜爆香',h:'中火煸炒5分钟'},{t:'拌面',d:'蒸好的面倒入菜汤中拌匀，再蒸5分钟',h:'大火蒸5分钟'}], tips: ['面条拌点油再蒸，不容易粘连','菜汤要多一点，面才能吸饱味儿'] },
-    { p: /汤|胡辣|油茶|羊肉/, m: [{n:'主料',a:'500克'},{n:'香料包',a:'1个'},{n:'葱姜',a:'适量'},{n:'高汤/清水',a:'1500毫升'}], s: [{t:'熬汤',d:'香料包入水，小火熬30分钟出味',h:'小火熬30分钟'},{t:'下料',d:'主料下锅煮熟',h:'中火煮20分钟'},{t:'调味',d:'加盐胡椒等调味出锅',h:'小火调味3分钟'}], tips: ['汤底提前熬，味道更醇厚','胡辣汤要勾薄芡，太稠容易坨'] },
-    { p: /鸡|鸭|肉|羊|牛|烧|焖/, m: [{n:'肉类',a:'500克'},{n:'葱姜',a:'适量'},{n:'料酒',a:'2勺'},{n:'香料',a:'少许'}], s: [{t:'焯水',d:'冷水下锅，加料酒焯去血沫',h:'大火烧开2分钟'},{t:'煸炒',d:'沥干后下锅煸炒至表面微焦',h:'中火煸炒5分钟'},{t:'炖煮',d:'加水没过肉，小火炖至软烂',h:'小火炖1小时'}], tips: ['冷水下锅焯水，血沫去得干净','煸炒时少翻动，焦化才香'] },
-    { p: /包|饺|馍|饼|煎|蒸/, m: [{n:'面粉',a:'300克'},{n:'馅料',a:'200克'},{n:'温水',a:'150毫升'}], s: [{t:'和面',d:'温水和面，揉至光滑醒30分钟',h:'常温醒30分钟'},{t:'包馅',d:'分剂擀皮，包入馅料捏紧',h:'手工包制'},{t:'蒸煎',d:'上锅蒸/平底锅中火煎至金黄',h:'中火蒸15分钟或煎8分钟'}], tips: ['面要醒够，皮才软和','包子收口要捏紧，不然蒸时漏汤'] },
-    { p: /炸|酥|焦|紫/, m: [{n:'主料',a:'300克'},{n:'淀粉',a:'3勺'},{n:'鸡蛋',a:'1个'},{n:'食用油',a:'足量'}], s: [{t:'腌制',d:'主料切块，加盐料酒腌制15分钟',h:'常温腌制'},{t:'挂糊',d:'裹上淀粉蛋液糊，静置5分钟',h:'静置5分钟'},{t:'油炸',d:'六成油温下锅，炸至金黄捞出',h:'中火炸至金黄'}], tips: ['复炸一次更酥脆','油温不够会吸油，太虚'] },
-    { p: /凉|皮|豆腐|萝卜/, m: [{n:'主料',a:'300克'},{n:'配菜',a:'适量'},{n:'蒜泥辣椒油',a:'各1勺'}], s: [{t:'切配',d:'主料切条或切块，配菜备好',h:'刀工处理'},{t:'调汁',d:'蒜泥辣椒油盐糖醋调成汁',h:'手动调拌'},{t:'拌匀',d:'主料和汁拌匀装盘',h:'拌匀即可'}], tips: ['调料汁提前调好，味道更融合','凉粉切粗一点，不容易碎'] }
+    { p: /面|条|粉|烩|卤/, m: [{n:'面粉',a:'300克'},{n:'五花肉',a:'200克'},{n:'黄豆芽',a:'150克'},{n:'葱姜蒜',a:'适量'},{n:'老抽生抽',a:'各1勺'}], s: [{t:'蒸面',d:'细面拌油，上锅蒸15分钟至八分熟',w:'拌油防止粘连，蒸透才好入味',h:'大火蒸15分钟'},{t:'炒肉',d:'五花肉煸出油，加葱姜蒜爆香',w:'煸出猪油，菜才香',h:'中火煸炒5分钟'},{t:'拌面',d:'蒸好的面倒入菜汤中拌匀，再蒸5分钟',w:'二次蒸让面条吸饱汤汁',h:'大火蒸5分钟'}], tips: ['面条拌点油再蒸，不容易粘连','菜汤要多一点，面才能吸饱味儿','卤面讲究"蒸两次"，第一次蒸面第二次拌'] },
+    { p: /汤|胡辣|油茶|羊肉/, m: [{n:'羊肉/牛肉',a:'300克'},{n:'面筋',a:'100克'},{n:'粉条',a:'1把'},{n:'香料包',a:'1个'},{n:'胡椒粉',a:'2勺'}], s: [{t:'熬汤',d:'骨头熬汤2小时，滤出清汤',w:'高汤是胡辣汤的底味',h:'小火熬2小时'},{t:'下面',d:'面筋撕块、粉条泡软下锅',w:'面筋撕块更易入味',h:'中火煮10分钟'},{t:'勾芡',d:'水淀粉勾薄芡，撒胡椒葱花',w:'芡汁不能太稠，要能流动',h:'小火搅匀'}], tips: ['胡辣汤要勾薄芡，太稠容易坨','胡椒粉最后放，香气更冲','面筋手撕比刀切更入味'] },
+    { p: /鸡|鸭|肉|羊|牛|烧|焖/, m: [{n:'肉类',a:'500克'},{n:'葱姜',a:'适量'},{n:'料酒',a:'2勺'},{n:'香料',a:'少许'}], s: [{t:'焯水',d:'冷水下锅，加料酒焯去血沫',w:'冷水下锅，血沫才能充分析出',h:'大火烧开2分钟'},{t:'煸炒',d:'沥干后下锅煸炒至表面微焦',w:'焦化反应产生香味',h:'中火煸炒5分钟'},{t:'炖煮',d:'加开水没过肉，小火炖至软烂',w:'开水炖肉不发柴',h:'小火炖1小时'}], tips: ['冷水下锅焯水，血沫去得干净','煸炒时少翻动，焦化才香','炖肉用开水，冷水会让肉收缩'] },
+    { p: /包|饺|馍|饼|煎|蒸/, m: [{n:'面粉',a:'300克'},{n:'馅料',a:'200克'},{n:'温水',a:'150毫升'}], s: [{t:'和面',d:'温水和面，揉至光滑醒30分钟',w:'温水激活面筋，面团更软',h:'常温醒30分钟'},{t:'包馅',d:'分剂擀皮，包入馅料捏紧',w:'中间厚边缘薄，不容易破',h:'手工包制'},{t:'蒸煎',d:'上锅蒸/平底锅中火煎至金黄',w:'煎包底部要煎出脆壳',h:'中火蒸15分钟或煎8分钟'}], tips: ['面要醒够，皮才软和','包子收口要捏紧，蒸时漏汤','水煎包底部喷水再焖，底更脆'] },
+    { p: /炸|酥|焦|紫/, m: [{n:'主料',a:'300克'},{n:'淀粉',a:'3勺'},{n:'鸡蛋',a:'1个'},{n:'食用油',a:'足量'}], s: [{t:'腌制',d:'主料切块，加盐料酒腌制15分钟',w:'入味去腥，底味要足',h:'常温腌制'},{t:'挂糊',d:'裹上淀粉蛋液糊，静置5分钟',w:'糊要稠一点，炸出来更酥',h:'静置5分钟'},{t:'油炸',d:'六成油温下锅，炸至金黄捞出',w:'六成油温约180度，筷子入油起密集泡',h:'中火炸至金黄'}], tips: ['复炸一次更酥脆','油温不够会吸油，太虚','挂糊后静置，糊更贴合'] },
+    { p: /凉|皮|豆腐|萝卜/, m: [{n:'凉粉/豆腐',a:'300克'},{n:'蒜泥',a:'2勺'},{n:'辣椒油',a:'1勺'},{n:'香醋',a:'2勺'},{n:'榨菜/香菜',a:'适量'}], s: [{t:'切配',d:'凉粉切方块或豆腐划薄片',w:'凉粉切粗一点，煎时不易碎',h:'刀工处理'},{t:'煎炒',d:'少许油将凉粉煎至两面焦黄',w:'煎至起焦壳才香',h:'中火煎5分钟'},{t:'调味',d:'加蒜泥辣椒油香醋拌匀',w:'调料提前调好，味道更融合',h:'小火翻匀'}], tips: ['凉粉切厚一点，煎时不容易碎','豆腐脑要趁热吃，凉了发酸','调料汁提前10分钟调好'] }
   ];
   for (const item of patterns) {
-    if (item.p.test(dish)) return { materials: item.m.map(x=>({name:x.n,amount:x.a})), steps: item.s.map(x=>({title:x.t,desc:x.d,heat:x.h})), tips: item.tips };
+    if (item.p.test(dish)) return { materials: item.m.map(x=>({name:x.n,amount:x.a})), steps: item.s.map(x=>({title:x.t,desc:x.d,why:x.w,heat:x.h})), tips: item.tips };
   }
-  return { materials: [{name:'主料',a:'按喜好'},{name:'配菜',a:'适量'},{name:'调料',a:'适量'}], steps: [{t:'备料',d:'食材洗净切配',h:'无需加热'},{t:'烹制',d:'按常见方法烹饪至熟',h:'中火翻炒'},{t:'调味',d:'加盐酱油等调味出锅',h:'小火拌匀'}], tips: ['火候到位，味道自然好','调味分两次，中间尝咸淡'] };
+  return { materials: [{name:'主料',a:'300克'},{name:'配菜',a:'适量'},{name:'调料',a:'适量'}], steps: [{t:'备料',d:'食材洗净切配',w:'预处理到位，炒菜不慌',h:'刀工处理'},{t:'烹制',d:'按火候要求烹饪至熟',w:'火候是家常菜的关键',h:'中火翻炒'},{t:'调味',d:'加盐酱油等调味出锅',w:'调味分两次，中间尝咸淡',h:'小火拌匀'}], tips: ['火候到位，味道自然好','调味分两次，中间尝咸淡','食材预处理做足，炒菜才顺手'] };
 }
 
 
@@ -1767,6 +1809,7 @@ function renderCook(recipe, container) {
         '<div class="cook-step-body">' +
           '<div class="cook-step-title">' + escapeHtml(s.title) + '</div>' +
           '<div class="cook-step-desc">' + escapeHtml(s.desc) + '</div>' +
+          (s.why ? '<div class="cook-step-why">' + escapeHtml(s.why) + '</div>' : '') +
           (s.heat ? '<div class="cook-step-heat">' + escapeHtml(s.heat) + '</div>' : '') +
         '</div>' +
       '</div>';
@@ -1793,7 +1836,14 @@ async function askCook() {
   const content = document.getElementById('cook-content');
   const btn = document.getElementById('cook-btn');
 
-  // 检查缓存
+  // 优先从 state.customRecipes 获取
+  if (state.customRecipes[dish]) {
+    renderCook(state.customRecipes[dish], content);
+    wrap.classList.add('visible');
+    return;
+  }
+
+  // 检查 localStorage 缓存
   const cached = getCookCache(dish);
   if (cached) {
     renderCook(cached, content);
@@ -1814,10 +1864,23 @@ async function askCook() {
     });
     if (!res.ok) throw new Error('API error');
     const data = await res.json();
-    renderCook(data.recipe, content);
-    setCookCache(dish, data.recipe);
+    // 保存 tip 和 recipe 到 state
+    if (data.tip) {
+      state.customTips[dish] = data.tip;
+      // 更新当前显示的 tip
+      const tipEl = document.getElementById('result-tip');
+      if (tipEl.classList.contains('visible')) {
+        tipEl.innerHTML = '<span class="tip-main">' + escapeHtml(data.tip) + '</span>' +
+          '<span class="tip-sub">' + getTimeTip() + ' · ' + getSolarTip() + '</span>';
+      }
+    }
+    if (data.recipe) {
+      state.customRecipes[dish] = data.recipe;
+      renderCook(data.recipe, content);
+      setCookCache(dish, data.recipe);
+    }
+    saveState();
   } catch (e) {
-    // API 不可用（包括本地 404）时 fallback
     renderCook(getCookFallback(dish), content);
   } finally {
     btn.textContent = '做法';

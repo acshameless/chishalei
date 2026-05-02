@@ -15,27 +15,33 @@ export default async function handler(req, res) {
 
   if (!apiKey) return res.status(500).json({ error: 'LLM API key not configured' });
 
-  const prompt = `你是一位中原（河南）菜系的家庭烹饪专家，擅长把复杂的馆子菜变成厨房小白也能上手做的家常版。
+  const prompt = `你是一位像王刚、小高姐一样的美食博主，精通中原（河南）家常菜的烹饪。请为"${dish}"写一份详细的厨房实战做法。
 
-请为"${dish}"写一份家庭做法，输出必须是合法的 JSON，不要加 markdown 代码块标记，不要加任何解释文字。
+输出必须是合法 JSON，不要加 markdown 代码块，不要任何解释文字。
 
 JSON 结构严格如下：
 {
-  "materials": [
-    {"name": "食材名", "amount": "具体用量（如300克、2勺）"}
-  ],
-  "steps": [
-    {"title": "步骤小标题（不超过4个字）", "desc": "详细操作，控制在25字以内", "heat": "火候/时间（如中火3分钟、小火慢炖1小时）"}
-  ],
-  "tips": ["小贴士1", "小贴士2"]
+  "tip": "一句话饮食建议，15字以内（如：焦底香脆，趁热吃）",
+  "recipe": {
+    "materials": [
+      {"name": "食材名", "amount": "具体用量（如300克、2勺）"}
+    ],
+    "steps": [
+      {"title": "步骤名（不超过4个字）", "desc": "详细操作说明（40-60字）", "why": "为什么要这样做（20字以内）", "heat": "火候/时间（如中火3分钟、小火慢炖1小时）"}
+    ],
+    "tips": ["小贴士1", "小贴士2", "小贴士3"]
+  }
 }
 
 要求：
-1. 食材用量必须具体，禁止写"适量""少许"
-2. 步骤控制在3-5步，每步标题不超过4个字，描述不超过25字
-3. 突出河南地方特色和家常做法
-4. 汤面类必须说明汤底做法；油炸类必须说明油温（几成热）；面食必须说明和面/醒面要点
-5. 语气朴实，像邻居阿姨教你做菜`;
+1. 食材用量必须具体，禁止写"适量""少许"，必须给出数字
+2. 每步描述要像美食博主一样详细：先做什么、要注意什么、为什么这样做
+3. 火候精确到温度（几成热）或时间（几分钟）
+4. 突出河南地方特色和传统技法
+5. 语气亲切实用，像美食博主面对面教你做菜
+6. 步骤控制在4-6步，每步描述40-60字
+7. why字段解释这步操作的目的（如"冷水下锅，血沫才能充分析出"）
+8. 小贴士至少3条，要实用、具体，不是泛泛而谈`;
 
   try {
     const endpoint = baseUrl
@@ -51,11 +57,11 @@ JSON 结构严格如下：
       body: JSON.stringify({
         model,
         messages: [
-          { role: 'system', content: '你是一位中原（河南）菜系的家庭烹饪专家。输出必须是合法JSON，不要markdown代码块，不要任何解释文字。同一道菜每次输出要保持一致。' },
+          { role: 'system', content: '你是一位中原（河南）菜系的家庭烹饪专家，像王刚、小高姐一样的美食博主。输出必须是合法JSON，不要markdown代码块，不要任何解释文字。同一道菜每次输出要保持一致。' },
           { role: 'user', content: prompt }
         ],
         temperature: 0.2,
-        max_tokens: 600
+        max_tokens: 800
       })
     });
 
@@ -67,18 +73,16 @@ JSON 结构严格如下：
     const data = await response.json();
     const raw = data.choices?.[0]?.message?.content || '';
 
-    // 尝试解析 JSON，如果失败返回原始文本让前端处理
-    let recipe;
+    let result;
     try {
-      recipe = JSON.parse(raw);
+      result = JSON.parse(raw);
     } catch {
-      // 尝试提取 JSON 块
       const match = raw.match(/\{[\s\S]*\}/);
-      if (match) recipe = JSON.parse(match[0]);
-      else recipe = raw;
+      if (match) result = JSON.parse(match[0]);
+      else throw new Error('Invalid JSON');
     }
 
-    res.status(200).json({ recipe });
+    res.status(200).json(result);
   } catch (e) {
     res.status(500).json({ error: 'Failed to fetch recipe', detail: e.message });
   }
