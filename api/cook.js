@@ -61,7 +61,7 @@ JSON 结构严格如下：
           { role: 'user', content: prompt }
         ],
         temperature: 0.2,
-        max_tokens: 800
+        max_tokens: 1500
       })
     });
 
