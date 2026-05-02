@@ -393,6 +393,8 @@ h1 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  pointer-events: auto;
+  cursor: pointer;
 }
 .slot-item.active {
   opacity: 1;
@@ -404,8 +406,15 @@ h1 {
   transition: all 0.35s cubic-bezier(0.22, 0.8, 0.3, 1);
 }
 .slot-item.in-my-menu {
-  opacity: 0.75;
+  opacity: 0.9;
   color: var(--lacquer-dim);
+}
+.slot-item.in-my-menu::before {
+  content: '·';
+  display: inline-block;
+  margin-right: 4px;
+  color: var(--lacquer);
+  font-weight: 800;
 }
 
 /* 横向贯穿的中心高亮条 */
@@ -426,6 +435,18 @@ h1 {
 }
 .slot-container.has-winner::after {
   opacity: 1;
+}
+
+.slot-empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 13px;
+  color: var(--ink-light);
+  letter-spacing: 0.1em;
+  text-align: center;
+  white-space: nowrap;
 }
 
 /* 滚动时的动态模拟效果 */
@@ -1392,7 +1413,23 @@ function loadState() {
   try {
     const raw = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (!raw) return defaultState();
-    return migrateState(raw);
+    const migrated = migrateState(raw);
+
+    // 自动清理：如果 myMenu 和 foods 内容完全相同（旧代码双向同步 bug 导致），重置 myMenu
+    if (migrated.myMenu && migrated.foods &&
+        migrated.myMenu.length === migrated.foods.length &&
+        migrated.myMenu.length > 0) {
+      const setMy = new Set(migrated.myMenu);
+      const setAll = new Set(migrated.foods);
+      if (setMy.size === migrated.myMenu.length &&
+          setAll.size === migrated.foods.length &&
+          setMy.size === setAll.size &&
+          [...setMy].every(x => setAll.has(x))) {
+        migrated.myMenu = [];
+      }
+    }
+
+    return migrated;
   } catch {
     return defaultState();
   }
@@ -1551,7 +1588,14 @@ function initSlotMachine() {
   container.innerHTML = '';
 
   const foods = getFoods();
-  if (foods.length === 0) return;
+  if (foods.length === 0) {
+    container.innerHTML = '<div class="slot-empty">' +
+      (currentPool === 'myMenu'
+        ? '我的菜单是空的，在"全部选项"中单击菜品即可加入'
+        : '暂无可选菜品') +
+      '</div>';
+    return;
+  }
 
   const columns = Math.min(5, Math.max(3, Math.floor(window.innerWidth / 130)));
 
@@ -1566,10 +1610,12 @@ function initSlotMachine() {
     for (let r = 0; r < 8; r++) {
       foods.forEach((name, idx) => {
         const item = document.createElement('div');
-        item.className = 'slot-item' + (state.myMenu.includes(name) ? ' in-my-menu' : '');
+        const inMyMenu = state.myMenu.includes(name);
+        item.className = 'slot-item' + (inMyMenu ? ' in-my-menu' : '');
         item.textContent = name;
         item.dataset.index = idx;
-        item.ondblclick = () => { toggleMyMenu(name); };
+        item.title = inMyMenu ? '单击移出我的菜单' : '单击加入我的菜单';
+        item.onclick = (e) => { e.stopPropagation(); toggleMyMenu(name); };
         strip.appendChild(item);
       });
     }
@@ -1871,6 +1917,12 @@ function toggleMyMenu(name) {
   } else {
     state.myMenu.push(name);
   }
+  saveState();
+  renderSlotMachine();
+}
+
+function clearMyMenu() {
+  state.myMenu = [];
   saveState();
   renderSlotMachine();
 }
