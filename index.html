@@ -30,7 +30,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px 20px 32px;
+  padding: 20px 20px 40px;
   position: relative;
   overflow-x: hidden;
   background-image: radial-gradient(circle, #CBC0AE 1px, transparent 1px);
@@ -326,7 +326,7 @@ h1 {
 .slot-container {
   position: relative;
   width: 100%;
-  height: 220px;
+  height: 260px;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
@@ -338,7 +338,7 @@ h1 {
 .menu-grid-container {
   position: relative;
   width: 100%;
-  height: 220px;
+  height: 260px;
   z-index: 0;
   pointer-events: auto;
   overflow-y: auto;
@@ -1666,12 +1666,8 @@ function migrateState(raw) {
 
   // v3 → v4: 清空旧默认数据（DEFAULT_FOODS 已改为空）
   if (raw.version < 4) {
-    if (raw.foods && raw.foods.includes('萝卜丝饼')) {
-      raw.foods = [];
-    }
-    if (raw.myMenu && raw.myMenu.includes('萝卜丝饼')) {
-      raw.myMenu = [];
-    }
+    raw.foods = [];
+    raw.myMenu = [];
     raw.version = 4;
   }
 
