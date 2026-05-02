@@ -448,23 +448,28 @@ h1 {
 .share-close:hover { border-color: var(--lacquer); color: var(--lacquer); }
 
 /* ── Hidden share card (for html2canvas) ── */
-.share-card-hidden {
-  position: fixed;
+.share-card-wrapper {
+  position: absolute;
   left: 0;
   top: 0;
-  visibility: hidden;
-  opacity: 0;
-  pointer-events: none;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+.share-card-hidden {
   width: 540px;
+  min-height: 720px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   background: #F6F1E9;
   background-image: radial-gradient(circle, #CBC0AE 0.8px, transparent 0.8px);
   background-size: 20px 20px;
   font-family: 'Shippori Mincho B1', serif;
   color: #23201B;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 80px 48px 56px;
+  padding: 48px;
+  box-sizing: border-box;
 }
 .sc-label {
   font-size: 12px;
@@ -619,13 +624,15 @@ h1 {
 </div>
 
 <!-- Hidden share card DOM (for html2canvas rendering) -->
-<div class="share-card-hidden" id="share-card">
-  <div class="sc-label" id="sc-label">今儿个吃这个</div>
-  <div class="sc-food" id="sc-food">胡辣汤</div>
-  <div class="sc-fortune" id="sc-fortune">宜热食<br>忌久饿</div>
-  <div class="sc-divider"></div>
-  <div class="sc-brand">吃啥嘞</div>
-  <div class="sc-url">chisha.shameless.top</div>
+<div class="share-card-wrapper">
+  <div class="share-card-hidden" id="share-card">
+    <div class="sc-label" id="sc-label">今儿个吃这个</div>
+    <div class="sc-food" id="sc-food">胡辣汤</div>
+    <div class="sc-fortune" id="sc-fortune">宜热食<br>忌久饿</div>
+    <div class="sc-divider"></div>
+    <div class="sc-brand">吃啥嘞</div>
+    <div class="sc-url">chisha.shameless.top</div>
+  </div>
 </div>
 
 <button class="sound-toggle" id="sound-toggle" onclick="toggleSound()" title="音效开关">♪</button>
@@ -1146,9 +1153,6 @@ async function generateShareImage(type) {
   }
   prepareShareCard(type);
   const card = document.getElementById('share-card');
-  // Temporarily make visible for html2canvas
-  card.style.visibility = 'visible';
-  card.style.opacity = '1';
 
   try {
     const canvas = await html2canvas(card, {
@@ -1161,9 +1165,6 @@ async function generateShareImage(type) {
     showShareOverlay(dataUrl);
   } catch(e) {
     console.error('Share image generation failed:', e);
-  } finally {
-    card.style.visibility = 'hidden';
-    card.style.opacity = '0';
   }
 }
 
