@@ -1338,9 +1338,8 @@ function toChineseUpper(n) {
 }
 
 function getSignNumber() {
-  const today = new Date().toISOString().slice(0, 10);
-  const seed = Math.abs(hashCode(today));
-  return (seed % FORTUNES.length) + 1;
+  // 每次问签随机生成签数（1-100），保持仪式感
+  return Math.floor(Math.random() * 100) + 1;
 }
 
 function renderSignNumber() {
