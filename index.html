@@ -1536,7 +1536,7 @@ h1 {
 <div class="category-overlay" id="category-overlay" onclick="closeCategoryPicker(event)">
   <div class="category-panel">
     <div class="category-header">
-      <div class="category-title">选菜入单</div>
+      <div class="category-title">加入我的菜单</div>
       <button class="category-close" onclick="closeCategoryPicker()">关闭</button>
     </div>
     <div class="category-list" id="category-list"></div>
@@ -1549,7 +1549,7 @@ h1 {
    ═══════════════════════════════════════ */
 
 const STORAGE_KEY = 'chisha-state';
-const STATE_VERSION = 4;
+const STATE_VERSION = 5;
 
 const DEFAULT_FOODS = [];
 
@@ -1651,8 +1651,8 @@ const FOOD_TIPS = {
 function defaultState() {
   return {
     version: STATE_VERSION,
-    foods: [...DEFAULT_FOODS],
     myMenu: [],
+    excludedFoods: [],
     customTips: {},
     customRecipes: {},
     history: {
@@ -1696,6 +1696,13 @@ function migrateState(raw) {
     raw.version = 4;
   }
 
+  // v4 → v5: 废弃 foods，全部选项固定为 ALL_FOODS，引入 excludedFoods
+  if (raw.version < 5) {
+    raw.excludedFoods = [];
+    delete raw.foods;
+    raw.version = 5;
+  }
+
   return raw;
 }
 
@@ -1722,12 +1729,8 @@ let currentPool = 'all'; // 'all' | 'myMenu'
 
 function getFoods() {
   if (currentPool === 'myMenu') return state.myMenu;
-  // 全部选项 = foods + myMenu 叠加，去重
-  const all = [...state.foods];
-  state.myMenu.forEach(name => {
-    if (!all.includes(name)) all.push(name);
-  });
-  return all;
+  // 全部选项 = 所有预设菜 - 被排除的
+  return ALL_FOODS.filter(name => !state.excludedFoods.includes(name));
 }
 
 /* ═══════════════════════════════════════
@@ -1881,7 +1884,7 @@ function initSlotMachine() {
     container.innerHTML = '<div class="slot-empty">' +
       (currentPool === 'myMenu'
         ? '我的菜单是空的'
-        : '暂无可选菜品') +
+        : state.excludedFoods.length > 0 ? '菜品已全部排除，点击「重」恢复' : '暂无可选菜品') +
       '</div>';
     return;
   }
@@ -1927,7 +1930,7 @@ function initSlotMachine() {
         item.className = 'slot-item';
         item.textContent = name;
         item.dataset.index = idx;
-        item.title = '单击移出';
+        item.title = '单击排除';
         item.onclick = (e) => { e.stopPropagation(); toggleFoodInPool(name); };
         strip.appendChild(item);
       });
@@ -1952,13 +1955,12 @@ function toggleFoodInPool(name) {
       state.myMenu.push(name);
     }
   } else {
-    // 全部选项模式下只操作 state.foods
-    const idx = state.foods.indexOf(name);
+    // 全部选项模式下：排除/恢复
+    const idx = state.excludedFoods.indexOf(name);
     if (idx >= 0) {
-      if (state.foods.length <= 1 && state.myMenu.length === 0) return;
-      state.foods.splice(idx, 1);
+      state.excludedFoods.splice(idx, 1);
     } else {
-      state.foods.push(name);
+      state.excludedFoods.push(name);
     }
   }
   saveState();
@@ -2142,22 +2144,9 @@ function removeFood(index) {
   const foods = getFoods();
   const dishName = foods[index];
 
-  // 全部选项至少保留一道菜；我的菜单可以清空
-  if (currentPool === 'all' && foods.length <= 1) return;
+  if (currentPool === 'myMenu' && foods.length <= 1) return;
 
-  if (currentPool === 'all') {
-    // 优先从 foods 移除，不在 foods 则从 myMenu 移除
-    const fIdx = state.foods.indexOf(dishName);
-    if (fIdx >= 0) {
-      state.foods.splice(fIdx, 1);
-    } else {
-      const mIdx = state.myMenu.indexOf(dishName);
-      if (mIdx >= 0) state.myMenu.splice(mIdx, 1);
-    }
-  } else {
-    // 从当前池中删除
-    foods.splice(index, 1);
-  }
+  foods.splice(index, 1);
 
   if (current === index) {
     current = -1;
@@ -2182,7 +2171,7 @@ function promptAddToMyMenu() {
   const name = prompt('添加菜品到我的菜单');
   if (name && name.trim()) {
     const val = name.trim();
-    if (state.myMenu.includes(val) || state.foods.includes(val)) {
+    if (state.myMenu.includes(val) || ALL_FOODS.includes(val)) {
       showToast('「' + val + '」已在菜单中');
       return;
     }
@@ -2239,6 +2228,19 @@ function switchPool(pool) {
   currentPool = pool;
   document.getElementById('tab-all').classList.toggle('active', pool === 'all');
   document.getElementById('tab-my').classList.toggle('active', pool === 'myMenu');
+
+  // 切换「选/重」按钮
+  const catBtn = document.getElementById('category-toggle');
+  if (pool === 'myMenu') {
+    catBtn.textContent = '选';
+    catBtn.title = '选菜入单';
+    catBtn.onclick = showCategoryPicker;
+  } else {
+    catBtn.textContent = '重';
+    catBtn.title = '重置排除';
+    catBtn.onclick = resetExcluded;
+  }
+
   // 切换后如果当前高亮的菜不在新池中，清除高亮
   const foods = getFoods();
   if (current !== -1 && (current >= foods.length || foods[current] !== document.getElementById('result').textContent)) {
@@ -2274,6 +2276,17 @@ function clearMyMenu() {
   renderSlotMachine();
 }
 
+function resetExcluded() {
+  if (state.excludedFoods.length === 0) {
+    showToast('没有排除的菜品');
+    return;
+  }
+  state.excludedFoods = [];
+  saveState();
+  renderSlotMachine();
+  showToast('已恢复全部菜品');
+}
+
 /* ── Category Picker ── */
 let categorySelectedIndex = 0;
 let categorySelectedItems = new Set();
@@ -2300,10 +2313,10 @@ document.addEventListener('keydown', e => {
 function renderCategoryList() {
   const list = document.getElementById('category-list');
   list.innerHTML = FOOD_CATEGORIES.map((cat, i) => {
-    const alreadyInPool = cat.items.filter(n => state.foods.includes(n)).length;
-    const allInPool = alreadyInPool === cat.items.length;
-    const actionText = allInPool ? '已全加入' : (alreadyInPool > 0 ? '追加 +' + (cat.items.length - alreadyInPool) : '加入 +' + cat.items.length);
-    return '<div class="category-row' + (allInPool ? ' added' : '') + '" onclick="toggleCategoryToMyMenu(' + i + ')">' +
+    const alreadyInMenu = cat.items.filter(n => state.myMenu.includes(n)).length;
+    const allInMenu = alreadyInMenu === cat.items.length;
+    const actionText = allInMenu ? '已全加入' : (alreadyInMenu > 0 ? '追加 +' + (cat.items.length - alreadyInMenu) : '加入 +' + cat.items.length);
+    return '<div class="category-row' + (allInMenu ? ' added' : '') + '" onclick="toggleCategoryToMyMenu(' + i + ')">' +
       '<span class="category-row-name">' + cat.name + '</span>' +
       '<span class="category-row-meta">' +
         '<span class="category-row-count">' + cat.items.length + ' 道</span>' +
@@ -2317,19 +2330,19 @@ function toggleCategoryToMyMenu(index) {
   const cat = FOOD_CATEGORIES[index];
   if (!cat) return;
 
-  const allInPool = cat.items.every(name => state.foods.includes(name));
+  const allInMenu = cat.items.every(name => state.myMenu.includes(name));
 
-  if (allInPool) {
-    // 全部已在池子中，点击取消加入
+  if (allInMenu) {
+    // 从菜单中移除该分类所有菜
     cat.items.forEach(name => {
-      const idx = state.foods.indexOf(name);
-      if (idx >= 0 && state.foods.length > 1) state.foods.splice(idx, 1);
+      const idx = state.myMenu.indexOf(name);
+      if (idx >= 0 && state.myMenu.length > 1) state.myMenu.splice(idx, 1);
     });
   } else {
-    // 追加未在池子中的菜
+    // 追加未在菜单中的菜
     cat.items.forEach(name => {
-      if (!state.foods.includes(name)) {
-        state.foods.push(name);
+      if (!state.myMenu.includes(name)) {
+        state.myMenu.push(name);
       }
     });
   }
@@ -3184,6 +3197,12 @@ window.previewSolarTheme = function(term) {
   document.documentElement.style.setProperty('--paper', papers[term] || '#F6F1E9');
   console.log('Previewing theme for:', term, 'paper:', papers[term] || '#F6F1E9');
 };
+
+// 初始化分类按钮状态（默认全部选项下显示「重」）
+const catBtnInit = document.getElementById('category-toggle');
+catBtnInit.textContent = '重';
+catBtnInit.title = '重置排除';
+catBtnInit.onclick = resetExcluded;
 
 renderSlotMachine();
 renderSoundToggle();
