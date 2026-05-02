@@ -1571,8 +1571,6 @@ function initParticles() {
   const foods = getFoods();
   const w = window.innerWidth;
   const h = window.innerHeight;
-  const zoneTop = h * 0.48; // 主要分布在中下部
-
   foods.forEach((name, i) => {
     const el = makeParticle(name, i);
     container.appendChild(el);
@@ -1584,9 +1582,9 @@ function initParticles() {
 
     const margin = 40;
 
-    // 主要在中下部随机分布，偶尔飘到上方
+    // 全屏分布
     const x = margin + Math.random() * (w - pw - margin * 2);
-    const y = zoneTop + Math.random() * (h - zoneTop - ph - margin);
+    const y = margin + Math.random() * (h - ph - margin * 2);
 
     particles.push({
       name, index: i,
@@ -1605,9 +1603,17 @@ function triggerParticleStorm() {
   stormTimer = 0;
 
   particles.forEach(p => {
-    // 向上爆发，像签被抛起
-    p.vx = (Math.random() - 0.5) * 10;
-    p.vy = -6 - Math.random() * 10;
+    // 向外爆发，像签筒炸裂
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight * 0.75;
+    const px = p.x + p.width / 2;
+    const py = p.y + p.height / 2;
+    const dx = px - centerX;
+    const dy = py - centerY;
+    const angle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 1.0;
+    const speed = 7 + Math.random() * 10;
+    p.vx = Math.cos(angle) * speed;
+    p.vy = Math.sin(angle) * speed - 4;
   });
 }
 
@@ -1620,7 +1626,7 @@ function updateParticles() {
   // 风暴状态更新
   if (stormActive) {
     stormTimer++;
-    if (stormTimer > 80) stormActive = false;
+    if (stormTimer > 100) stormActive = false;
   }
 
   particles.forEach(p => {
@@ -1634,18 +1640,22 @@ function updateParticles() {
     if (p.y < 0) { p.y = 0; p.vy = Math.abs(p.vy) * 0.8; }
     if (p.y > h - p.height) { p.y = h - p.height; p.vy = -Math.abs(p.vy) * 0.8; }
 
-    // 风暴：签筒内翻飞
+    // 风暴：签筒炸裂，签向全屏飞散
     if (stormActive) {
       const centerX = w / 2;
+      const centerY = h * 0.75;
       const px = p.x + p.width / 2;
-      // 向中心线聚拢（筒壁约束）
-      p.vx += (centerX - px) * 0.004;
-      // 轻微重力让签回落
-      p.vy += 0.07;
-      // 底部增强反弹，像筒底
-      if (p.y > h - p.height - 10) {
-        p.vy = -Math.abs(p.vy) * 0.85;
+      const py = p.y + p.height / 2;
+      const dx = px - centerX;
+      const dy = py - centerY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 1) {
+        // 离心力：向外甩
+        p.vx += (dx / dist) * 0.15;
+        p.vy += (dy / dist) * 0.15;
       }
+      // 轻微重力
+      p.vy += 0.04;
     }
 
     // 鼠标/触摸推开
