@@ -671,30 +671,6 @@ h1 {
 }
 .share-close:hover { border-color: var(--lacquer); color: var(--lacquer); }
 
-.share-tabs {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  margin-bottom: 12px;
-}
-.share-tab {
-  background: none;
-  border: 1px solid var(--paper-dark);
-  padding: 4px 16px;
-  font-size: 11px;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
-  color: var(--ink-light);
-  letter-spacing: 0.1em;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.share-tab:hover { border-color: var(--lacquer); color: var(--lacquer); }
-.share-tab.active {
-  background: var(--lacquer);
-  border-color: var(--lacquer);
-  color: #FDF8F2;
-}
-
 /* ── Cook loading animation ── */
 .cook-loading {
   text-align: center;
@@ -725,7 +701,7 @@ h1 {
   50% { opacity: 0.7; transform: scale(1.3); }
 }
 
-/* ── Hidden share card (for html2canvas) ── */
+/* ── Hidden long share card (for html2canvas) ── */
 .share-card-wrapper {
   position: absolute;
   left: 0;
@@ -734,13 +710,8 @@ h1 {
   height: 0;
   overflow: hidden;
 }
-.share-card-hidden {
+.share-long-card {
   width: 540px;
-  min-height: 720px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   background: #F6F1E9;
   background-image: radial-gradient(circle, #CBC0AE 0.8px, transparent 0.8px);
   background-size: 20px 20px;
@@ -749,7 +720,15 @@ h1 {
   padding: 48px;
   box-sizing: border-box;
 }
-.sc-label {
+
+/* Fortune section (top) */
+.slc-fortune-section {
+  text-align: center;
+  padding-bottom: 40px;
+  border-bottom: 1px solid #E8DFD0;
+  margin-bottom: 40px;
+}
+.slc-label {
   font-size: 12px;
   color: #A89F94;
   letter-spacing: 0.35em;
@@ -757,126 +736,85 @@ h1 {
   font-weight: 300;
   font-family: 'Zen Kaku Gothic New', sans-serif;
 }
-.sc-food {
+.slc-food {
   font-size: 56px;
   font-weight: 600;
   color: #8A3D27;
   letter-spacing: 0.12em;
   line-height: 1.3;
 }
-.sc-fortune {
+.slc-fortune {
   font-size: 14px;
   color: #6B6055;
   letter-spacing: 0.06em;
   line-height: 1.6;
   margin-top: 10px;
-  margin-bottom: 56px;
   text-align: center;
 }
-.sc-fortune .sc-tip-sub {
+.slc-fortune .slc-tip-sub {
   display: block;
   font-size: 12px;
   color: #A89F94;
   letter-spacing: 0.06em;
+  margin-top: 4px;
 }
-.sc-divider {
+.slc-divider {
   width: 32px;
   height: 1px;
   background: #E8DFD0;
-  margin-bottom: 24px;
-}
-.sc-brand {
-  font-size: 13px;
-  color: #A89F94;
-  letter-spacing: 0.18em;
-  margin-bottom: 6px;
-}
-.sc-url {
-  font-size: 10px;
-  color: #CBC0AE;
-  letter-spacing: 0.12em;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
-  font-weight: 300;
-}
-.sc-date {
-  margin-top: 24px;
-  font-size: 10px;
-  color: #CBC0AE;
-  letter-spacing: 0.15em;
-  font-family: 'Shippori Mincho B1', serif;
+  margin: 24px auto 0;
 }
 
-/* ── Hidden cook share card (for html2canvas) ── */
-.cook-share-card {
-  width: 540px;
-  background: #F6F1E9;
-  background-image: radial-gradient(circle, #CBC0AE 0.8px, transparent 0.8px);
-  background-size: 20px 20px;
-  font-family: 'Shippori Mincho B1', serif;
-  color: #23201B;
-  padding: 40px 48px;
-  box-sizing: border-box;
-}
-.csc-header {
-  text-align: center;
-  margin-bottom: 32px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #E8DFD0;
-}
-.csc-title {
-  font-size: 36px;
+/* Cook section (middle) */
+.slc-cook-section { padding-bottom: 40px; }
+.slc-cook-title {
+  font-size: 14px;
+  color: #B85438;
+  letter-spacing: 0.22em;
+  margin-bottom: 24px;
   font-weight: 600;
-  color: #8A3D27;
-  letter-spacing: 0.1em;
-  margin-bottom: 8px;
+  text-align: center;
 }
-.csc-subtitle {
-  font-size: 12px;
-  color: #A89F94;
-  letter-spacing: 0.3em;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
-  font-weight: 300;
-}
-.csc-content {
+.slc-cook-content {
   font-size: 13px;
   line-height: 1.8;
   color: #6B6055;
 }
-.csc-content .cook-section { margin-bottom: 24px; }
-.csc-content .cook-section:last-child { margin-bottom: 0; }
-.csc-content .cook-section-title {
+.slc-cook-content .cook-section { margin-bottom: 24px; }
+.slc-cook-content .cook-section:last-child { margin-bottom: 0; }
+.slc-cook-content .cook-section-title {
   font-size: 11px;
   color: #B85438;
   letter-spacing: 0.22em;
   margin-bottom: 12px;
   font-weight: 600;
 }
-.csc-content .cook-materials-list {
+.slc-cook-content .cook-materials-list {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 20px;
 }
-.csc-content .cook-material-item {
+.slc-cook-content .cook-material-item {
   font-size: 12.5px;
   display: flex;
   gap: 6px;
   align-items: baseline;
 }
-.csc-content .cook-material-name { color: #23201B; font-weight: 500; }
-.csc-content .cook-material-amount { color: #A89F94; font-size: 11px; }
-.csc-content .cook-step {
+.slc-cook-content .cook-material-name { color: #23201B; font-weight: 500; }
+.slc-cook-content .cook-material-amount { color: #A89F94; font-size: 11px; }
+.slc-cook-content .cook-step {
   display: flex;
   gap: 14px;
   margin-bottom: 18px;
   padding-bottom: 16px;
   border-bottom: 1px dashed #E8DFD0;
 }
-.csc-content .cook-step:last-child {
+.slc-cook-content .cook-step:last-child {
   margin-bottom: 0;
   padding-bottom: 0;
   border-bottom: none;
 }
-.csc-content .cook-step-num {
+.slc-cook-content .cook-step-num {
   font-family: 'Shippori Mincho B1', serif;
   font-size: 18px;
   color: #B85438;
@@ -886,28 +824,28 @@ h1 {
   text-align: center;
   opacity: 0.8;
 }
-.csc-content .cook-step-body { flex: 1; }
-.csc-content .cook-step-title {
+.slc-cook-content .cook-step-body { flex: 1; }
+.slc-cook-content .cook-step-title {
   font-size: 13.5px;
   color: #23201B;
   font-weight: 600;
   margin-bottom: 4px;
   letter-spacing: 0.04em;
 }
-.csc-content .cook-step-desc {
+.slc-cook-content .cook-step-desc {
   font-size: 12.5px;
   color: #6B6055;
   line-height: 1.7;
 }
-.csc-content .cook-step-why {
+.slc-cook-content .cook-step-why {
   font-size: 11.5px;
   color: #A89F94;
   margin-top: 4px;
   font-style: italic;
   letter-spacing: 0.03em;
 }
-.csc-content .cook-step-why::before { content: '→ '; color: #E8C4AE; }
-.csc-content .cook-step-heat {
+.slc-cook-content .cook-step-why::before { content: '→ '; color: #E8C4AE; }
+.slc-cook-content .cook-step-heat {
   font-size: 11px;
   color: #8A3D27;
   margin-top: 6px;
@@ -918,46 +856,47 @@ h1 {
   border-radius: 2px;
   border: 1px solid #E8DFD0;
 }
-.csc-content .cook-tips-list {
+.slc-cook-content .cook-tips-list {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
-.csc-content .cook-tips-item {
+.slc-cook-content .cook-tips-item {
   font-size: 12px;
   color: #6B6055;
   line-height: 1.7;
   padding-left: 16px;
   position: relative;
 }
-.csc-content .cook-tips-item::before {
+.slc-cook-content .cook-tips-item::before {
   content: '·';
   position: absolute;
   left: 2px;
   color: #B85438;
   font-weight: 600;
 }
-.csc-footer {
-  margin-top: 32px;
-  padding-top: 20px;
-  border-top: 1px solid #E8DFD0;
+
+/* Footer */
+.slc-footer {
   text-align: center;
+  padding-top: 32px;
+  border-top: 1px solid #E8DFD0;
 }
-.csc-brand {
+.slc-brand {
   font-size: 13px;
   color: #A89F94;
   letter-spacing: 0.18em;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
-.csc-url {
+.slc-url {
   font-size: 10px;
   color: #CBC0AE;
   letter-spacing: 0.12em;
   font-family: 'Zen Kaku Gothic New', sans-serif;
   font-weight: 300;
 }
-.csc-date {
-  margin-top: 12px;
+.slc-date {
+  margin-top: 24px;
   font-size: 10px;
   color: #CBC0AE;
   letter-spacing: 0.15em;
@@ -1075,37 +1014,29 @@ h1 {
 <!-- Share overlay -->
 <div class="share-overlay" id="share-overlay" onclick="closeShareOverlay(event)">
   <div class="share-preview">
-    <div class="share-tabs">
-      <button class="share-tab active" data-tab="fortune" onclick="switchShareTab('fortune')">签签图</button>
-      <button class="share-tab" data-tab="cook" onclick="switchShareTab('cook')">做法图</button>
-    </div>
     <img id="share-preview-img" src="" alt="分享图预览">
     <div class="share-hint" id="share-hint">长按图片保存 · 分享给朋友</div>
     <button class="share-close" onclick="closeShareOverlay()">关闭</button>
   </div>
 </div>
 
-<!-- Hidden share card DOM (for html2canvas rendering) -->
+<!-- Hidden long share card (for html2canvas rendering) -->
 <div class="share-card-wrapper">
-  <div class="share-card-hidden" id="share-card">
-    <div class="sc-label" id="sc-label">今儿个吃这个</div>
-    <div class="sc-food" id="sc-food">胡辣汤</div>
-    <div class="sc-fortune" id="sc-fortune">宜热食<br>忌久饿</div>
-    <div class="sc-divider"></div>
-    <div class="sc-brand">吃啥嘞</div>
-    <div class="sc-url">chisha.shameless.top</div>
-    <div class="sc-date" id="sc-date"></div>
-  </div>
-  <div class="cook-share-card" id="cook-share-card">
-    <div class="csc-header">
-      <div class="csc-title" id="csc-title"></div>
-      <div class="csc-subtitle">做法</div>
+  <div class="share-long-card" id="share-long-card">
+    <div class="slc-fortune-section">
+      <div class="slc-label">今儿个吃这个</div>
+      <div class="slc-food" id="slc-food">胡辣汤</div>
+      <div class="slc-fortune" id="slc-fortune"></div>
+      <div class="slc-divider"></div>
     </div>
-    <div class="csc-content" id="csc-content"></div>
-    <div class="csc-footer">
-      <div class="csc-brand">吃啥嘞</div>
-      <div class="csc-url">chisha.shameless.top</div>
-      <div class="csc-date" id="csc-date"></div>
+    <div class="slc-cook-section">
+      <div class="slc-cook-title">做法</div>
+      <div class="slc-cook-content" id="slc-cook-content"></div>
+    </div>
+    <div class="slc-footer">
+      <div class="slc-brand">吃啥嘞</div>
+      <div class="slc-url">chisha.shameless.top</div>
+      <div class="slc-date" id="slc-date"></div>
     </div>
   </div>
 </div>
@@ -1892,41 +1823,29 @@ function showShareRow() {
    Share / 分享图系统 (v1.2)
    ═══════════════════════════════════════ */
 
-let shareImages = { fortune: null, cook: null };
-let currentShareTab = 'fortune';
-
-function prepareFortuneCard(dish) {
-  const label = document.getElementById('sc-label');
-  const food = document.getElementById('sc-food');
-  const fortune = document.getElementById('sc-fortune');
-  const dateEl = document.getElementById('sc-date');
+function prepareLongShareCard(dish) {
+  const food = document.getElementById('slc-food');
+  const fortune = document.getElementById('slc-fortune');
+  const dateEl = document.getElementById('slc-date');
+  const cookContent = document.getElementById('slc-cook-content');
 
   const d = new Date();
   dateEl.textContent = d.getFullYear() + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0');
 
-  label.textContent = '今儿个吃这个';
   food.textContent = dish;
   const foodTip = FOOD_TIPS[dish] || state.customTips[dish] || '';
   fortune.innerHTML = foodTip +
-    '<span class="sc-tip-sub">' + getTimeTip() + ' · ' + getSolarTip() + '</span>';
+    '<span class="slc-tip-sub">' + getTimeTip() + ' · ' + getSolarTip() + '</span>';
+
+  // Cook content: use cached or fallback, no API blocking
+  let recipe = state.customRecipes[dish] || getCookCache(dish);
+  if (!recipe) recipe = getCookFallback(dish);
+  renderCook(recipe, cookContent);
 }
 
-function prepareCookShareCard(dish, recipe) {
-  const title = document.getElementById('csc-title');
-  const content = document.getElementById('csc-content');
-  const dateEl = document.getElementById('csc-date');
-
-  title.textContent = dish;
-
-  const d = new Date();
-  dateEl.textContent = d.getFullYear() + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0');
-
-  renderCook(recipe, content);
-}
-
-async function generateFortuneImage() {
+async function generateLongShareImage() {
   if (typeof html2canvas === 'undefined') return null;
-  const card = document.getElementById('share-card');
+  const card = document.getElementById('share-long-card');
   try {
     const canvas = await html2canvas(card, {
       backgroundColor: '#F6F1E9',
@@ -1936,47 +1855,9 @@ async function generateFortuneImage() {
     });
     return canvas.toDataURL('image/png');
   } catch(e) {
-    console.error('Fortune image generation failed:', e);
+    console.error('Share image generation failed:', e);
     return null;
   }
-}
-
-async function generateCookImage() {
-  if (typeof html2canvas === 'undefined') return null;
-  const card = document.getElementById('cook-share-card');
-  try {
-    const canvas = await html2canvas(card, {
-      backgroundColor: '#F6F1E9',
-      scale: 2,
-      useCORS: true,
-      logging: false
-    });
-    return canvas.toDataURL('image/png');
-  } catch(e) {
-    console.error('Cook image generation failed:', e);
-    return null;
-  }
-}
-
-function updateSharePreview() {
-  const img = document.getElementById('share-preview-img');
-  const hint = document.getElementById('share-hint');
-  const tabs = document.querySelectorAll('.share-tab');
-
-  img.src = shareImages[currentShareTab] || '';
-  hint.textContent = currentShareTab === 'fortune'
-    ? '长按图片保存 · 分享给朋友'
-    : '长按保存做法长图';
-
-  tabs.forEach(tab => {
-    tab.classList.toggle('active', tab.dataset.tab === currentShareTab);
-  });
-}
-
-function switchShareTab(tab) {
-  if (!shareImages[tab]) return;
-  currentShareTab = tab;
-  updateSharePreview();
 }
 
 function showShareOverlay() {
@@ -1987,9 +1868,6 @@ function showShareOverlay() {
 function closeShareOverlay(e) {
   if (e && e.target !== document.getElementById('share-overlay') && !e.target.closest('.share-close')) return;
   document.getElementById('share-overlay').classList.remove('active');
-  // Reset state
-  shareImages = { fortune: null, cook: null };
-  currentShareTab = 'fortune';
   document.getElementById('share-preview-img').src = '';
 }
 
@@ -1997,57 +1875,21 @@ async function shareFood() {
   const dish = document.getElementById('result').textContent;
   if (dish === '待君问签') return;
 
-  // Show overlay with loading state
   const img = document.getElementById('share-preview-img');
   const hint = document.getElementById('share-hint');
   img.src = '';
   hint.textContent = '生成中…';
   showShareOverlay();
 
-  // 1. Generate fortune image
-  prepareFortuneCard(dish);
-  const fortuneImg = await generateFortuneImage();
+  prepareLongShareCard(dish);
+  const imgSrc = await generateLongShareImage();
 
-  // 2. Prepare cook content (fetch if not cached)
-  let recipe = state.customRecipes[dish] || getCookCache(dish);
-  if (!recipe) {
-    try {
-      const res = await fetch('/api/cook', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dish })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.tip) {
-          state.customTips[dish] = data.tip;
-          // Update displayed tip if visible
-          const tipEl = document.getElementById('result-tip');
-          if (tipEl.classList.contains('visible')) {
-            const tipText = FOOD_TIPS[dish] || state.customTips[dish] || '';
-            tipEl.innerHTML = '<span class="tip-main">' + escapeHtml(tipText) + '</span>' +
-              '<span class="tip-sub">' + getTimeTip() + ' · ' + getSolarTip() + '</span>';
-          }
-        }
-        if (data.recipe) {
-          recipe = data.recipe;
-          state.customRecipes[dish] = recipe;
-          setCookCache(dish, recipe);
-        }
-        saveState();
-      }
-    } catch (e) {
-      // Silent fail
-    }
+  if (imgSrc) {
+    img.src = imgSrc;
+    hint.textContent = '长按图片保存 · 分享给朋友';
+  } else {
+    hint.textContent = '生成失败，请重试';
   }
-  if (!recipe) recipe = getCookFallback(dish);
-
-  prepareCookShareCard(dish, recipe);
-  const cookImg = await generateCookImage();
-
-  shareImages = { fortune: fortuneImg, cook: cookImg };
-  currentShareTab = 'fortune';
-  updateSharePreview();
 }
 
 /* ═══════════════════════════════════════
