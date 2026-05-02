@@ -30,7 +30,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 36px 24px 48px;
+  padding: 20px 20px 32px;
   position: relative;
   overflow-x: hidden;
   background-image: radial-gradient(circle, #CBC0AE 1px, transparent 1px);
@@ -58,7 +58,7 @@ body::before {
 }
 
 /* ── Header ── */
-.header { text-align: center; margin-bottom: 24px; }
+.header { text-align: center; margin-bottom: 12px; }
 
 .mark {
   display: flex;
@@ -80,7 +80,7 @@ h1 {
 }
 
 /* ── Result card ── */
-.result-wrap { width: 100%; margin-bottom: 16px; }
+.result-wrap { width: 100%; margin-bottom: 8px; }
 
 .result-card {
   background: var(--card);
@@ -230,7 +230,7 @@ h1 {
 }
 
 /* ── Button ── */
-.btn-wrap { margin-bottom: 24px; }
+.btn-wrap { margin-bottom: 16px; }
 
 .btn {
   display: inline-flex;
@@ -334,7 +334,6 @@ h1 {
   justify-content: center;
   align-items: center;
   gap: 14px;
-  margin-top: 8px;
 }
 .menu-grid-container {
   position: relative;
@@ -351,7 +350,6 @@ h1 {
   gap: 10px 12px;
   mask-image: linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%);
-  margin-top: 8px;
 }
 .menu-grid-item {
   padding: 6px 14px;
@@ -1308,41 +1306,33 @@ h1 {
 }
 .category-row.added:hover .category-row-action { color: var(--lacquer); }
 
-.category-custom {
+.menu-grid-empty {
+  width: 100%;
+  height: 100%;
   display: flex;
-  gap: 8px;
-  padding: 12px 20px;
-  border-top: 1px solid var(--paper-dark);
-  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
 }
-.category-custom-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid var(--paper-dark);
-  padding: 4px 6px;
-  font-size: 13px;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
-  color: var(--ink);
-  outline: none;
-  letter-spacing: 0.06em;
-  transition: border-color 0.2s;
-}
-.category-custom-input::placeholder { color: var(--ink-light); }
-.category-custom-input:focus { border-color: var(--lacquer); }
-.category-custom-btn {
-  background: none;
+.menu-grid-add {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
   border: 1px solid var(--paper-dark);
-  padding: 4px 14px;
-  font-size: 12px;
+  background: var(--card);
   color: var(--ink-mid);
-  cursor: pointer;
+  font-size: 22px;
   font-family: 'Zen Kaku Gothic New', sans-serif;
-  letter-spacing: 0.1em;
-  transition: border-color 0.15s, color 0.15s;
-  white-space: nowrap;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s, color 0.15s, transform 0.15s;
 }
-.category-custom-btn:hover { border-color: var(--lacquer); color: var(--lacquer); }
+.menu-grid-add:hover {
+  border-color: var(--lacquer);
+  color: var(--lacquer);
+  transform: scale(1.08);
+}
 
 @media (max-width: 480px) {
   .share-slider img { width: 100%; }
@@ -1398,8 +1388,10 @@ h1 {
   .category-row {
     padding: 11px 14px;
   }
-  .category-custom {
-    padding: 10px 14px;
+  .menu-grid-add {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
   }
 }
 </style>
@@ -1427,6 +1419,9 @@ h1 {
       <div class="sign-number" id="sign-number"></div>
     </div>
   </div>
+
+  <!-- Slot machine / Menu grid -->
+  <div class="particle-container" id="particle-container"></div>
 
   <div class="fortune-wrap" id="fortune-wrap">
     <div class="fortune-text" id="fortune-text"></div>
@@ -1457,9 +1452,6 @@ h1 {
   <div class="cook-wrap" id="cook-wrap">
     <div class="cook-content" id="cook-content"></div>
   </div>
-
-  <!-- Slot machine / Menu grid -->
-  <div class="particle-container" id="particle-container"></div>
 </div>
 
 <!-- Share overlay -->
@@ -1523,10 +1515,6 @@ h1 {
       <button class="category-close" onclick="closeCategoryPicker()">关闭</button>
     </div>
     <div class="category-list" id="category-list"></div>
-    <div class="category-custom">
-      <input class="category-custom-input" id="category-custom-input" type="text" placeholder="自定义菜品…" maxlength="12">
-      <button class="category-custom-btn" onclick="addFoodFromPicker()">添加</button>
-    </div>
   </div>
 </div>
 
@@ -1536,7 +1524,7 @@ h1 {
    ═══════════════════════════════════════ */
 
 const STORAGE_KEY = 'chisha-state';
-const STATE_VERSION = 3;
+const STATE_VERSION = 4;
 
 const DEFAULT_FOODS = [];
 
@@ -1675,6 +1663,17 @@ function migrateState(raw) {
   if (!raw.customRecipes) raw.customRecipes = {};
   if (!raw.history.draws) raw.history.draws = [];
   if (!raw.settings) raw.settings = { sound: true };
+
+  // v3 → v4: 清空旧默认数据（DEFAULT_FOODS 已改为空）
+  if (raw.version < 4) {
+    if (raw.foods && raw.foods.includes('萝卜丝饼')) {
+      raw.foods = [];
+    }
+    if (raw.myMenu && raw.myMenu.includes('萝卜丝饼')) {
+      raw.myMenu = [];
+    }
+    raw.version = 4;
+  }
 
   return raw;
 }
@@ -1869,6 +1868,10 @@ function initSlotMachine() {
   // 我的菜单模式下显示简洁网格列表
   if (currentPool === 'myMenu') {
     container.className = 'menu-grid-container';
+    if (foods.length === 0) {
+      container.innerHTML = '<div class="menu-grid-empty"><button class="menu-grid-add" onclick="promptAddToMyMenu()" title="添加菜品">＋</button></div>';
+      return;
+    }
     foods.forEach((name, idx) => {
       const item = document.createElement('div');
       item.className = 'menu-grid-item';
@@ -2154,37 +2157,20 @@ function removeFood(index) {
   saveState();
 }
 
-function addFoodFromPicker() {
-  addFoodFromInput(document.getElementById('category-custom-input'));
-}
-
-function addFoodFromInput(input) {
-  if (!input) return;
-  const val = input.value.trim();
-  if (!val) {
-    input.style.borderColor = 'var(--lacquer)';
-    setTimeout(() => { input.style.borderColor = ''; }, 400);
-    return;
-  }
-  if (state.foods.includes(val) || state.myMenu.includes(val)) {
-    input.value = '';
-    input.style.borderColor = 'var(--lacquer)';
-    setTimeout(() => { input.style.borderColor = ''; }, 400);
-    return;
-  }
-  // 只添加到当前激活的池子
-  if (currentPool === 'all') {
-    state.foods.push(val);
-  } else {
+function promptAddToMyMenu() {
+  const name = prompt('添加菜品到我的菜单');
+  if (name && name.trim()) {
+    const val = name.trim();
+    if (state.myMenu.includes(val) || state.foods.includes(val)) {
+      showToast('「' + val + '」已在菜单中');
+      return;
+    }
     state.myMenu.push(val);
-  }
-  input.value = '';
-  renderSlotMachine();
-  saveState();
-
-  // 自定义菜（不在 DEFAULT_FOODS 中）自动请求 LLM 获取描述和做法
-  if (!DEFAULT_FOODS.includes(val)) {
-    fetchCookFor(val);
+    saveState();
+    renderSlotMachine();
+    if (!DEFAULT_FOODS.includes(val)) {
+      fetchCookFor(val);
+    }
   }
 }
 
@@ -2346,9 +2332,7 @@ function showToast(msg) {
   setTimeout(() => el.classList.remove('visible'), 2200);
 }
 
-document.getElementById('category-custom-input')?.addEventListener('keydown', e => {
-  if (e.key === 'Enter') addFoodFromPicker();
-});
+
 
 /* ═══════════════════════════════════════
    Spin Logic
