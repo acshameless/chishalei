@@ -352,7 +352,8 @@ h1 {
 .add-btn:hover { border-color: var(--lacquer); color: var(--lacquer); }
 
 /* ── Food tags ── */
-.particle-container {
+.particle-container,
+.slot-container {
   position: fixed;
   bottom: 0;
   left: 0;
@@ -365,6 +366,44 @@ h1 {
   justify-content: center;
   align-items: center;
   gap: 14px;
+}
+.menu-grid-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 48vh;
+  z-index: 0;
+  pointer-events: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 10px 12px;
+  mask-image: linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%);
+}
+.menu-grid-item {
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  color: var(--ink-mid);
+  border: 1px solid var(--paper-dark);
+  background: var(--card);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  letter-spacing: 0.04em;
+  user-select: none;
+}
+.menu-grid-item:hover {
+  border-color: var(--lacquer);
+  color: var(--lacquer);
+}
+.menu-grid-item:active {
+  transform: scale(0.96);
 }
 .slot-column {
   width: 110px;
@@ -1328,6 +1367,73 @@ h1 {
   border-color: var(--lacquer);
   color: var(--lacquer);
 }
+.category-search-wrap {
+  padding: 8px 16px 0;
+  flex-shrink: 0;
+}
+.category-search {
+  width: 100%;
+  padding: 7px 12px;
+  font-size: 12.5px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  border: 1px solid var(--paper-dark);
+  background: var(--card);
+  color: var(--ink-mid);
+  outline: none;
+  letter-spacing: 0.05em;
+}
+.category-search:focus {
+  border-color: var(--lacquer-lt);
+}
+.category-item .check {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 4px;
+  border: 1px solid var(--paper-dark);
+  vertical-align: middle;
+  position: relative;
+  transition: all 0.2s;
+}
+.category-item.selected .check {
+  background: var(--lacquer);
+  border-color: var(--lacquer);
+}
+.category-item.selected .check::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--card);
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: var(--card);
+  border: 1px solid var(--paper-dark);
+  padding: 10px 24px;
+  font-size: 13px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  color: var(--ink-mid);
+  letter-spacing: 0.1em;
+  z-index: 200;
+  opacity: 0;
+  transition: all 0.3s ease;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
 
 @media (max-width: 420px) {
   .category-grid { grid-template-columns: repeat(2, 1fr); }
@@ -1384,7 +1490,6 @@ h1 {
     <button class="add-btn" onclick="addFood()">＋</button>
     <button class="control-btn" id="category-toggle" onclick="showCategoryPicker()" title="选菜入单">选</button>
     <button class="control-btn" id="history-toggle" onclick="showHistory()" title="抽签历史">历</button>
-    <button class="control-btn" id="sound-toggle" onclick="toggleSound()" title="音效开关">♪</button>
   </div>
 
   <div class="cook-wrap" id="cook-wrap">
@@ -1455,10 +1560,13 @@ h1 {
       <div class="category-title">选菜入单</div>
       <button class="category-close" onclick="closeCategoryPicker()">关闭</button>
     </div>
+    <div class="category-search-wrap">
+      <input class="category-search" id="category-search" type="text" placeholder="搜索菜名…" oninput="filterCategoryGrid(this.value)">
+    </div>
     <div class="category-tabs" id="category-tabs"></div>
     <div class="category-grid" id="category-grid"></div>
     <div class="category-footer">
-      <button class="category-btn" onclick="addSelectedToMyMenu()">加入我的菜单</button>
+      <button class="category-btn" onclick="addSelectedToMyMenu()">加入我的菜单 <span id="category-count"></span></button>
     </div>
   </div>
 </div>
@@ -1527,10 +1635,16 @@ const FOOD_CATEGORIES = [
     items: ['过桥米线','汽锅鸡','野生菌火锅','饵块','乳扇','宣威火腿','丽江腊排骨','菠萝饭','鬼鸡','老奶洋芋','大救驾','竹筒饭','酸汤鱼','丝娃娃','肠旺面','花溪牛肉粉','遵义羊肉粉','水城烙锅','青岩猪脚','盗汗鸡','鸡豆凉粉','糟辣脆皮鱼','乌江豆腐鱼','骟鸡点豆腐','折耳根炒腊肉']
   },
   {
-    name: '京鄂豫沪',
-    items: ['北京烤鸭','京酱肉丝','涮羊肉','炸酱面','豆汁儿','卤煮火烧','炒肝','爆肚','驴打滚','豌豆黄','莲藕排骨汤','热干面','三鲜豆皮','武昌鱼','排骨藕汤','面窝','糊汤粉','烩面','胡辣汤','灌汤包','鲤鱼焙面','道口烧鸡','小笼包','生煎包','红烧肉','响油鳝丝']
+    name: '河南菜',
+    items: ['烩面','胡辣汤','灌汤包','羊肉汤','浆面条','道口烧鸡','鲤鱼焙面','水煎包','炒凉粉','杠子馍','菜馍','油茶','豆腐脑','红焖羊肉','卤面','炸紫酥肉','桶子鸡','烧饼夹肉','焦饼','葱油饼','蒸饺','煎包','板面','扁粉菜','臊子面','信阳焖罐肉','南阳黄牛肉','周口羊肉汤','许昌卤面','新乡烧饼','洛阳水席','开封炒凉粉','逍遥胡辣汤','三鲜烩面','萝卜丝饼']
+  },
+  {
+    name: '京鄂沪',
+    items: ['北京烤鸭','京酱肉丝','涮羊肉','炸酱面','豆汁儿','卤煮火烧','炒肝','爆肚','驴打滚','豌豆黄','芥末墩儿','萨其马','糖火烧','艾窝窝','羊蝎子','莲藕排骨汤','热干面','三鲜豆皮','武昌鱼','排骨藕汤','面窝','糊汤粉','沔阳三蒸','潜江油焖大虾','武汉鸭脖','小笼包','生煎包','红烧肉','响油鳝丝','油爆虾','白斩鸡','四喜烤麸','腌笃鲜','阳春面']
   }
 ];
+
+const ALL_FOODS = [...new Set(FOOD_CATEGORIES.flatMap(c => c.items))];
 
 const FOOD_TIPS = {
   '烩面': '汤面一体，趁热吃更香',
@@ -1573,7 +1687,7 @@ const FOOD_TIPS = {
 function defaultState() {
   return {
     version: STATE_VERSION,
-    foods: [...DEFAULT_FOODS],
+    foods: [...ALL_FOODS],
     myMenu: [],
     customTips: {},
     customRecipes: {},
@@ -1610,6 +1724,16 @@ function migrateState(raw) {
   if (!raw.customRecipes) raw.customRecipes = {};
   if (!raw.history.draws) raw.history.draws = [];
   if (!raw.settings) raw.settings = { sound: true };
+
+  // v3 升级：旧版 foods 只有 35 道中原菜，自动扩展为全部菜品
+  if (raw.foods && raw.foods.length <= 35) {
+    const oldSet = new Set(DEFAULT_FOODS);
+    const currentSet = new Set(raw.foods);
+    if (currentSet.size === raw.foods.length && [...currentSet].every(x => oldSet.has(x))) {
+      raw.foods = [...ALL_FOODS];
+    }
+  }
+
   return raw;
 }
 
@@ -1785,6 +1909,21 @@ function initSlotMachine() {
     return;
   }
 
+  // 我的菜单模式下显示简洁网格列表
+  if (currentPool === 'myMenu') {
+    container.className = 'menu-grid-container';
+    foods.forEach((name, idx) => {
+      const item = document.createElement('div');
+      item.className = 'menu-grid-item';
+      item.textContent = name;
+      item.title = '单击删除';
+      item.onclick = () => removeFood(idx);
+      container.appendChild(item);
+    });
+    return;
+  }
+
+  container.className = 'slot-container';
   const columns = Math.min(5, Math.max(3, Math.floor(window.innerWidth / 130)));
 
   for (let i = 0; i < columns; i++) {
@@ -2126,6 +2265,9 @@ let categorySelectedItems = new Set();
 function showCategoryPicker() {
   categorySelectedIndex = 0;
   categorySelectedItems.clear();
+  const search = document.getElementById('category-search');
+  if (search) search.value = '';
+  updateCategoryCount();
   renderCategoryTabs();
   renderCategoryGrid(0);
   document.getElementById('category-overlay').classList.add('active');
@@ -2136,6 +2278,15 @@ function closeCategoryPicker(e) {
   document.getElementById('category-overlay').classList.remove('active');
 }
 
+// ESC 关闭选菜面板
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeCategoryPicker();
+    closeHistory();
+    closeShareOverlay();
+  }
+});
+
 function renderCategoryTabs() {
   const tabs = document.getElementById('category-tabs');
   tabs.innerHTML = FOOD_CATEGORIES.map((cat, i) =>
@@ -2145,19 +2296,32 @@ function renderCategoryTabs() {
 
 function switchCategoryTab(index) {
   categorySelectedIndex = index;
+  const search = document.getElementById('category-search');
+  if (search) search.value = '';
   renderCategoryTabs();
   renderCategoryGrid(index);
 }
 
-function renderCategoryGrid(index) {
+function renderCategoryGrid(index, filter) {
   const grid = document.getElementById('category-grid');
   const cat = FOOD_CATEGORIES[index];
   if (!cat) { grid.innerHTML = ''; return; }
-  grid.innerHTML = cat.items.map(name => {
-    const inMenu = state.myMenu.includes(name) || state.foods.includes(name);
+  const items = filter
+    ? cat.items.filter(n => n.includes(filter))
+    : cat.items;
+  if (items.length === 0) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--ink-light);font-size:12px;padding:20px;">未找到匹配菜品</div>';
+    return;
+  }
+  grid.innerHTML = items.map(name => {
+    const inMenu = state.myMenu.includes(name);
     const isSelected = categorySelectedItems.has(name);
-    return '<div class="category-item' + (isSelected ? ' selected' : '') + (inMenu ? ' in-menu' : '') + '" onclick="toggleCategoryItem(\'' + name + '\', this)">' + name + '</div>';
+    return '<div class="category-item' + (isSelected ? ' selected' : '') + (inMenu ? ' in-menu' : '') + '" onclick="toggleCategoryItem(\'' + name + '\', this)"><span class="check"></span>' + name + '</div>';
   }).join('');
+}
+
+function filterCategoryGrid(query) {
+  renderCategoryGrid(categorySelectedIndex, query.trim());
 }
 
 function toggleCategoryItem(name, el) {
@@ -2168,6 +2332,12 @@ function toggleCategoryItem(name, el) {
     categorySelectedItems.add(name);
     el.classList.add('selected');
   }
+  updateCategoryCount();
+}
+
+function updateCategoryCount() {
+  const count = document.getElementById('category-count');
+  if (count) count.textContent = categorySelectedItems.size > 0 ? '(' + categorySelectedItems.size + ')' : '';
 }
 
 function addSelectedToMyMenu() {
@@ -2175,13 +2345,32 @@ function addSelectedToMyMenu() {
     closeCategoryPicker();
     return;
   }
+  let added = 0;
   categorySelectedItems.forEach(name => {
-    if (!state.myMenu.includes(name)) state.myMenu.push(name);
+    if (!state.myMenu.includes(name)) {
+      state.myMenu.push(name);
+      added++;
+    }
     if (!state.foods.includes(name)) state.foods.push(name);
   });
   saveState();
   renderSlotMachine();
   closeCategoryPicker();
+  if (added > 0) showToast('已加入 ' + added + ' 道菜到「我的菜单」');
+}
+
+/* ── Toast ── */
+function showToast(msg) {
+  let el = document.getElementById('toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'toast';
+    el.id = 'toast';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.classList.add('visible');
+  setTimeout(() => el.classList.remove('visible'), 2200);
 }
 
 document.getElementById('add-input').addEventListener('keydown', e => {
