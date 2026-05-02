@@ -44,6 +44,15 @@ body::before {
   pointer-events: none;
   z-index: 0;
 }
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: var(--seasonal-tint, transparent);
+  pointer-events: none;
+  z-index: 0;
+  transition: background 1.2s ease;
+}
 
 .container {
   position: relative;
@@ -176,6 +185,34 @@ h1 {
 
 /* Border tint while spinning */
 .result-card.spinning { border-color: var(--lacquer-lt); }
+
+.solar-term-mark {
+  font-size: 9px;
+  color: var(--ink-light);
+  letter-spacing: 0.22em;
+  margin-top: 10px;
+  opacity: 0;
+  transition: opacity 0.5s ease 0.4s;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-weight: 300;
+}
+.solar-term-mark.visible {
+  opacity: 0.35;
+}
+.sign-number {
+  position: absolute;
+  bottom: 10px;
+  right: 14px;
+  font-family: 'Shippori Mincho B1', serif;
+  font-size: 10px;
+  color: var(--ink-light);
+  letter-spacing: 0.12em;
+  opacity: 0;
+  transition: opacity 0.5s ease 0.6s;
+}
+.sign-number.visible {
+  opacity: 0.45;
+}
 
 .result-food.landing {
   animation: stamp 0.4s cubic-bezier(0.22, 1, 0.36, 1);
@@ -363,6 +400,18 @@ h1 {
   letter-spacing: 0.18em;
   line-height: 1.9;
 }
+.fortune-columns {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+}
+.fc-col {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 0.3em;
+  font-size: 13px;
+  line-height: 1.6;
+}
 
 /* ── Share buttons ── */
 .share-row {
@@ -495,6 +544,17 @@ h1 {
   margin-bottom: 56px;
   text-align: center;
 }
+.sc-fortune.vertical {
+  display: flex;
+  gap: 18px;
+  justify-content: center;
+  line-height: 1.6;
+}
+.sc-fortune.vertical .sc-fc {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 0.3em;
+}
 .sc-divider {
   width: 32px;
   height: 1px;
@@ -513,6 +573,13 @@ h1 {
   letter-spacing: 0.12em;
   font-family: 'Zen Kaku Gothic New', sans-serif;
   font-weight: 300;
+}
+.sc-date {
+  margin-top: 24px;
+  font-size: 10px;
+  color: #CBC0AE;
+  letter-spacing: 0.15em;
+  font-family: 'Shippori Mincho B1', serif;
 }
 
 /* ── Footer ── */
@@ -578,7 +645,9 @@ h1 {
       <div class="corner-tr"></div>
       <div class="corner-bl"></div>
       <div class="result-label">今儿个吃这个</div>
-      <div class="result-food" id="result">戳下边按钮</div>
+      <div class="result-food" id="result">待君问签</div>
+      <div class="solar-term-mark" id="solar-term-mark"></div>
+      <div class="sign-number" id="sign-number"></div>
     </div>
   </div>
 
@@ -632,6 +701,7 @@ h1 {
     <div class="sc-divider"></div>
     <div class="sc-brand">吃啥嘞</div>
     <div class="sc-url">chisha.shameless.top</div>
+    <div class="sc-date" id="sc-date"></div>
   </div>
 </div>
 
@@ -871,6 +941,8 @@ function pick(index) {
   el.classList.add('landing');
   el.textContent = getFoods()[index];
   showFortune();
+  showSolarTermMark();
+  showSignNumber();
   showShareRow();
 }
 
@@ -882,7 +954,9 @@ function removeFood(index) {
     current = -1;
     const el = document.getElementById('result');
     el.classList.remove('landing');
-    el.textContent = '戳下边按钮';
+    el.textContent = '待君问签';
+    hideSolarTermMark();
+    hideSignNumber();
   } else if (current > index) current--;
   renderTags();
   saveState();
@@ -1076,7 +1150,22 @@ const FORTUNES = [
   { type:'life', text:'胃暖了，心就安了' },
   { type:'life', text:'不赶时间的饭，最香' },
   { type:'life', text:'吃完这碗，明天继续' },
-  { type:'life', text:'世事无常，但饭要按时吃' }
+  { type:'life', text:'世事无常，但饭要按时吃' },
+  { type:'life', text:'人间至味是清欢' },
+  { type:'life', text:'粗茶淡饭，胜却人间无数' },
+  { type:'life', text:'一箪食，一瓢饮，足矣' },
+  { type:'life', text:'黄河水宽，不如一碗烩面暖' },
+  { type:'life', text:'洛阳花开，不及一口汤面鲜' },
+  { type:'life', text:'开封城外，烧饼夹肉最解忧' },
+  { type:'life', text:'胡辣汤热，中原的早晨醒了' },
+  { type:'life', text:'烟火深处，自有山河' },
+  { type:'life', text:'米油盐酱醋，人间五味全' },
+  { type:'life', text:'晨起一碗汤，日落一箪食' },
+  { type:'life', text:'此心安处，即是餐桌' },
+  { type:'life', text:'食无定味，适口者珍' },
+  { type:'life', text:'饭要一口一口吃，路要一步一步走' },
+  { type:'life', text:'碗中日月长' },
+  { type:'life', text:'人生如逆旅，我亦是食客' }
 ];
 
 function hashCode(str) {
@@ -1088,24 +1177,96 @@ function hashCode(str) {
   return hash;
 }
 
+function getCurrentSolarTerm() {
+  const month = new Date().getMonth() + 1;
+  const day = new Date().getDate();
+  const terms = [
+    { name: '立春', m: 2, d: 4 }, { name: '雨水', m: 2, d: 19 },
+    { name: '惊蛰', m: 3, d: 5 }, { name: '春分', m: 3, d: 20 },
+    { name: '清明', m: 4, d: 4 }, { name: '谷雨', m: 4, d: 19 },
+    { name: '立夏', m: 5, d: 5 }, { name: '小满', m: 5, d: 20 },
+    { name: '芒种', m: 6, d: 5 }, { name: '夏至', m: 6, d: 21 },
+    { name: '小暑', m: 7, d: 6 }, { name: '大暑', m: 7, d: 22 },
+    { name: '立秋', m: 8, d: 7 }, { name: '处暑', m: 8, d: 23 },
+    { name: '白露', m: 9, d: 7 }, { name: '秋分', m: 9, d: 22 },
+    { name: '寒露', m: 10, d: 8 }, { name: '霜降', m: 10, d: 23 },
+    { name: '立冬', m: 11, d: 7 }, { name: '小雪', m: 11, d: 22 },
+    { name: '大雪', m: 12, d: 6 }, { name: '冬至', m: 12, d: 21 },
+    { name: '小寒', m: 1, d: 5 }, { name: '大寒', m: 1, d: 20 }
+  ];
+  let current = terms[terms.length - 1];
+  for (let i = 0; i < terms.length; i++) {
+    const t = terms[i];
+    if (month < t.m || (month === t.m && day < t.d)) {
+      current = terms[i === 0 ? terms.length - 1 : i - 1];
+      break;
+    }
+  }
+  return current.name;
+}
+
 function getDailyFortune() {
   const today = new Date().toISOString().slice(0, 10);
   const seed = Math.abs(hashCode(today));
   return FORTUNES[seed % FORTUNES.length];
 }
 
+function toChineseUpper(n) {
+  const cn = ['零','壹','贰','叁','肆','伍','陆','柒','捌','玖','拾'];
+  if (n <= 10) return cn[n];
+  if (n < 20) return '拾' + (n % 10 === 0 ? '' : cn[n % 10]);
+  const tens = Math.floor(n / 10);
+  const ones = n % 10;
+  if (ones === 0) return cn[tens] + '拾';
+  return cn[tens] + '拾' + cn[ones];
+}
+
+function getSignNumber() {
+  const today = new Date().toISOString().slice(0, 10);
+  const seed = Math.abs(hashCode(today));
+  return (seed % FORTUNES.length) + 1;
+}
+
+function renderSolarTermMark() {
+  const el = document.getElementById('solar-term-mark');
+  const term = getCurrentSolarTerm();
+  el.textContent = '今日 · ' + term;
+}
+function showSolarTermMark() {
+  document.getElementById('solar-term-mark').classList.add('visible');
+}
+function hideSolarTermMark() {
+  document.getElementById('solar-term-mark').classList.remove('visible');
+}
+
+function renderSignNumber() {
+  const el = document.getElementById('sign-number');
+  const num = getSignNumber();
+  el.textContent = '第' + toChineseUpper(num) + '签';
+}
+
 function renderFortune() {
   const fortune = getDailyFortune();
   const el = document.getElementById('fortune-text');
   if (fortune.type === 'food') {
-    el.innerHTML = fortune.yi + '　' + fortune.ji;
+    // 竖排：忌在左，宜在右，从右到左读
+    el.innerHTML = '<div class="fortune-columns"><div class="fc-col">' + fortune.ji + '</div><div class="fc-col">' + fortune.yi + '</div></div>';
   } else {
+    el.innerHTML = '';
     el.textContent = fortune.text;
   }
 }
 
 function showFortune() {
   document.getElementById('fortune-wrap').classList.add('visible');
+}
+
+function showSignNumber() {
+  document.getElementById('sign-number').classList.add('visible');
+}
+
+function hideSignNumber() {
+  document.getElementById('sign-number').classList.remove('visible');
 }
 
 function showShareRow() {
@@ -1121,7 +1282,13 @@ function prepareShareCard(type) {
   const label = document.getElementById('sc-label');
   const food = document.getElementById('sc-food');
   const fortune = document.getElementById('sc-fortune');
+  const dateEl = document.getElementById('sc-date');
   const dailyFortune = getDailyFortune();
+
+  // Date stamp: 2026.05.01 · 立夏
+  const d = new Date();
+  const term = getCurrentSolarTerm();
+  dateEl.textContent = d.getFullYear() + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0') + ' · ' + term;
 
   if (type === 'food') {
     // Share card A: food result
@@ -1129,19 +1296,24 @@ function prepareShareCard(type) {
     label.textContent = '今儿个吃这个';
     food.textContent = resultText;
     if (dailyFortune.type === 'food') {
-      fortune.innerHTML = dailyFortune.yi + '<br>' + dailyFortune.ji;
+      // 竖排：忌在左，宜在右
+      fortune.innerHTML = '<div class="sc-fc">' + dailyFortune.ji + '</div><div class="sc-fc">' + dailyFortune.yi + '</div>';
+      fortune.classList.add('vertical');
     } else {
       fortune.textContent = dailyFortune.text;
+      fortune.classList.remove('vertical');
     }
   } else {
     // Share card B: daily fortune
     label.textContent = '今日天意';
     if (dailyFortune.type === 'food') {
-      food.textContent = dailyFortune.yi;
-      fortune.textContent = dailyFortune.ji;
+      food.textContent = '';
+      fortune.innerHTML = '<div class="sc-fc">' + dailyFortune.ji + '</div><div class="sc-fc">' + dailyFortune.yi + '</div>';
+      fortune.classList.add('vertical');
     } else {
       food.textContent = '';
       fortune.textContent = dailyFortune.text;
+      fortune.classList.remove('vertical');
     }
   }
 }
@@ -1182,7 +1354,7 @@ function closeShareOverlay(e) {
 
 function shareFood() {
   const resultText = document.getElementById('result').textContent;
-  if (resultText === '戳下边按钮') return;
+  if (resultText === '待君问签') return;
   generateShareImage('food');
 }
 
@@ -1194,9 +1366,35 @@ function shareFortune() {
    Init
    ═══════════════════════════════════════ */
 
+function applySeasonalTheme() {
+  const term = getCurrentSolarTerm();
+  // 24 节气 subtle 色调覆盖层（中国传统色，极淡）
+  const colors = {
+    '立春': 'rgba(232,216,179,0.05)', '雨水': 'rgba(232,224,216,0.05)',
+    '惊蛰': 'rgba(212,160,136,0.04)', '春分': 'rgba(200,216,208,0.05)',
+    '清明': 'rgba(184,200,184,0.05)', '谷雨': 'rgba(200,184,168,0.04)',
+    '立夏': 'rgba(216,160,120,0.04)', '小满': 'rgba(216,152,128,0.04)',
+    '芒种': 'rgba(216,192,136,0.04)', '夏至': 'rgba(216,128,104,0.04)',
+    '小暑': 'rgba(216,112,88,0.04)',  '大暑': 'rgba(216,104,80,0.04)',
+    '立秋': 'rgba(232,224,208,0.05)', '处暑': 'rgba(224,208,176,0.05)',
+    '白露': 'rgba(224,216,200,0.05)', '秋分': 'rgba(216,208,192,0.05)',
+    '寒露': 'rgba(208,200,184,0.05)', '霜降': 'rgba(200,192,176,0.05)',
+    '立冬': 'rgba(200,192,176,0.05)', '小雪': 'rgba(192,184,168,0.05)',
+    '大雪': 'rgba(184,176,160,0.05)', '冬至': 'rgba(176,168,152,0.05)',
+    '小寒': 'rgba(168,160,144,0.05)', '大寒': 'rgba(160,152,136,0.05)'
+  };
+  const c = colors[term];
+  if (c) {
+    document.documentElement.style.setProperty('--seasonal-tint', c);
+  }
+}
+applySeasonalTheme();
+
 renderTags();
 renderSoundToggle();
 renderFortune();
+renderSolarTermMark();
+renderSignNumber();
 </script>
 </body>
 </html>
