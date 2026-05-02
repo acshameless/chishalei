@@ -938,7 +938,7 @@ h1 {
 /* 做法分享卡 */
 .cook-share-card {
   width: 540px;
-  height: 960px;
+  min-height: 960px;
   background: #F6F1E9;
   background-image: radial-gradient(circle, #CBC0AE 0.8px, transparent 0.8px);
   background-size: 20px 20px;
@@ -946,7 +946,7 @@ h1 {
   color: #23201B;
   padding: 32px 36px;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
 }
 .csc-header {
   text-align: center;
@@ -2706,15 +2706,15 @@ async function generateCookImage() {
   if (typeof html2canvas === 'undefined') return null;
   const card = document.getElementById('cook-share-card');
   try {
-    const targetHeight = 960;
+    const renderHeight = Math.max(card.scrollHeight, 960);
     const canvas = await html2canvas(card, {
       backgroundColor: '#F6F1E9',
       scale: 2,
       useCORS: true,
       logging: false,
       width: card.offsetWidth,
-      height: targetHeight,
-      windowHeight: targetHeight + 200
+      height: renderHeight,
+      windowHeight: renderHeight + 200
     });
     return canvas.toDataURL('image/png');
   } catch(e) {
@@ -2984,6 +2984,10 @@ async function askCook() {
     exportCookCard();
     return;
   }
+
+  // 显示做法时移除 slot 高亮特效
+  document.querySelectorAll('.slot-item.active').forEach(item => item.classList.remove('active'));
+  document.querySelector('.slot-container')?.classList.remove('has-winner');
 
   // 优先从 state.customRecipes 获取
   if (state.customRecipes[dish]) {
