@@ -3368,7 +3368,8 @@ renderSlotMachine();
 renderSoundToggle();
 renderSignNumber();
 renderFortune();
-applyGoldenLayout();
+// 延迟一次 rAF 确保 slot-machine 已渲染后再计算布局
+requestAnimationFrame(() => requestAnimationFrame(applyGoldenLayout));
 
 /* ── 触摸滑动切换池子 ── */
 let touchStartX = 0;
@@ -3413,9 +3414,17 @@ function applyGoldenLayout() {
   const padBottom = parseFloat(bodyStyles.paddingBottom);
   const available = window.innerHeight - padTop - padBottom;
 
-  const upperH = upper.scrollHeight;
+  // 用 offsetHeight 累加，排除被隐藏元素（scrollHeight 会把 max-height:0 的内容也算进去）
+  const upperH = Array.from(upper.children).reduce((s, c) => s + c.offsetHeight, 0);
   const btnH = btn.offsetHeight;
-  const lowerH = lower.scrollHeight;
+
+  // lower-content 里 particle-container 可能还没渲染完，用 min-height 保底
+  const particle = lower.querySelector('.particle-container, .slot-container, .menu-grid-container');
+  const particleH = particle ? Math.max(particle.offsetHeight, 180) : 180;
+  const controlH = document.getElementById('control-row')?.offsetHeight || 0;
+  const shareH = document.getElementById('share-row')?.offsetHeight || 0;
+  const cookH = document.getElementById('cook-wrap')?.offsetHeight || 0;
+  const lowerH = shareH + controlH + cookH + particleH;
 
   if (upperH + btnH + lowerH <= available) {
     const target = available * 0.382;
