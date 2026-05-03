@@ -92,12 +92,23 @@ Component({
         };
       });
 
-      this.setData({ columns: newColumns });
+      // 小程序中 transition 需要分两步设置才能触发：
+      // 第一步先重置 transition 为 none，确保浏览器记录当前位置
+      // 第二步再设置 transition + 新 offsetY，触发滚动动画
+      const resetColumns = columns.map(col => ({
+        ...col,
+        transition: 'none'
+      }));
+      this.setData({ columns: resetColumns });
+
+      setTimeout(() => {
+        this.setData({ columns: newColumns });
+      }, 50);
 
       const maxDuration = 1.8 + 1 * 0.35 + 0.12 + 0.3;
       setTimeout(() => {
         this.triggerEvent('onComplete');
-      }, maxDuration * 1000);
+      }, (maxDuration * 1000) + 50);
     },
 
     shuffle(arr) {

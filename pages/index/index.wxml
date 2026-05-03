@@ -22,12 +22,9 @@
           <text class="tip-main">{{tipText}}</text>
           <text class="tip-sub">{{timeTip}}</text>
         </view>
+        <view class="fortune-text-inside {{fortuneVisible ? 'visible' : ''}}">{{fortuneText}}</view>
         <view class="sign-number {{signNumber ? 'visible' : ''}}">第 {{signNumber}} 签</view>
       </view>
-    </view>
-
-    <view class="fortune-wrap {{fortuneVisible ? 'visible' : ''}}">
-      <view class="fortune-text">{{fortuneText}}</view>
     </view>
   </view>
 

@@ -1,7 +1,7 @@
 <view class="menu-grid-container">
   <block wx:if="{{foods.length === 0}}">
     <view class="menu-grid-empty">
-      <button class="menu-grid-add" bindtap="onAddTap">＋</button>
+      <view class="menu-grid-add" bindtap="onAddTap">＋</view>
     </view>
   </block>
   <block wx:else>

@@ -164,12 +164,45 @@ Page({
       cookVisible: false,
       cookBtnText: '做法',
       btnText: '正在问天…',
-      btnKanji: '转动',
+      btnKanji: '止',
       signNumber: '',
       resultText: foods[idx]
     });
 
     this.playWoodblock();
+  },
+
+  onPickFood() {
+    const { foods } = this.data;
+    if (foods.length === 0) {
+      this.showToast('暂无可选菜品');
+      return;
+    }
+    const idx = Math.floor(Math.random() * foods.length);
+    this.currentIndex = idx;
+    const name = foods[idx];
+    const tip = FOOD_TIPS[name] || '用心烹饪，味道自然不会差';
+    const sign = this.generateSignNumber();
+    const fortune = FORTUNES[Math.floor(Math.random() * FORTUNES.length)];
+
+    this.setData({
+      resultText: name,
+      landed: true,
+      tipVisible: true,
+      tipText: tip,
+      signNumber: sign,
+      fortuneVisible: true,
+      fortuneText: fortune,
+      shareVisible: true
+    });
+
+    this.playStamp();
+
+    this.state.history.draws.unshift({ name, time: Date.now() });
+    if (this.state.history.draws.length > 50) {
+      this.state.history.draws.pop();
+    }
+    this.saveState();
   },
 
   onSpinComplete() {
@@ -569,7 +602,7 @@ Page({
   },
 
   onGoPool() {
-    wx.navigateTo({ url: '/pages/pool/pool' });
+    this.onPickFood();
   },
 
   onShowHistory() {
