@@ -43,8 +43,8 @@
   <!-- lower-content -->
   <view class="lower-content">
     <view class="share-row {{shareVisible ? 'visible' : ''}}">
-      <button class="share-btn" bindtap="onSaveShareImage">分享</button>
-      <button class="share-btn" bindtap="onToggleCook">{{cookBtnText}}</button>
+      <view class="share-btn" bindtap="onSaveShareImage">分享</view>
+      <view class="share-btn" bindtap="onToggleCook">{{cookBtnText}}</view>
     </view>
 
     <view class="control-row">
@@ -60,8 +60,8 @@
           bindtap="onSwitchPool"
         >我的菜单</text>
       </view>
-      <button class="control-btn" bindtap="onGoPool">选</button>
-      <button class="control-btn" bindtap="onShowHistory">历</button>
+      <view class="control-btn" bindtap="onGoPool">选</view>
+      <view class="control-btn" bindtap="onShowHistory">历</view>
     </view>
 
     <!-- Slot machine / Menu grid -->
@@ -83,7 +83,36 @@
 
     <view class="cook-wrap {{cookVisible ? 'visible' : ''}}">
       <scroll-view class="cook-scroll" scroll-y>
-        <rich-text nodes="{{cookHtml}}"></rich-text>
+        <!-- 食材 -->
+        <view class="cook-section" wx:if="{{cookMaterials.length}}">
+          <view class="cook-section-title">食材</view>
+          <view class="cook-materials-list">
+            <view class="cook-material-item" wx:for="{{cookMaterials}}" wx:key="index">
+              <text class="cook-material-name">{{item.name}}</text>
+              <text class="cook-material-amount">{{item.amount}}</text>
+            </view>
+          </view>
+        </view>
+        <!-- 步骤 -->
+        <view class="cook-section" wx:if="{{cookSteps.length}}">
+          <view class="cook-section-title">步骤</view>
+          <view class="cook-step" wx:for="{{cookSteps}}" wx:key="index">
+            <view class="cook-step-num">{{index + 1}}</view>
+            <view class="cook-step-body">
+              <view class="cook-step-title">{{item.title}}</view>
+              <view class="cook-step-desc">{{item.desc}}</view>
+              <view class="cook-step-why" wx:if="{{item.why}}">→ {{item.why}}</view>
+              <view class="cook-step-heat" wx:if="{{item.heat}}">{{item.heat}}</view>
+            </view>
+          </view>
+        </view>
+        <!-- 小贴士 -->
+        <view class="cook-section" wx:if="{{cookTips.length}}">
+          <view class="cook-section-title">小贴士</view>
+          <view class="cook-tips-list">
+            <view class="cook-tips-item" wx:for="{{cookTips}}" wx:key="index">{{item}}</view>
+          </view>
+        </view>
       </scroll-view>
     </view>
   </view>

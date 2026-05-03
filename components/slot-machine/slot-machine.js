@@ -6,47 +6,50 @@ Component({
   },
 
   data: {
-    columns: [
-      { items: [], offsetY: 0, transition: 'none', highlightIndex: -1 },
-      { items: [], offsetY: 0, transition: 'none', highlightIndex: -1 },
-      { items: [], offsetY: 0, transition: 'none', highlightIndex: -1 }
-    ],
-    itemHeight: 44, // px
-    colHeight: 240  // px
+    columns: [],
+    itemHeight: 44,
+    colHeight: 240,
+    inited: false
   },
 
   lifetimes: {
+    attached() {
+      this.tryInit();
+    },
     ready() {
-      const { foods } = this.data;
-      if (foods && foods.length > 0) {
-        this.initColumns(foods);
-      }
+      this.tryInit();
     }
   },
 
   observers: {
     'foods': function(foods) {
-      if (!foods || foods.length === 0) return;
-      this.initColumns(foods);
+      if (foods && foods.length > 0 && !this.data.inited) {
+        this.initColumns(foods);
+      }
     },
     'spinning': function(spinning) {
-      if (spinning) {
+      if (spinning && this.data.inited) {
         this.startSpin();
       }
     }
   },
 
   methods: {
+    tryInit() {
+      const { foods, inited } = this.data;
+      if (!inited && foods && foods.length > 0) {
+        this.initColumns(foods);
+      }
+    },
+
     initColumns(foods) {
       const repeat = Math.min(8, Math.max(3, Math.floor(600 / foods.length)));
-      const columns = this.data.columns.map(() => {
-        // 每列独立随机排列
+      const columns = [0, 1, 2].map(() => {
         const order = this.shuffle([...foods]);
         const items = [];
         for (let r = 0; r < repeat; r++) {
           items.push(...order);
         }
-        // 初始随机偏移
         const randomOffset = Math.floor(Math.random() * foods.length) * this.data.itemHeight;
         return {
           items,
@@ -55,7 +58,7 @@ Component({
           highlightIndex: -1
         };
       });
-      this.setData({ columns });
+      this.setData({ columns, inited: true });
     },
 
     startSpin() {
@@ -74,7 +77,7 @@ Component({
         const effectivePos = posInCol >= 0 ? posInCol % foods.length : targetIndex;
 
         const baseY = -(targetCycle * cycleHeight + effectivePos * itemHeight) + centerOffset;
-        const distFromMid = Math.abs(i - 1); // 中间列索引为1
+        const distFromMid = Math.abs(i - 1);
         const extraRounds = distFromMid;
         const finalY = baseY - extraRounds * cycleHeight;
 
@@ -91,7 +94,6 @@ Component({
 
       this.setData({ columns: newColumns });
 
-      // 动画结束后通知父组件
       const maxDuration = 1.8 + 1 * 0.35 + 0.12 + 0.3;
       setTimeout(() => {
         this.triggerEvent('onComplete');

@@ -338,6 +338,9 @@ page {
   opacity: 1;
 }
 .share-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: 1px solid var(--paper-dark);
   padding: 6px 18px;
@@ -348,11 +351,7 @@ page {
   letter-spacing: 0.15em;
   transition: all 0.2s ease;
   line-height: 1;
-  border-radius: 0;
-  margin: 0;
-  min-height: auto;
 }
-.share-btn::after { border: none; }
 .share-btn:active {
   border-color: var(--lacquer);
   color: var(--lacquer);
@@ -392,8 +391,8 @@ page {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 1px solid var(--paper-dark) !important;
-  background: var(--card) !important;
+  border: 1px solid var(--paper-dark);
+  background: var(--card);
   color: var(--ink-mid);
   font-size: 15px;
   font-family: 'Shippori Mincho B1', 'Noto Serif SC', 'Songti SC', serif;
@@ -403,13 +402,9 @@ page {
   transition: all 0.2s ease;
   line-height: 1;
   flex-shrink: 0;
-  padding: 0;
-  margin: 0;
-  min-height: auto;
 }
-.control-btn::after { border: none !important; }
 .control-btn:active {
-  border-color: var(--lacquer) !important;
+  border-color: var(--lacquer);
   color: var(--lacquer);
   transform: scale(0.96);
 }

@@ -31,7 +31,9 @@ Page({
     shareVisible: false,
     cookVisible: false,
     cookBtnText: '做法',
-    cookHtml: '',
+    cookMaterials: [],
+    cookSteps: [],
+    cookTips: [],
     toastVisible: false,
     toastMsg: '',
     btnText: '问问天意',
@@ -260,41 +262,11 @@ Page({
 
   renderCook(recipe) {
     if (!recipe) return;
-    let html = '';
-
-    if (recipe.materials && recipe.materials.length) {
-      html += '<view class="cook-section"><view class="cook-section-title">食材</view><view class="cook-materials-list">';
-      recipe.materials.forEach(m => {
-        html += `<view class="cook-material-item"><text class="cook-material-name">${m.name}</text><text class="cook-material-amount">${m.amount}</text></view>`;
-      });
-      html += '</view></view>';
-    }
-
-    if (recipe.steps && recipe.steps.length) {
-      html += '<view class="cook-section"><view class="cook-section-title">步骤</view>';
-      recipe.steps.forEach((s, i) => {
-        html += `<view class="cook-step">
-          <view class="cook-step-num">${i + 1}</view>
-          <view class="cook-step-body">
-            <view class="cook-step-title">${s.title}</view>
-            <view class="cook-step-desc">${s.desc}</view>
-            ${s.why ? `<view class="cook-step-why">→ ${s.why}</view>` : ''}
-            ${s.heat ? `<view class="cook-step-heat">${s.heat}</view>` : ''}
-          </view>
-        </view>`;
-      });
-      html += '</view>';
-    }
-
-    if (recipe.tips && recipe.tips.length) {
-      html += '<view class="cook-section"><view class="cook-section-title">小贴士</view><view class="cook-tips-list">';
-      recipe.tips.forEach(t => {
-        html += `<view class="cook-tips-item">${t}</view>`;
-      });
-      html += '</view></view>';
-    }
-
-    this.setData({ cookHtml: html });
+    this.setData({
+      cookMaterials: recipe.materials || [],
+      cookSteps: recipe.steps || [],
+      cookTips: recipe.tips || []
+    });
   },
 
   async onSaveShareImage() {

@@ -42,6 +42,5 @@
 
   <view class="pool-footer">
     <text class="pool-stats">已选 {{selectedCount}} 个分类，共 {{totalFoods}} 道菜</text>
-    <button class="back-btn" bindtap="onBack">完成</button>
   </view>
 </view>
