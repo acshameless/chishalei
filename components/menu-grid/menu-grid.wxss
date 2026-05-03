@@ -1,0 +1,65 @@
+.menu-grid-container {
+  width: 100%;
+  height: 100%;
+  padding: 24rpx;
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 16rpx 20rpx;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.menu-grid-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-grid-item {
+  padding: 12rpx 28rpx;
+  font-size: 26rpx;
+  color: var(--ink-mid);
+  border: 1rpx solid var(--paper-dark);
+  background: var(--card);
+  border-radius: 8rpx;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.menu-grid-item:active {
+  transform: scale(0.96);
+  border-color: var(--lacquer);
+  color: var(--lacquer);
+}
+
+.menu-grid-add {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  border: 1rpx solid var(--paper-dark);
+  background: var(--card);
+  color: var(--ink-mid);
+  font-size: 36rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+}
+.menu-grid-add::after {
+  border: none;
+}
+
+.menu-grid-input {
+  width: 200rpx;
+  height: 56rpx;
+  padding: 0 20rpx;
+  border: 1rpx solid var(--lacquer-lt);
+  border-radius: 28rpx;
+  background: var(--card);
+  font-size: 26rpx;
+  color: var(--ink);
+}

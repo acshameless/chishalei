@@ -1,0 +1,99 @@
+<view class="page-container">
+  <!-- 顶部 -->
+  <view class="header">
+    <view class="mark">
+      <text class="mark-line">——</text>
+      <text class="mark-text">吃啥嘞</text>
+      <text class="mark-line">——</text>
+    </view>
+    <view class="subtitle">今日食运 · 抽签问天</view>
+  </view>
+
+  <!-- 签号 -->
+  <view class="sign-number {{signNumber ? 'visible' : ''}}">
+    <text>第 {{signNumber}} 签</text>
+  </view>
+
+  <!-- 结果卡片 -->
+  <view class="result-card {{landed ? 'landing' : ''}}">
+    <text class="result-text">{{resultText}}</text>
+    <view class="result-tip {{tipVisible ? 'visible' : ''}}">
+      <text class="tip-main">{{tipText}}</text>
+      <text class="tip-sub">{{timeTip}}</text>
+    </view>
+  </view>
+
+  <!-- 老虎机 / 菜单网格 -->
+  <view class="machine-area">
+    <slot-machine
+      wx:if="{{currentPool === 'all'}}"
+      foods="{{foods}}"
+      spinning="{{isSpinning}}"
+      targetIndex="{{targetIndex}}"
+      bind:onComplete="onSpinComplete"
+    />
+    <menu-grid
+      wx:if="{{currentPool === 'myMenu'}}"
+      foods="{{foods}}"
+      bind:onAdd="onMenuAdd"
+      bind:onRemove="onMenuRemove"
+    />
+  </view>
+
+  <!-- 控制按钮 -->
+  <view class="btn-wrap">
+    <button class="main-btn {{isSpinning ? 'spinning' : ''}}" bindtap="onSpin">
+      <text class="btn-label">{{btnText}}</text>
+      <text class="btn-kanji">{{btnKanji}}</text>
+    </button>
+    <button class="reset-btn" bindtap="onReset">重置</button>
+  </view>
+
+  <!-- 分享行 -->
+  <view class="share-row {{shareVisible ? 'visible' : ''}}">
+    <text class="share-text">今日食运已注定，分享给朋友</text>
+    <button class="share-btn" open-type="share">转发</button>
+    <button class="save-btn" bindtap="onSaveShareImage">保存图片</button>
+  </view>
+
+  <!-- 做法按钮 -->
+  <view class="cook-row" wx:if="{{landed}}">
+    <button class="cook-btn" bindtap="onToggleCook">{{cookBtnText}}</button>
+  </view>
+
+  <!-- 做法内容 -->
+  <view class="cook-wrap {{cookVisible ? 'visible' : ''}}">
+    <scroll-view class="cook-scroll" scroll-y>
+      <rich-text nodes="{{cookHtml}}"></rich-text>
+    </scroll-view>
+  </view>
+
+  <!-- 底部 Tab -->
+  <view class="tab-bar">
+    <view
+      class="tab-item {{currentPool === 'all' ? 'active' : ''}}"
+      data-pool="all"
+      bindtap="onSwitchPool"
+    >
+      <text class="tab-text">全部选项</text>
+    </view>
+    <view
+      class="tab-item {{currentPool === 'myMenu' ? 'active' : ''}}"
+      data-pool="myMenu"
+      bindtap="onSwitchPool"
+    >
+      <text class="tab-text">我的菜单</text>
+    </view>
+  </view>
+
+  <!-- Toast -->
+  <view class="toast {{toastVisible ? 'visible' : ''}}">{{toastMsg}}</view>
+
+  <!-- 分享图片 canvas（离屏绘制） -->
+  <canvas
+    type="2d"
+    id="shareCanvas"
+    class="share-canvas"
+    style="width: 540px; height: 960px;"
+  />
+</view>

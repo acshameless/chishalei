@@ -1,0 +1,15 @@
+<view class="slot-container">
+  <view class="slot-column" wx:for="{{columns}}" wx:key="index">
+    <view class="slot-strip" style="transform: translateY({{item.offsetY}}px); transition: {{item.transition}};">
+      <view
+        class="slot-item {{item.highlightIndex === idx ? 'active' : ''}}"
+        wx:for="{{item.items}}"
+        wx:for-item="name"
+        wx:for-index="idx"
+        wx:key="idx"
+      >
+        {{name}}
+      </view>
+    </view>
+  </view>
+</view>

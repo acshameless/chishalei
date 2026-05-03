@@ -1,0 +1,64 @@
+App({
+  globalData: {
+    // 全局状态（小程序内跨页面共享）
+    state: null,
+  },
+
+  onLaunch() {
+    // 初始化音频上下文
+    this.initAudio();
+    // 加载状态
+    this.loadState();
+  },
+
+  initAudio() {
+    // 小程序不支持 Web Audio API，使用 InnerAudioContext
+    this.woodblock = wx.createInnerAudioContext();
+    this.stamp = wx.createInnerAudioContext();
+    // 音效文件暂时不加载，后续可放入 CDN 或 base64
+    // this.woodblock.src = '/sounds/woodblock.mp3';
+    // this.stamp.src = '/sounds/stamp.mp3';
+  },
+
+  loadState() {
+    try {
+      const raw = wx.getStorageSync('chisha_state');
+      if (raw) {
+        this.globalData.state = JSON.parse(raw);
+      }
+    } catch (e) {
+      console.warn('loadState failed', e);
+    }
+    if (!this.globalData.state) {
+      this.globalData.state = this.defaultState();
+    }
+  },
+
+  saveState() {
+    try {
+      wx.setStorageSync('chisha_state', JSON.stringify(this.globalData.state));
+    } catch (e) {
+      console.warn('saveState failed', e);
+    }
+  },
+
+  defaultState() {
+    return {
+      version: 6,
+      selectedCategories: ['河南菜'],
+      excludedFoods: [],
+      myMenu: [],
+      customTips: {},
+      customRecipes: {},
+      history: {
+        recent: [],
+        favorites: [],
+        blacklist: [],
+        todayFortune: null,
+        todayPick: null,
+        draws: []
+      },
+      settings: { sound: true }
+    };
+  }
+});

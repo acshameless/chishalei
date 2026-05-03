@@ -1,0 +1,30 @@
+<view class="menu-grid-container">
+  <block wx:if="{{foods.length === 0}}">
+    <view class="menu-grid-empty">
+      <button class="menu-grid-add" bindtap="onAddTap">＋</button>
+    </view>
+  </block>
+  <block wx:else>
+    <view
+      class="menu-grid-item"
+      wx:for="{{foods}}"
+      wx:key="index"
+      data-index="{{index}}"
+      bindtap="onRemoveTap"
+    >
+      {{item}}
+    </view>
+    <block wx:if="{{!isEditing}}">
+      <button class="menu-grid-add" bindtap="onAddTap">＋</button>
+    </block>
+    <block wx:else>
+      <input
+        class="menu-grid-input"
+        placeholder="菜名，回车添加"
+        focus
+        bindconfirm="onInputConfirm"
+        bindblur="onInputBlur"
+      />
+    </block>
+  </block>
+</view>
