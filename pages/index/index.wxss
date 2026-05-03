@@ -349,6 +349,8 @@ page {
   transition: all 0.2s ease;
   line-height: 1;
   border-radius: 0;
+  margin: 0;
+  min-height: auto;
 }
 .share-btn::after { border: none; }
 .share-btn:active {
@@ -390,22 +392,24 @@ page {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 1px solid var(--paper-dark);
-  background: var(--card);
+  border: 1px solid var(--paper-dark) !important;
+  background: var(--card) !important;
   color: var(--ink-mid);
   font-size: 15px;
   font-family: 'Shippori Mincho B1', 'Noto Serif SC', 'Songti SC', serif;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
   line-height: 1;
   flex-shrink: 0;
   padding: 0;
+  margin: 0;
+  min-height: auto;
 }
-.control-btn::after { border: none; }
+.control-btn::after { border: none !important; }
 .control-btn:active {
-  border-color: var(--lacquer);
+  border-color: var(--lacquer) !important;
   color: var(--lacquer);
   transform: scale(0.96);
 }

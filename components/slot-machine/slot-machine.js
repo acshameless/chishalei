@@ -12,7 +12,16 @@ Component({
       { items: [], offsetY: 0, transition: 'none', highlightIndex: -1 }
     ],
     itemHeight: 44, // px
-    colHeight: 180  // px
+    colHeight: 240  // px
+  },
+
+  lifetimes: {
+    ready() {
+      const { foods } = this.data;
+      if (foods && foods.length > 0) {
+        this.initColumns(foods);
+      }
+    }
   },
 
   observers: {
