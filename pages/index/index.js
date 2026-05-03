@@ -3,6 +3,17 @@ const storage = require('../../utils/storage');
 
 const app = getApp();
 
+const FORTUNES = [
+  '天时地利，今日宜尝鲜',
+  '食运亨通，美味在望',
+  '吉时吉日，好菜自来',
+  '食神眷顾，口福不浅',
+  '今日食缘，命中注定',
+  '菜香四溢，好运连连',
+  '天时人和，一餐美满',
+  '食来运转，美味当前'
+];
+
 Page({
   data: {
     currentPool: 'all',
@@ -15,6 +26,8 @@ Page({
     tipVisible: false,
     tipText: '',
     timeTip: '',
+    fortuneVisible: false,
+    fortuneText: '',
     shareVisible: false,
     cookVisible: false,
     cookBtnText: '做法',
@@ -22,7 +35,11 @@ Page({
     toastVisible: false,
     toastMsg: '',
     btnText: '问问天意',
-    btnKanji: '抽签',
+    btnKanji: '签',
+    historyVisible: false,
+    historyList: [],
+    shareOverlayVisible: false,
+    shareImageUrl: ''
   },
 
   state: null,
@@ -37,7 +54,6 @@ Page({
 
   onShow() {
     this.updateTimeTip();
-    // 从 pool 页返回时重新加载状态
     this.loadState();
     this.refreshFoods();
   },
@@ -54,9 +70,25 @@ Page({
 
   loadState() {
     let s = storage.load();
-    if (!s) s = app.defaultState();
+    if (!s) s = app.defaultState ? app.defaultState() : this.defaultState();
     this.state = s;
     this.setData({ currentPool: s.currentPool || 'all' });
+  },
+
+  defaultState() {
+    return {
+      version: 6,
+      selectedCategories: ['河南菜'],
+      excludedFoods: [],
+      myMenu: [],
+      customTips: {},
+      customRecipes: {},
+      history: {
+        recent: [], favorites: [], blacklist: [],
+        todayFortune: null, todayPick: null, draws: []
+      },
+      settings: { sound: true }
+    };
   },
 
   saveState() {
@@ -75,7 +107,7 @@ Page({
 
   updateTimeTip() {
     const d = new Date();
-    const hours = ['子', '丑', '丑', '寅', '寅', '卯', '卯', '辰', '辰', '巳', '巳', '午', '午', '未', '未', '申', '申', '酉', '酉', '戌', '戌', '亥', '亥', '子'];
+    const hours = ['子','丑','丑','寅','寅','卯','卯','辰','辰','巳','巳','午','午','未','未','申','申','酉','酉','戌','戌','亥','亥','子'];
     const tip = `${hours[d.getHours()]}时 · ${d.getMonth() + 1}月${d.getDate()}日`;
     this.setData({ timeTip: tip });
   },
@@ -109,11 +141,13 @@ Page({
       landed: false,
       tipVisible: false,
       shareVisible: false,
+      fortuneVisible: false,
       cookVisible: false,
       cookBtnText: '做法',
       btnText: '正在问天…',
       btnKanji: '转动',
-      signNumber: ''
+      signNumber: '',
+      resultText: foods[idx]
     });
 
     this.playWoodblock();
@@ -124,6 +158,7 @@ Page({
     const name = foods[this.currentIndex];
     const tip = FOOD_TIPS[name] || '用心烹饪，味道自然不会差';
     const sign = this.generateSignNumber();
+    const fortune = FORTUNES[Math.floor(Math.random() * FORTUNES.length)];
 
     this.setData({
       isSpinning: false,
@@ -132,14 +167,15 @@ Page({
       tipVisible: true,
       tipText: tip,
       signNumber: sign,
+      fortuneVisible: true,
+      fortuneText: fortune,
       shareVisible: true,
       btnText: '问问天意',
-      btnKanji: '抽签'
+      btnKanji: '签'
     });
 
     this.playStamp();
 
-    // 记录历史
     this.state.history.draws.unshift({ name, time: Date.now() });
     if (this.state.history.draws.length > 50) {
       this.state.history.draws.pop();
@@ -163,15 +199,12 @@ Page({
       landed: false,
       tipVisible: false,
       shareVisible: false,
+      fortuneVisible: false,
       cookVisible: false,
       cookBtnText: '做法',
       signNumber: ''
     });
     this.currentIndex = -1;
-  },
-
-  onGoPool() {
-    wx.navigateTo({ url: '/pages/pool/pool' });
   },
 
   onToggleCook() {
@@ -180,10 +213,9 @@ Page({
 
     if (!cookVisible) {
       this.fetchCook(resultText);
-      this.setData({ cookVisible: true, cookBtnText: '导出' });
+      this.setData({ cookVisible: true, cookBtnText: '收起' });
     } else {
-      // 导出图片
-      this.exportCookCard();
+      this.setData({ cookVisible: false, cookBtnText: '做法' });
     }
   },
 
@@ -194,7 +226,6 @@ Page({
       return;
     }
 
-    // 调用云函数（无需备案域名）
     wx.cloud.callFunction({
       name: 'cook',
       data: { dish },
@@ -202,9 +233,7 @@ Page({
         const data = res.result;
         if (data && data.recipe) {
           this.state.customRecipes[dish] = data.recipe;
-          if (data.tip) {
-            this.state.customTips[dish] = data.tip;
-          }
+          if (data.tip) this.state.customTips[dish] = data.tip;
           this.saveState();
           this.renderCook(data.recipe);
         } else if (data && data.error) {
@@ -234,11 +263,11 @@ Page({
     let html = '';
 
     if (recipe.materials && recipe.materials.length) {
-      html += '<view class="cook-section"><view class="cook-section-title">食材</view>';
+      html += '<view class="cook-section"><view class="cook-section-title">食材</view><view class="cook-materials-list">';
       recipe.materials.forEach(m => {
-        html += `<view class="cook-material"><text class="cook-material-name">${m.name}</text><text class="cook-material-amount">${m.amount}</text></view>`;
+        html += `<view class="cook-material-item"><text class="cook-material-name">${m.name}</text><text class="cook-material-amount">${m.amount}</text></view>`;
       });
-      html += '</view>';
+      html += '</view></view>';
     }
 
     if (recipe.steps && recipe.steps.length) {
@@ -258,19 +287,14 @@ Page({
     }
 
     if (recipe.tips && recipe.tips.length) {
-      html += '<view class="cook-section"><view class="cook-section-title">小贴士</view>';
+      html += '<view class="cook-section"><view class="cook-section-title">小贴士</view><view class="cook-tips-list">';
       recipe.tips.forEach(t => {
         html += `<view class="cook-tips-item">${t}</view>`;
       });
-      html += '</view>';
+      html += '</view></view>';
     }
 
     this.setData({ cookHtml: html });
-  },
-
-  exportCookCard() {
-    // TODO: canvas 绘制做法卡片并保存
-    this.showToast('做法卡片绘制中…');
   },
 
   async onSaveShareImage() {
@@ -281,15 +305,10 @@ Page({
     }
     try {
       const tempPath = await this.drawShareCard(resultText, signNumber, timeTip);
-      await wx.saveImageToPhotosAlbum({ filePath: tempPath });
-      this.showToast('已保存到相册');
+      this.setData({ shareImageUrl: tempPath, shareOverlayVisible: true });
     } catch (e) {
-      console.error('save image failed', e);
-      if (e.errMsg && e.errMsg.includes('auth deny')) {
-        this.showToast('请授权保存相册权限');
-      } else {
-        this.showToast('保存失败，请重试');
-      }
+      console.error('draw share card failed', e);
+      this.showToast('生成失败，请重试');
     }
   },
 
@@ -313,11 +332,11 @@ Page({
           canvas.height = height * dpr;
           ctx.scale(dpr, dpr);
 
-          // 背景
+          // Background
           ctx.fillStyle = '#F6F1E9';
           ctx.fillRect(0, 0, width, height);
 
-          // 网格点
+          // Dot grid
           ctx.fillStyle = '#CBC0AE';
           for (let x = 10; x < width; x += 20) {
             for (let y = 10; y < height; y += 20) {
@@ -327,18 +346,18 @@ Page({
             }
           }
 
-          // 菜名
+          // Dish name
           ctx.fillStyle = '#8A3D27';
           ctx.font = '600 48px serif';
           ctx.textAlign = 'center';
           ctx.fillText(dish, width / 2, 360);
 
-          // 签号
+          // Sign number
           ctx.fillStyle = '#6B6055';
           ctx.font = '400 14px sans-serif';
           ctx.fillText(`第 ${sign} 签 · ${dateStr}`, width / 2, 420);
 
-          // 分隔线
+          // Divider
           ctx.strokeStyle = '#E8DFD0';
           ctx.lineWidth = 1;
           ctx.beginPath();
@@ -346,7 +365,7 @@ Page({
           ctx.lineTo(width / 2 + 16, 480);
           ctx.stroke();
 
-          // 品牌
+          // Brand
           ctx.fillStyle = '#A89F94';
           ctx.font = '400 12px sans-serif';
           ctx.fillText('吃啥嘞', width / 2, 540);
@@ -359,6 +378,40 @@ Page({
           });
         });
     });
+  },
+
+  onCloseShareOverlay() {
+    this.setData({ shareOverlayVisible: false });
+  },
+
+  onGoPool() {
+    wx.navigateTo({ url: '/pages/pool/pool' });
+  },
+
+  onShowHistory() {
+    const draws = this.state.history.draws || [];
+    const list = draws.slice(0, 30).map(d => {
+      const t = new Date(d.time);
+      return {
+        name: d.name,
+        timeStr: `${t.getMonth() + 1}/${t.getDate()} ${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`
+      };
+    });
+    this.setData({ historyVisible: true, historyList: list });
+  },
+
+  onCloseHistory() {
+    this.setData({ historyVisible: false });
+  },
+
+  onClearHistory() {
+    this.state.history.draws = [];
+    this.saveState();
+    this.setData({ historyList: [] });
+  },
+
+  onPanelTap() {
+    // 阻止冒泡，防止点击 panel 内容时关闭 overlay
   },
 
   onMenuAdd(e) {
@@ -384,18 +437,18 @@ Page({
   },
 
   playWoodblock() {
-    const app = getApp();
-    if (app.woodblock && this.state.settings.sound) {
-      app.woodblock.stop();
-      app.woodblock.play();
+    const appInstance = getApp();
+    if (appInstance.woodblock && this.state.settings.sound) {
+      appInstance.woodblock.stop();
+      appInstance.woodblock.play();
     }
   },
 
   playStamp() {
-    const app = getApp();
-    if (app.stamp && this.state.settings.sound) {
-      app.stamp.stop();
-      app.stamp.play();
+    const appInstance = getApp();
+    if (appInstance.stamp && this.state.settings.sound) {
+      appInstance.stamp.stop();
+      appInstance.stamp.play();
     }
   },
 

@@ -1,98 +1,130 @@
 <view class="page-container">
-  <!-- 顶部 -->
-  <view class="header">
-    <view class="mark">
-      <text class="mark-line">——</text>
-      <text class="mark-text">吃啥嘞</text>
-      <text class="mark-line">——</text>
+
+  <!-- upper-content -->
+  <view class="upper-content">
+    <view class="header">
+      <view class="mark">
+        <view class="mark-line"></view>
+        <view class="mark-dot"></view>
+        <view class="mark-line"></view>
+      </view>
+      <view class="title">吃啥嘞</view>
     </view>
-    <view class="subtitle">今日食运 · 抽签问天</view>
-  </view>
 
-  <!-- 签号 -->
-  <view class="sign-number {{signNumber ? 'visible' : ''}}">
-    <text>第 {{signNumber}} 签</text>
-  </view>
+    <view class="result-wrap">
+      <view class="result-card {{isSpinning ? 'spinning' : ''}} {{landed ? 'landed' : ''}}">
+        <view class="card-fx"></view>
+        <view class="corner-tr"></view>
+        <view class="corner-bl"></view>
+        <view class="result-label">今儿个吃这个</view>
+        <view class="result-food">{{resultText}}</view>
+        <view class="result-tip {{tipVisible ? 'visible' : ''}}">
+          <text class="tip-main">{{tipText}}</text>
+          <text class="tip-sub">{{timeTip}}</text>
+        </view>
+        <view class="sign-number {{signNumber ? 'visible' : ''}}">第 {{signNumber}} 签</view>
+      </view>
+    </view>
 
-  <!-- 结果卡片 -->
-  <view class="result-card {{landed ? 'landing' : ''}}">
-    <text class="result-text">{{resultText}}</text>
-    <view class="result-tip {{tipVisible ? 'visible' : ''}}">
-      <text class="tip-main">{{tipText}}</text>
-      <text class="tip-sub">{{timeTip}}</text>
+    <view class="fortune-wrap {{fortuneVisible ? 'visible' : ''}}">
+      <view class="fortune-text">{{fortuneText}}</view>
     </view>
   </view>
 
-  <!-- 老虎机 / 菜单网格 -->
-  <view class="machine-area">
-    <slot-machine
-      wx:if="{{currentPool === 'all'}}"
-      foods="{{foods}}"
-      spinning="{{isSpinning}}"
-      targetIndex="{{targetIndex}}"
-      bind:onComplete="onSpinComplete"
-    />
-    <menu-grid
-      wx:if="{{currentPool === 'myMenu'}}"
-      foods="{{foods}}"
-      bind:onAdd="onMenuAdd"
-      bind:onRemove="onMenuRemove"
-    />
-  </view>
-
-  <!-- 控制按钮 -->
+  <!-- btn-wrap -->
   <view class="btn-wrap">
-    <button class="main-btn {{isSpinning ? 'spinning' : ''}}" bindtap="onSpin">
+    <button class="btn {{isSpinning ? 'is-spinning' : ''}}" bindtap="onSpin">
       <text class="btn-label">{{btnText}}</text>
+      <view class="btn-rule"></view>
       <text class="btn-kanji">{{btnKanji}}</text>
     </button>
-    <view class="sub-btns">
-      <button class="reset-btn" bindtap="onReset">重置</button>
-      <button class="pool-btn" bindtap="onGoPool">选</button>
+  </view>
+
+  <!-- lower-content -->
+  <view class="lower-content">
+    <view class="share-row {{shareVisible ? 'visible' : ''}}">
+      <button class="share-btn" bindtap="onSaveShareImage">分享</button>
+      <button class="share-btn" bindtap="onToggleCook">{{cookBtnText}}</button>
     </view>
-  </view>
 
-  <!-- 分享行 -->
-  <view class="share-row {{shareVisible ? 'visible' : ''}}">
-    <text class="share-text">今日食运已注定，分享给朋友</text>
-    <button class="share-btn" open-type="share">转发</button>
-    <button class="save-btn" bindtap="onSaveShareImage">保存图片</button>
-  </view>
-
-  <!-- 做法按钮 -->
-  <view class="cook-row" wx:if="{{landed}}">
-    <button class="cook-btn" bindtap="onToggleCook">{{cookBtnText}}</button>
-  </view>
-
-  <!-- 做法内容 -->
-  <view class="cook-wrap {{cookVisible ? 'visible' : ''}}">
-    <scroll-view class="cook-scroll" scroll-y>
-      <rich-text nodes="{{cookHtml}}"></rich-text>
-    </scroll-view>
-  </view>
-
-  <!-- 底部 Tab -->
-  <view class="tab-bar">
-    <view
-      class="tab-item {{currentPool === 'all' ? 'active' : ''}}"
-      data-pool="all"
-      bindtap="onSwitchPool"
-    >
-      <text class="tab-text">全部选项</text>
+    <view class="control-row">
+      <view class="pool-tabs">
+        <text
+          class="pool-tab {{currentPool === 'all' ? 'active' : ''}}"
+          data-pool="all"
+          bindtap="onSwitchPool"
+        >全部选项</text>
+        <text
+          class="pool-tab {{currentPool === 'myMenu' ? 'active' : ''}}"
+          data-pool="myMenu"
+          bindtap="onSwitchPool"
+        >我的菜单</text>
+      </view>
+      <button class="control-btn" bindtap="onGoPool">选</button>
+      <button class="control-btn" bindtap="onShowHistory">历</button>
     </view>
-    <view
-      class="tab-item {{currentPool === 'myMenu' ? 'active' : ''}}"
-      data-pool="myMenu"
-      bindtap="onSwitchPool"
-    >
-      <text class="tab-text">我的菜单</text>
+
+    <!-- Slot machine / Menu grid -->
+    <view class="machine-area">
+      <slot-machine
+        wx:if="{{currentPool === 'all'}}"
+        foods="{{foods}}"
+        spinning="{{isSpinning}}"
+        targetIndex="{{targetIndex}}"
+        bind:onComplete="onSpinComplete"
+      />
+      <menu-grid
+        wx:if="{{currentPool === 'myMenu'}}"
+        foods="{{foods}}"
+        bind:onAdd="onMenuAdd"
+        bind:onRemove="onMenuRemove"
+      />
+    </view>
+
+    <view class="cook-wrap {{cookVisible ? 'visible' : ''}}">
+      <scroll-view class="cook-scroll" scroll-y>
+        <rich-text nodes="{{cookHtml}}"></rich-text>
+      </scroll-view>
     </view>
   </view>
 
   <!-- Toast -->
   <view class="toast {{toastVisible ? 'visible' : ''}}">{{toastMsg}}</view>
 
-  <!-- 分享图片 canvas（离屏绘制） -->
+  <!-- History overlay -->
+  <view class="overlay {{historyVisible ? 'active' : ''}}" bindtap="onCloseHistory">
+    <view class="panel" catchtap="onPanelTap">
+      <view class="panel-header">
+        <text class="panel-title">抽签历史</text>
+        <text class="panel-close" bindtap="onCloseHistory">关闭</text>
+      </view>
+      <scroll-view class="panel-body" scroll-y>
+        <block wx:if="{{historyList.length === 0}}">
+          <view class="empty-text">暂无记录</view>
+        </block>
+        <block wx:else>
+          <view class="history-item" wx:for="{{historyList}}" wx:key="index">
+            <text class="history-name">{{item.name}}</text>
+            <text class="history-time">{{item.timeStr}}</text>
+          </view>
+        </block>
+      </scroll-view>
+      <view class="panel-footer" wx:if="{{historyList.length > 0}}">
+        <text class="clear-btn" bindtap="onClearHistory">清空</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Share overlay -->
+  <view class="overlay {{shareOverlayVisible ? 'active' : ''}}" bindtap="onCloseShareOverlay">
+    <view class="share-preview" catchtap="onPanelTap">
+      <image class="share-img" src="{{shareImageUrl}}" mode="widthFix" show-menu-by-longpress />
+      <view class="share-hint">长按保存图片</view>
+      <button class="share-close" bindtap="onCloseShareOverlay">关闭</button>
+    </view>
+  </view>
+
+  <!-- Hidden canvas for share card -->
   <canvas
     type="2d"
     id="shareCanvas"

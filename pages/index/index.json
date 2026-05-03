@@ -3,5 +3,6 @@
     "slot-machine": "/components/slot-machine/slot-machine",
     "menu-grid": "/components/menu-grid/menu-grid"
   },
-  "navigationBarTitleText": "吃啥嘞"
+  "navigationBarTitleText": "吃啥嘞",
+  "navigationStyle": "custom"
 }
