@@ -4,7 +4,7 @@
     "ignore": [
       { "type": "folder", "value": "web" },
       { "type": "folder", "value": "api" },
-      { "type": "folder", "value": "sounds" },
+      { "type": "folder", "value": "web" },
       { "type": "folder", "value": ".vercel" },
       { "type": "file", "value": ".env" },
       { "type": "file", "value": "chisha_prd.md" }

@@ -1,0 +1,140 @@
+.pool-page {
+  min-height: 100vh;
+  background: var(--paper);
+  padding: 40rpx 32rpx calc(40rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+.pool-header {
+  margin-bottom: 40rpx;
+}
+.pool-title {
+  display: block;
+  font-size: 40rpx;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0.1em;
+  margin-bottom: 12rpx;
+}
+.pool-sub {
+  font-size: 24rpx;
+  color: var(--ink-light);
+}
+
+.category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.category-item {
+  background: var(--card);
+  border: 1rpx solid var(--paper-dark);
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+
+.category-row {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 28rpx;
+  gap: 20rpx;
+}
+
+.checkbox {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  border: 2rpx solid var(--paper-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22rpx;
+  color: var(--paper);
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.checkbox.checked {
+  background: var(--lacquer);
+  border-color: var(--lacquer);
+}
+
+.category-name {
+  flex: 1;
+  font-size: 30rpx;
+  color: var(--ink);
+  font-weight: 500;
+}
+.category-count {
+  font-size: 24rpx;
+  color: var(--ink-light);
+}
+.expand-icon {
+  font-size: 24rpx;
+  color: var(--ink-light);
+  transition: transform 0.3s ease;
+  margin-left: 8rpx;
+}
+.expand-icon.expanded {
+  transform: rotate(90deg);
+}
+
+.food-list {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  background: rgba(246, 241, 233, 0.4);
+}
+.food-list.expanded {
+  max-height: 800rpx;
+}
+
+.food-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 28rpx 20rpx 88rpx;
+  border-top: 1rpx solid var(--paper-dark);
+  transition: all 0.15s;
+}
+.food-item.excluded {
+  opacity: 0.45;
+}
+.food-item.excluded .food-name {
+  text-decoration: line-through;
+}
+.food-name {
+  font-size: 28rpx;
+  color: var(--ink-mid);
+}
+.food-status {
+  font-size: 22rpx;
+  color: var(--ink-light);
+}
+
+.pool-footer {
+  margin-top: 48rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24rpx;
+}
+.pool-stats {
+  font-size: 24rpx;
+  color: var(--ink-light);
+}
+.back-btn {
+  width: 280rpx;
+  height: 80rpx;
+  border-radius: 40rpx;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 28rpx;
+  letter-spacing: 0.1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.back-btn::after {
+  border: none;
+}

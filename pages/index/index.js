@@ -113,8 +113,7 @@ Page({
       signNumber: ''
     });
 
-    // 模拟音效（后续接入 InnerAudioContext）
-    // this.playWoodblock();
+    this.playWoodblock();
   },
 
   onSpinComplete() {
@@ -135,7 +134,7 @@ Page({
       btnKanji: '抽签'
     });
 
-    // this.playStamp();
+    this.playStamp();
 
     // 记录历史
     this.state.history.draws.unshift({ name, time: Date.now() });
@@ -166,6 +165,10 @@ Page({
       signNumber: ''
     });
     this.currentIndex = -1;
+  },
+
+  onGoPool() {
+    wx.navigateTo({ url: '/pages/pool/pool' });
   },
 
   onToggleCook() {
@@ -265,9 +268,92 @@ Page({
     this.showToast('做法卡片绘制中…');
   },
 
-  onSaveShareImage() {
-    // TODO: canvas 绘制签签卡片并保存相册
-    this.showToast('分享卡片绘制中…');
+  async onSaveShareImage() {
+    const { resultText, signNumber, timeTip } = this.data;
+    if (resultText === '待君问签') {
+      this.showToast('先抽签再分享');
+      return;
+    }
+    try {
+      const tempPath = await this.drawShareCard(resultText, signNumber, timeTip);
+      await wx.saveImageToPhotosAlbum({ filePath: tempPath });
+      this.showToast('已保存到相册');
+    } catch (e) {
+      console.error('save image failed', e);
+      if (e.errMsg && e.errMsg.includes('auth deny')) {
+        this.showToast('请授权保存相册权限');
+      } else {
+        this.showToast('保存失败，请重试');
+      }
+    }
+  },
+
+  drawShareCard(dish, sign, dateStr) {
+    return new Promise((resolve, reject) => {
+      const query = wx.createSelectorQuery();
+      query.select('#shareCanvas')
+        .fields({ node: true, size: true })
+        .exec((res) => {
+          if (!res[0] || !res[0].node) {
+            reject(new Error('canvas not found'));
+            return;
+          }
+          const canvas = res[0].node;
+          const ctx = canvas.getContext('2d');
+          const dpr = wx.getSystemInfoSync().pixelRatio;
+          const width = 540;
+          const height = 960;
+
+          canvas.width = width * dpr;
+          canvas.height = height * dpr;
+          ctx.scale(dpr, dpr);
+
+          // 背景
+          ctx.fillStyle = '#F6F1E9';
+          ctx.fillRect(0, 0, width, height);
+
+          // 网格点
+          ctx.fillStyle = '#CBC0AE';
+          for (let x = 10; x < width; x += 20) {
+            for (let y = 10; y < height; y += 20) {
+              ctx.beginPath();
+              ctx.arc(x, y, 0.8, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+
+          // 菜名
+          ctx.fillStyle = '#8A3D27';
+          ctx.font = '600 48px serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(dish, width / 2, 360);
+
+          // 签号
+          ctx.fillStyle = '#6B6055';
+          ctx.font = '400 14px sans-serif';
+          ctx.fillText(`第 ${sign} 签 · ${dateStr}`, width / 2, 420);
+
+          // 分隔线
+          ctx.strokeStyle = '#E8DFD0';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(width / 2 - 16, 480);
+          ctx.lineTo(width / 2 + 16, 480);
+          ctx.stroke();
+
+          // 品牌
+          ctx.fillStyle = '#A89F94';
+          ctx.font = '400 12px sans-serif';
+          ctx.fillText('吃啥嘞', width / 2, 540);
+          ctx.fillText('chisha.shameless.top', width / 2, 565);
+
+          wx.canvasToTempFilePath({
+            canvas,
+            success: (r) => resolve(r.tempFilePath),
+            fail: reject
+          });
+        });
+    });
   },
 
   onMenuAdd(e) {
@@ -290,6 +376,22 @@ Page({
     this.state.myMenu.splice(idx, 1);
     this.saveState();
     this.refreshFoods();
+  },
+
+  playWoodblock() {
+    const app = getApp();
+    if (app.woodblock && this.state.settings.sound) {
+      app.woodblock.stop();
+      app.woodblock.play();
+    }
+  },
+
+  playStamp() {
+    const app = getApp();
+    if (app.stamp && this.state.settings.sound) {
+      app.stamp.stop();
+      app.stamp.play();
+    }
   },
 
   showToast(msg) {

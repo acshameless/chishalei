@@ -15,9 +15,8 @@ App({
     // 小程序不支持 Web Audio API，使用 InnerAudioContext
     this.woodblock = wx.createInnerAudioContext();
     this.stamp = wx.createInnerAudioContext();
-    // 音效文件暂时不加载，后续可放入 CDN 或 base64
-    // this.woodblock.src = '/sounds/woodblock.mp3';
-    // this.stamp.src = '/sounds/stamp.mp3';
+    this.woodblock.src = '/sounds/woodblock.m4a';
+    this.stamp.src = '/sounds/stamp.m4a';
   },
 
   loadState() {

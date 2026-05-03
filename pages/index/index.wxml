@@ -46,7 +46,10 @@
       <text class="btn-label">{{btnText}}</text>
       <text class="btn-kanji">{{btnKanji}}</text>
     </button>
-    <button class="reset-btn" bindtap="onReset">重置</button>
+    <view class="sub-btns">
+      <button class="reset-btn" bindtap="onReset">重置</button>
+      <button class="pool-btn" bindtap="onGoPool">选</button>
+    </view>
   </view>
 
   <!-- 分享行 -->
