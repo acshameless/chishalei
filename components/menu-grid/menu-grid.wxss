@@ -9,6 +9,7 @@
   gap: 16rpx 20rpx;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  pointer-events: auto;
 }
 
 .menu-grid-empty {

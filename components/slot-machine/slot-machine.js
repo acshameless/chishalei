@@ -13,12 +13,8 @@ Component({
   },
 
   lifetimes: {
-    attached() {
-      this.tryInit();
-    },
-    ready() {
-      this.tryInit();
-    }
+    attached() { this.tryInit(); },
+    ready() { this.tryInit(); }
   },
 
   observers: {
@@ -55,7 +51,8 @@ Component({
           items,
           offsetY: -randomOffset,
           transition: 'none',
-          highlightIndex: -1
+          highlightIndex: -1,
+          animData: null
         };
       });
       this.setData({ columns, inited: true });
@@ -69,6 +66,8 @@ Component({
       const cycleHeight = foods.length * itemHeight;
       const targetCycle = Math.floor(repeat / 2);
       const centerOffset = colHeight / 2 - itemHeight / 2;
+
+      let maxDurationMs = 0;
 
       const newColumns = columns.map((col, i) => {
         const posInCol = col.items.findIndex((name, idx) => {
@@ -84,31 +83,30 @@ Component({
         const delay = distFromMid * 0.12;
         const duration = 1.8 + distFromMid * 0.35;
 
+        // 使用小程序 animation API，这是唯一能可靠触发滚动动画的方式
+        const anim = wx.createAnimation({
+          duration: duration * 1000,
+          timingFunction: 'cubic-bezier(0.22, 0.8, 0.3, 1)',
+          delay: delay * 1000
+        });
+        anim.translateY(finalY).step();
+
+        maxDurationMs = Math.max(maxDurationMs, (duration + delay + 0.3) * 1000);
+
         return {
           ...col,
           offsetY: finalY,
-          transition: `transform ${duration}s cubic-bezier(0.22, 0.8, 0.3, 1) ${delay}s`,
-          highlightIndex: effectivePos + (targetCycle + extraRounds) * foods.length
+          transition: 'none',
+          highlightIndex: effectivePos + (targetCycle + extraRounds) * foods.length,
+          animData: anim.export()
         };
       });
 
-      // 小程序中 transition 需要分两步设置才能触发：
-      // 第一步先重置 transition 为 none，确保浏览器记录当前位置
-      // 第二步再设置 transition + 新 offsetY，触发滚动动画
-      const resetColumns = columns.map(col => ({
-        ...col,
-        transition: 'none'
-      }));
-      this.setData({ columns: resetColumns });
+      this.setData({ columns: newColumns });
 
-      setTimeout(() => {
-        this.setData({ columns: newColumns });
-      }, 50);
-
-      const maxDuration = 1.8 + 1 * 0.35 + 0.12 + 0.3;
       setTimeout(() => {
         this.triggerEvent('onComplete');
-      }, (maxDuration * 1000) + 50);
+      }, maxDurationMs);
     },
 
     shuffle(arr) {

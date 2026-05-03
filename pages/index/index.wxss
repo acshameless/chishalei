@@ -637,18 +637,23 @@ page {
   align-items: center;
   padding: 10px 0;
   border-bottom: 1px solid var(--paper-dark);
+  gap: 12px;
 }
 .history-item:last-child { border-bottom: none; }
 .history-name {
   font-size: 13px;
   color: var(--ink-mid);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .history-time {
   font-size: 11px;
   color: var(--ink-light);
   white-space: nowrap;
   flex-shrink: 0;
-  margin-left: 12px;
 }
 .clear-btn {
   font-size: 12px;

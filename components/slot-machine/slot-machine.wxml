@@ -1,6 +1,6 @@
 <view class="slot-container">
   <view class="slot-column" wx:for="{{columns}}" wx:key="index">
-    <view class="slot-strip" style="transform: translateY({{item.offsetY}}px); transition: {{item.transition}};">
+    <view class="slot-strip" animation="{{item.animData}}" style="transform: translateY({{item.offsetY}}px);">
       <view
         class="slot-item {{item.highlightIndex === idx ? 'active' : ''}}"
         wx:for="{{item.items}}"
