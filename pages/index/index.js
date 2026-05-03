@@ -60,6 +60,18 @@ Page({
     this.refreshFoods();
   },
 
+  onReady() {
+    // 主动初始化子组件，避免生命周期不可靠
+    this.initChildComponents();
+  },
+
+  initChildComponents() {
+    const slotMachine = this.selectComponent('#slotMachine');
+    if (slotMachine && this.data.foods.length > 0) {
+      slotMachine.initColumns(this.data.foods);
+    }
+  },
+
   onShareAppMessage() {
     const { resultText, signNumber } = this.data;
     return {
@@ -104,7 +116,12 @@ Page({
       excludedFoods: this.state.excludedFoods,
       myMenu: this.state.myMenu
     });
-    this.setData({ foods });
+    this.setData({ foods }, () => {
+      const slotMachine = this.selectComponent('#slotMachine');
+      if (slotMachine && foods.length > 0) {
+        slotMachine.initColumns(foods);
+      }
+    });
   },
 
   updateTimeTip() {
@@ -215,9 +232,9 @@ Page({
 
     if (!cookVisible) {
       this.fetchCook(resultText);
-      this.setData({ cookVisible: true, cookBtnText: '收起' });
+      this.setData({ cookVisible: true, cookBtnText: '导出' });
     } else {
-      this.setData({ cookVisible: false, cookBtnText: '做法' });
+      this.exportCookCard();
     }
   },
 
@@ -282,6 +299,201 @@ Page({
       console.error('draw share card failed', e);
       this.showToast('生成失败，请重试');
     }
+  },
+
+  async exportCookCard() {
+    const { resultText, cookMaterials, cookSteps, cookTips } = this.data;
+    if (!cookMaterials.length && !cookSteps.length) {
+      this.showToast('暂无做法可导出');
+      return;
+    }
+    try {
+      const tempPath = await this.drawCookCard(resultText, cookMaterials, cookSteps, cookTips);
+      await wx.saveImageToPhotosAlbum({ filePath: tempPath });
+      this.showToast('已保存到相册');
+    } catch (e) {
+      console.error('draw cook card failed', e);
+      if (e.errMsg && e.errMsg.includes('auth deny')) {
+        this.showToast('请授权保存相册权限');
+      } else {
+        this.showToast('导出失败，请重试');
+      }
+    }
+  },
+
+  drawCookCard(dish, materials, steps, tips) {
+    return new Promise((resolve, reject) => {
+      const query = wx.createSelectorQuery();
+      query.select('#shareCanvas')
+        .fields({ node: true, size: true })
+        .exec((res) => {
+          if (!res[0] || !res[0].node) {
+            reject(new Error('canvas not found'));
+            return;
+          }
+          const canvas = res[0].node;
+          const ctx = canvas.getContext('2d');
+          const dpr = wx.getSystemInfoSync().pixelRatio;
+          const width = 540;
+          // 根据内容动态计算高度
+          let height = 400;
+          height += materials.length * 30;
+          height += steps.length * 120;
+          height += tips.length * 30;
+          height = Math.max(height, 960);
+          height = Math.min(height, 2000);
+
+          canvas.width = width * dpr;
+          canvas.height = height * dpr;
+          ctx.scale(dpr, dpr);
+
+          // Background
+          ctx.fillStyle = '#F6F1E9';
+          ctx.fillRect(0, 0, width, height);
+
+          // Dot grid
+          ctx.fillStyle = '#CBC0AE';
+          for (let x = 10; x < width; x += 20) {
+            for (let y = 10; y < height; y += 20) {
+              ctx.beginPath();
+              ctx.arc(x, y, 0.8, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+
+          let y = 60;
+
+          // Title
+          ctx.fillStyle = '#8A3D27';
+          ctx.font = '600 36px serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(dish, width / 2, y);
+          y += 50;
+
+          // Date
+          const d = new Date();
+          const dateStr = d.getFullYear() + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0');
+          ctx.fillStyle = '#A89F94';
+          ctx.font = '400 12px sans-serif';
+          ctx.fillText(dateStr, width / 2, y);
+          y += 50;
+
+          // Materials
+          if (materials.length) {
+            ctx.fillStyle = '#B85438';
+            ctx.font = '600 12px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('食材', 48, y);
+            y += 24;
+            ctx.fillStyle = '#6B6055';
+            ctx.font = '400 12px sans-serif';
+            materials.forEach(m => {
+              ctx.fillText(`${m.name}  ${m.amount}`, 48, y);
+              y += 22;
+            });
+            y += 16;
+          }
+
+          // Steps
+          if (steps.length) {
+            ctx.fillStyle = '#B85438';
+            ctx.font = '600 12px sans-serif';
+            ctx.fillText('步骤', 48, y);
+            y += 24;
+            steps.forEach((s, i) => {
+              ctx.fillStyle = '#B85438';
+              ctx.font = '600 16px serif';
+              ctx.fillText(String(i + 1), 48, y);
+              ctx.fillStyle = '#23201B';
+              ctx.font = '600 13px sans-serif';
+              ctx.fillText(s.title, 72, y);
+              y += 20;
+              ctx.fillStyle = '#6B6055';
+              ctx.font = '400 12px sans-serif';
+              const maxWidth = width - 96;
+              this.wrapText(ctx, s.desc, 72, y, maxWidth, 18);
+              y += this.getTextLines(ctx, s.desc, maxWidth) * 18 + 6;
+              if (s.why) {
+                ctx.fillStyle = '#A89F94';
+                ctx.font = 'italic 400 11px sans-serif';
+                this.wrapText(ctx, `→ ${s.why}`, 72, y, maxWidth, 16);
+                y += this.getTextLines(ctx, `→ ${s.why}`, maxWidth) * 16 + 4;
+              }
+              if (s.heat) {
+                ctx.fillStyle = '#8A3D27';
+                ctx.font = '400 11px sans-serif';
+                ctx.fillText(s.heat, 72, y);
+                y += 20;
+              }
+              y += 12;
+            });
+            y += 8;
+          }
+
+          // Tips
+          if (tips.length) {
+            ctx.fillStyle = '#B85438';
+            ctx.font = '600 12px sans-serif';
+            ctx.fillText('小贴士', 48, y);
+            y += 24;
+            ctx.fillStyle = '#6B6055';
+            ctx.font = '400 12px sans-serif';
+            tips.forEach(t => {
+              this.wrapText(ctx, `· ${t}`, 48, y, width - 96, 18);
+              y += this.getTextLines(ctx, `· ${t}`, width - 96) * 18 + 4;
+            });
+            y += 16;
+          }
+
+          // Footer
+          ctx.fillStyle = '#A89F94';
+          ctx.font = '400 12px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('吃啥嘞', width / 2, height - 40);
+          ctx.fillText('chisha.shameless.top', width / 2, height - 20);
+
+          wx.canvasToTempFilePath({
+            canvas,
+            success: (r) => resolve(r.tempFilePath),
+            fail: reject
+          });
+        });
+    });
+  },
+
+  wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+    const chars = text.split('');
+    let line = '';
+    for (let i = 0; i < chars.length; i++) {
+      const testLine = line + chars[i];
+      const metrics = ctx.measureText(testLine);
+      if (metrics.width > maxWidth && i > 0) {
+        ctx.fillText(line, x, y);
+        line = chars[i];
+        y += lineHeight;
+      } else {
+        line = testLine;
+      }
+    }
+    ctx.fillText(line, x, y);
+    return y;
+  },
+
+  getTextLines(ctx, text, maxWidth) {
+    const chars = text.split('');
+    let line = '';
+    let lines = 1;
+    for (let i = 0; i < chars.length; i++) {
+      const testLine = line + chars[i];
+      const metrics = ctx.measureText(testLine);
+      if (metrics.width > maxWidth && i > 0) {
+        line = chars[i];
+        lines++;
+      } else {
+        line = testLine;
+      }
+    }
+    return lines;
   },
 
   drawShareCard(dish, sign, dateStr) {

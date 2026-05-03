@@ -67,14 +67,16 @@
     <!-- Slot machine / Menu grid -->
     <view class="machine-area">
       <slot-machine
-        wx:if="{{currentPool === 'all'}}"
+        id="slotMachine"
+        hidden="{{currentPool !== 'all'}}"
         foods="{{foods}}"
         spinning="{{isSpinning}}"
         targetIndex="{{targetIndex}}"
         bind:onComplete="onSpinComplete"
       />
       <menu-grid
-        wx:if="{{currentPool === 'myMenu'}}"
+        id="menuGrid"
+        hidden="{{currentPool !== 'myMenu'}}"
         foods="{{foods}}"
         bind:onAdd="onMenuAdd"
         bind:onRemove="onMenuRemove"

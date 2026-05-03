@@ -468,6 +468,102 @@ page {
 .cook-scroll::before { top: -1px; left: -1px; border-width: 1.5px 0 0 1.5px; }
 .cook-scroll::after  { bottom: -1px; right: -1px; border-width: 0 1.5px 1.5px 0; }
 
+.cook-section { margin-bottom: 20px; }
+.cook-section:last-child { margin-bottom: 0; }
+.cook-section-title {
+  font-size: 10.5px;
+  color: var(--lacquer);
+  letter-spacing: 0.22em;
+  margin-bottom: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.cook-materials-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+.cook-material-item {
+  font-size: 12px;
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+.cook-material-name { color: var(--ink); font-weight: 500; }
+.cook-material-amount { color: var(--ink-light); font-size: 11px; }
+
+.cook-step {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed var(--paper-dark);
+}
+.cook-step:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+.cook-step-num {
+  font-family: 'Shippori Mincho B1', 'Noto Serif SC', 'Songti SC', serif;
+  font-size: 18px;
+  color: var(--lacquer);
+  line-height: 1.2;
+  flex-shrink: 0;
+  min-width: 26px;
+  text-align: center;
+  opacity: 0.8;
+}
+.cook-step-body { flex: 1; }
+.cook-step-title {
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 600;
+  margin-bottom: 4px;
+  letter-spacing: 0.04em;
+}
+.cook-step-desc {
+  font-size: 12px;
+  color: var(--ink-mid);
+  line-height: 1.7;
+}
+.cook-step-why {
+  font-size: 11px;
+  color: var(--ink-light);
+  margin-top: 4px;
+  font-style: italic;
+  letter-spacing: 0.03em;
+}
+.cook-step-heat {
+  font-size: 11px;
+  color: var(--lacquer-dim);
+  margin-top: 6px;
+  letter-spacing: 0.05em;
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--paper);
+  border-radius: 2px;
+}
+.cook-tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cook-tips-item {
+  font-size: 11.5px;
+  color: var(--ink-mid);
+  line-height: 1.7;
+  padding-left: 16px;
+  position: relative;
+}
+.cook-tips-item::before {
+  content: '·';
+  position: absolute;
+  left: 2px;
+  color: var(--lacquer);
+  font-weight: 600;
+}
+
 /* ═══════════════════════════════════════
    Toast
    ═══════════════════════════════════════ */

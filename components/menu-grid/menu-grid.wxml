@@ -15,7 +15,7 @@
       {{item}}
     </view>
     <block wx:if="{{!isEditing}}">
-      <button class="menu-grid-add" bindtap="onAddTap">＋</button>
+      <view class="menu-grid-add" bindtap="onAddTap">＋</view>
     </block>
     <block wx:else>
       <input
