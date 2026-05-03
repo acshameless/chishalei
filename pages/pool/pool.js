@@ -73,6 +73,13 @@ Page({
     this.setData({ categories: [...categories] });
   },
 
+  onToggleExpand(e) {
+    const idx = e.currentTarget.dataset.index;
+    const categories = this.data.categories;
+    categories[idx].expanded = !categories[idx].expanded;
+    this.setData({ categories: [...categories] });
+  },
+
   onToggleFood(e) {
     const catIdx = e.currentTarget.dataset.cat;
     const foodIdx = e.currentTarget.dataset.food;

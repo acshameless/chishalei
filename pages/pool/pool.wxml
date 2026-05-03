@@ -12,13 +12,13 @@
       data-index="{{index}}"
     >
       <!-- 分类行 -->
-      <view class="category-row" bindtap="onToggleCategory" data-index="{{index}}">
-        <view class="checkbox {{item.selected ? 'checked' : ''}}">
+      <view class="category-row">
+        <view class="checkbox {{item.selected ? 'checked' : ''}}" bindtap="onToggleCategory" data-index="{{index}}">
           <text wx:if="{{item.selected}}">✓</text>
         </view>
-        <text class="category-name">{{item.name}}</text>
-        <text class="category-count">{{item.items.length}} 道</text>
-        <text class="expand-icon {{item.expanded ? 'expanded' : ''}}">▸</text>
+        <text class="category-name" bindtap="onToggleExpand" data-index="{{index}}">{{item.name}}</text>
+        <text class="category-count" bindtap="onToggleExpand" data-index="{{index}}">{{item.items.length}} 道</text>
+        <text class="expand-icon {{item.expanded ? 'expanded' : ''}}" bindtap="onToggleExpand" data-index="{{index}}">▸</text>
       </view>
 
       <!-- 菜品展开 -->
