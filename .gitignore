@@ -4,3 +4,5 @@
 .idea/
 .vercel
 .env
+*.png
+project.private.config.json

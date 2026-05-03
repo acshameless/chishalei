@@ -37,6 +37,9 @@ Page({
 
   onShow() {
     this.updateTimeTip();
+    // 从 pool 页返回时重新加载状态
+    this.loadState();
+    this.refreshFoods();
   },
 
   onShareAppMessage() {
@@ -191,26 +194,28 @@ Page({
       return;
     }
 
-    // 调用后端接口
-    // 注意：需要把域名配置到小程序后台 request 合法域名
-    wx.request({
-      url: 'https://chisha.shameless.top/api/cook',
-      method: 'POST',
-      header: { 'Content-Type': 'application/json' },
+    // 调用云函数（无需备案域名）
+    wx.cloud.callFunction({
+      name: 'cook',
       data: { dish },
       success: (res) => {
-        if (res.data && res.data.recipe) {
-          this.state.customRecipes[dish] = res.data.recipe;
-          if (res.data.tip) {
-            this.state.customTips[dish] = res.data.tip;
+        const data = res.result;
+        if (data && data.recipe) {
+          this.state.customRecipes[dish] = data.recipe;
+          if (data.tip) {
+            this.state.customTips[dish] = data.tip;
           }
           this.saveState();
-          this.renderCook(res.data.recipe);
+          this.renderCook(data.recipe);
+        } else if (data && data.error) {
+          console.warn('cook cloud function error:', data.error, data.detail);
+          this.renderCook(this.getCookFallback(dish));
         } else {
           this.renderCook(this.getCookFallback(dish));
         }
       },
-      fail: () => {
+      fail: (err) => {
+        console.error('cook cloud function failed:', err);
         this.renderCook(this.getCookFallback(dish));
       }
     });

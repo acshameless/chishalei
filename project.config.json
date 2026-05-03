@@ -2,13 +2,32 @@
   "description": "吃啥嘞 - 今天吃什么小程序",
   "packOptions": {
     "ignore": [
-      { "type": "folder", "value": "web" },
-      { "type": "folder", "value": "api" },
-      { "type": "folder", "value": "web" },
-      { "type": "folder", "value": ".vercel" },
-      { "type": "file", "value": ".env" },
-      { "type": "file", "value": "chisha_prd.md" }
-    ]
+      {
+        "value": "web",
+        "type": "folder"
+      },
+      {
+        "value": "api",
+        "type": "folder"
+      },
+      {
+        "value": "web",
+        "type": "folder"
+      },
+      {
+        "value": ".vercel",
+        "type": "folder"
+      },
+      {
+        "value": ".env",
+        "type": "file"
+      },
+      {
+        "value": "chisha_prd.md",
+        "type": "file"
+      }
+    ],
+    "include": []
   },
   "setting": {
     "urlCheck": false,
@@ -46,15 +65,22 @@
     "disableUseStrict": false,
     "minifyWXML": true,
     "showES6CompileOption": false,
-    "useCompilerPlugins": false
+    "useCompilerPlugins": false,
+    "compileWorklet": false,
+    "localPlugins": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true
   },
+  "cloudfunctionRoot": "cloudfunctions/",
   "compileType": "miniprogram",
   "libVersion": "3.3.0",
-  "appid": "",
+  "appid": "wx77e720bb95fa63fa",
   "projectname": "%E5%90%83%E5%95%A5%E5%98%9E",
   "condition": {},
   "editorSetting": {
     "tabIndent": "insertSpaces",
     "tabSize": 2
-  }
+  },
+  "simulatorPluginLibVersion": {}
 }
