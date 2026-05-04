@@ -1,15 +1,49 @@
 <view class="slot-container">
-  <view class="slot-column" wx:for="{{columns}}" wx:key="index">
-    <view class="slot-strip" animation="{{item.animData}}" style="transform: translateY({{item.offsetY}}px);">
-      <view
-        class="slot-item {{item.highlightIndex === idx ? 'active' : ''}}"
-        wx:for="{{item.items}}"
-        wx:for-item="name"
-        wx:for-index="idx"
-        wx:key="idx"
-      >
-        {{name}}
+  <block wx:if="{{items0.length === 0}}">
+    <view class="slot-empty">暂无可选菜品</view>
+  </block>
+  <block wx:else>
+    <!-- 第 0 列 -->
+    <view class="slot-column">
+      <view class="slot-strip" style="transform: translateY({{offset0}}px);" animation="{{anim0}}">
+        <view
+          class="slot-item {{highlight0 === idx ? 'active' : ''}} {{myMenu.indexOf(name) > -1 ? 'in-my-menu' : ''}}"
+          wx:for="{{items0}}"
+          wx:for-item="name"
+          wx:for-index="idx"
+          wx:key="idx"
+          data-name="{{name}}"
+          bindtap="onItemTap"
+        >{{name}}</view>
       </view>
     </view>
-  </view>
+    <!-- 第 1 列 -->
+    <view class="slot-column">
+      <view class="slot-strip" style="transform: translateY({{offset1}}px);" animation="{{anim1}}">
+        <view
+          class="slot-item {{highlight1 === idx ? 'active' : ''}} {{myMenu.indexOf(name) > -1 ? 'in-my-menu' : ''}}"
+          wx:for="{{items1}}"
+          wx:for-item="name"
+          wx:for-index="idx"
+          wx:key="idx"
+          data-name="{{name}}"
+          bindtap="onItemTap"
+        >{{name}}</view>
+      </view>
+    </view>
+    <!-- 第 2 列 -->
+    <view class="slot-column">
+      <view class="slot-strip" style="transform: translateY({{offset2}}px);" animation="{{anim2}}">
+        <view
+          class="slot-item {{highlight2 === idx ? 'active' : ''}} {{myMenu.indexOf(name) > -1 ? 'in-my-menu' : ''}}"
+          wx:for="{{items2}}"
+          wx:for-item="name"
+          wx:for-index="idx"
+          wx:key="idx"
+          data-name="{{name}}"
+          bindtap="onItemTap"
+        >{{name}}</view>
+      </view>
+    </view>
+  </block>
 </view>

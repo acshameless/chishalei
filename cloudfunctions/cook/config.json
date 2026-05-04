@@ -2,5 +2,6 @@
   "permissions": {
     "openapi": []
   },
-  "runtime": "Nodejs18"
+  "runtime": "Nodejs18",
+  "timeout": 20
 }

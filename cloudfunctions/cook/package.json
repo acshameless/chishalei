@@ -1,8 +1,11 @@
 {
   "name": "cook",
   "version": "1.0.0",
-  "description": "Fetch recipe from LLM API",
+  "description": "Fetch recipe from LLM API (DeepSeek / OpenAI compatible)",
   "main": "index.js",
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "wx-server-sdk": "~3.0.0"
   }

@@ -1,162 +1,198 @@
-<view class="page-container">
+<view class="page-container" style="background-color: {{pageBg}};">
+  <view class="container" bindtouchstart="onTouchStart" bindtouchend="onTouchEnd">
 
-  <!-- upper-content -->
-  <view class="upper-content">
-    <view class="header">
-      <view class="mark">
-        <view class="mark-line"></view>
-        <view class="mark-dot"></view>
-        <view class="mark-line"></view>
-      </view>
-      <view class="title">吃啥嘞</view>
-    </view>
-
-    <view class="result-wrap">
-      <view class="result-card {{isSpinning ? 'spinning' : ''}} {{landed ? 'landed' : ''}}">
-        <view class="card-fx"></view>
-        <view class="corner-tr"></view>
-        <view class="corner-bl"></view>
-        <view class="result-label">今儿个吃这个</view>
-        <view class="result-food">{{resultText}}</view>
-        <view class="result-tip {{tipVisible ? 'visible' : ''}}">
-          <text class="tip-main">{{tipText}}</text>
-          <text class="tip-sub">{{timeTip}}</text>
+    <!-- upper-content -->
+    <view class="upper-content">
+      <view class="header">
+        <view class="mark">
+          <view class="mark-line"></view>
+          <view class="mark-dot"></view>
+          <view class="mark-line"></view>
         </view>
-        <view class="fortune-text-inside {{fortuneVisible ? 'visible' : ''}}">{{fortuneText}}</view>
-        <view class="sign-number {{signNumber ? 'visible' : ''}}">第 {{signNumber}} 签</view>
+        <view class="title">吃啥嘞</view>
+      </view>
+
+      <view class="result-wrap">
+        <view class="result-card {{isSpinning ? 'spinning' : ''}} {{landed ? 'landed' : ''}}" id="result-card">
+          <view class="card-fx"></view>
+          <view class="corner-tr"></view>
+          <view class="corner-bl"></view>
+          <view class="result-label">今儿个吃这个</view>
+          <view class="result-food {{landed ? 'landing' : ''}}" id="result">{{resultText}}</view>
+          <view class="result-tip {{tipVisible ? 'visible' : ''}}" id="result-tip">
+            <text class="tip-main">{{tipText}}</text>
+            <text class="tip-sub">{{tipSub}}</text>
+          </view>
+          <view class="sign-number {{signNumberText ? 'visible' : ''}}" id="sign-number">{{signNumberText}}</view>
+        </view>
+      </view>
+
+      <view class="fortune-wrap {{fortuneVisible ? 'visible' : ''}}" id="fortune-wrap">
+        <view class="fortune-text" id="fortune-text">{{fortuneText}}</view>
       </view>
     </view>
-  </view>
 
-  <!-- btn-wrap -->
-  <view class="btn-wrap">
-    <button class="btn {{isSpinning ? 'is-spinning' : ''}}" bindtap="onSpin">
-      <text class="btn-label">{{btnText}}</text>
-      <view class="btn-rule"></view>
-      <text class="btn-kanji">{{btnKanji}}</text>
-    </button>
-  </view>
-
-  <!-- lower-content -->
-  <view class="lower-content">
-    <view class="share-row {{shareVisible ? 'visible' : ''}}">
-      <view class="share-btn" bindtap="onSaveShareImage">分享</view>
-      <view class="share-btn" bindtap="onToggleCook">{{cookBtnText}}</view>
+    <!-- btn-wrap -->
+    <view class="btn-wrap">
+      <button class="btn {{isSpinning ? 'is-spinning' : ''}}" id="btn" bindtap="spin">
+        <text class="btn-label">{{btnText}}</text>
+        <view class="btn-rule"></view>
+        <text class="btn-kanji">{{btnKanji}}</text>
+      </button>
     </view>
 
-    <view class="control-row">
-      <view class="pool-tabs">
-        <text
-          class="pool-tab {{currentPool === 'all' ? 'active' : ''}}"
-          data-pool="all"
-          bindtap="onSwitchPool"
-        >全部选项</text>
-        <text
-          class="pool-tab {{currentPool === 'myMenu' ? 'active' : ''}}"
-          data-pool="myMenu"
-          bindtap="onSwitchPool"
-        >我的菜单</text>
+    <!-- lower-content -->
+    <view class="lower-content">
+      <view class="share-row {{shareVisible ? 'visible' : ''}}" id="share-row">
+        <view class="share-btn" bindtap="shareFood">分享</view>
+        <view class="share-btn" id="cook-btn" bindtap="askCook">{{cookBtnText}}</view>
       </view>
-      <view class="control-btn" bindtap="onGoPool">选</view>
-      <view class="control-btn" bindtap="onShowHistory">历</view>
-    </view>
 
-    <!-- Slot machine / Menu grid -->
-    <view class="machine-area">
-      <slot-machine
-        id="slotMachine"
-        hidden="{{currentPool !== 'all'}}"
-        foods="{{foods}}"
-        spinning="{{isSpinning}}"
-        targetIndex="{{targetIndex}}"
-        bind:onComplete="onSpinComplete"
-      />
-      <menu-grid
-        id="menuGrid"
-        hidden="{{currentPool !== 'myMenu'}}"
-        foods="{{foods}}"
-        bind:onAdd="onMenuAdd"
-        bind:onRemove="onMenuRemove"
-      />
-    </view>
+      <view class="control-row" id="control-row">
+        <view class="pool-tabs">
+          <text class="pool-tab {{currentPool === 'all' ? 'active' : ''}}" id="tab-all" bindtap="switchPool" data-pool="all">全部选项</text>
+          <text class="pool-tab {{currentPool === 'myMenu' ? 'active' : ''}}" id="tab-my" bindtap="switchPool" data-pool="myMenu">我的菜单</text>
+        </view>
+        <view class="control-btn" id="category-toggle" bindtap="showCategoryPicker">选</view>
+        <view class="control-btn" id="history-toggle" bindtap="showHistory">历</view>
+      </view>
 
-    <view class="cook-wrap {{cookVisible ? 'visible' : ''}}">
-      <scroll-view class="cook-scroll" scroll-y>
-        <!-- 食材 -->
-        <view class="cook-section" wx:if="{{cookMaterials.length}}">
-          <view class="cook-section-title">食材</view>
-          <view class="cook-materials-list">
-            <view class="cook-material-item" wx:for="{{cookMaterials}}" wx:key="index">
-              <text class="cook-material-name">{{item.name}}</text>
-              <text class="cook-material-amount">{{item.amount}}</text>
+      <!-- Slot machine / Menu grid -->
+      <view class="machine-area {{hasWinner ? 'has-winner' : ''}}" id="particle-container">
+        <slot-machine
+          wx:if="{{currentPool === 'all'}}"
+          id="slotMachine"
+          foods="{{foods}}"
+          myMenu="{{state.myMenu}}"
+          excludedFoods="{{state.excludedFoods}}"
+          spinning="{{isSpinning}}"
+          targetIndex="{{targetIndex}}"
+          bind:onComplete="onSpinComplete"
+          bind:onToggleFood="onToggleFoodInPool"
+        />
+        <menu-grid
+          wx:if="{{currentPool === 'myMenu'}}"
+          id="menuGrid"
+          foods="{{foods}}"
+          bind:onAdd="onMenuAdd"
+          bind:onRemove="onMenuRemove"
+        />
+      </view>
+
+      <view class="cook-wrap {{cookVisible ? 'visible' : ''}}" id="cook-wrap">
+        <view class="cook-content" id="cook-content">
+          <view class="cook-loading" wx:if="{{cookLoading}}">
+            <view class="cook-loading-dots">
+              <view></view><view></view><view></view>
             </view>
+            <view>正在生成做法</view>
           </view>
-        </view>
-        <!-- 步骤 -->
-        <view class="cook-section" wx:if="{{cookSteps.length}}">
-          <view class="cook-section-title">步骤</view>
-          <view class="cook-step" wx:for="{{cookSteps}}" wx:key="index">
-            <view class="cook-step-num">{{index + 1}}</view>
-            <view class="cook-step-body">
-              <view class="cook-step-title">{{item.title}}</view>
-              <view class="cook-step-desc">{{item.desc}}</view>
-              <view class="cook-step-why" wx:if="{{item.why}}">→ {{item.why}}</view>
-              <view class="cook-step-heat" wx:if="{{item.heat}}">{{item.heat}}</view>
+          <block wx:if="{{!cookLoading}}">
+            <view class="cook-section" wx:if="{{cookMaterials.length}}">
+              <view class="cook-section-title">材料</view>
+              <view class="cook-materials-list">
+                <view class="cook-material-item" wx:for="{{cookMaterials}}" wx:key="index">
+                  <text class="cook-material-name">{{item.name}}</text>
+                  <text class="cook-material-amount">{{item.amount}}</text>
+                </view>
+              </view>
             </view>
-          </view>
+            <view class="cook-section" wx:if="{{cookSteps.length}}">
+              <view class="cook-section-title">步骤</view>
+              <view class="cook-step" wx:for="{{cookSteps}}" wx:key="index">
+                <view class="cook-step-num">{{item.num}}</view>
+                <view class="cook-step-body">
+                  <view class="cook-step-title">{{item.title}}</view>
+                  <view class="cook-step-desc">{{item.desc}}</view>
+                  <view class="cook-step-why" wx:if="{{item.why}}">{{item.why}}</view>
+                  <view class="cook-step-heat" wx:if="{{item.heat}}">{{item.heat}}</view>
+                </view>
+              </view>
+            </view>
+            <view class="cook-section" wx:if="{{cookTips.length}}">
+              <view class="cook-section-title">小贴士</view>
+              <view class="cook-tips-list">
+                <view class="cook-tips-item" wx:for="{{cookTips}}" wx:key="index">{{item}}</view>
+              </view>
+            </view>
+          </block>
         </view>
-        <!-- 小贴士 -->
-        <view class="cook-section" wx:if="{{cookTips.length}}">
-          <view class="cook-section-title">小贴士</view>
-          <view class="cook-tips-list">
-            <view class="cook-tips-item" wx:for="{{cookTips}}" wx:key="index">{{item}}</view>
-          </view>
-        </view>
-      </scroll-view>
-    </view>
-  </view>
-
-  <!-- Toast -->
-  <view class="toast {{toastVisible ? 'visible' : ''}}">{{toastMsg}}</view>
-
-  <!-- History overlay -->
-  <view class="overlay {{historyVisible ? 'active' : ''}}" bindtap="onCloseHistory">
-    <view class="panel" catchtap="onPanelTap">
-      <view class="panel-header">
-        <text class="panel-title">抽签历史</text>
-        <text class="panel-close" bindtap="onCloseHistory">关闭</text>
-      </view>
-      <scroll-view class="panel-body" scroll-y>
-        <block wx:if="{{historyList.length === 0}}">
-          <view class="empty-text">暂无记录</view>
-        </block>
-        <block wx:else>
-          <view class="history-item" wx:for="{{historyList}}" wx:key="index">
-            <text class="history-name">{{item.name}}</text>
-            <text class="history-time">{{item.timeStr}}</text>
-          </view>
-        </block>
-      </scroll-view>
-      <view class="panel-footer" wx:if="{{historyList.length > 0}}">
-        <text class="clear-btn" bindtap="onClearHistory">清空</text>
       </view>
     </view>
   </view>
 
   <!-- Share overlay -->
-  <view class="overlay {{shareOverlayVisible ? 'active' : ''}}" bindtap="onCloseShareOverlay">
+  <view class="share-overlay {{shareOverlayVisible ? 'active' : ''}}" id="share-overlay" bindtap="closeShareOverlay" bindtouchstart="onOverlayTouchStart" bindtouchend="onOverlayTouchEnd">
     <view class="share-preview" catchtap="onPanelTap">
-      <image class="share-img" src="{{shareImageUrl}}" mode="widthFix" show-menu-by-longpress />
-      <view class="share-hint">长按保存图片</view>
-      <button class="share-close" bindtap="onCloseShareOverlay">关闭</button>
+      <button class="share-nav prev" wx:if="{{shareNavVisible}}" bindtap="scrollShare" data-dir="-1">‹</button>
+      <scroll-view class="share-slider" id="share-slider" scroll-x scroll-with-animation scroll-left="{{shareScrollLeft}}" bindscroll="onShareScroll">
+        <image class="share-img" wx:if="{{shareImageUrl1}}" src="{{shareImageUrl1}}" mode="widthFix" show-menu-by-longpress />
+        <image class="share-img" wx:if="{{shareImageUrl2}}" src="{{shareImageUrl2}}" mode="widthFix" show-menu-by-longpress />
+      </scroll-view>
+      <button class="share-nav next" wx:if="{{shareNavVisible}}" bindtap="scrollShare" data-dir="1">›</button>
+      <view class="share-dots" wx:if="{{shareDotsVisible}}">
+        <view class="share-dot {{shareDotIndex === 0 ? 'active' : ''}}"></view>
+        <view class="share-dot {{shareDotIndex === 1 ? 'active' : ''}}"></view>
+      </view>
+      <view class="share-hint">{{shareHint}}</view>
     </view>
   </view>
 
-  <!-- Hidden canvas for share card -->
-  <canvas
-    type="2d"
-    id="shareCanvas"
-    class="share-canvas"
-    style="width: 540px; height: 960px;"
-  />
+  <!-- History overlay -->
+  <view class="history-overlay {{historyVisible ? 'active' : ''}}" id="history-overlay" bindtap="closeHistory" bindtouchstart="onOverlayTouchStart" bindtouchend="onOverlayTouchEnd">
+    <view class="history-panel" catchtap="onPanelTap">
+      <view class="history-header">
+        <view class="history-title">抽签历史</view>
+        <button class="history-clear" catchtap="clearHistory">清空</button>
+      </view>
+      <view class="history-list">
+        <block wx:if="{{historyList.length === 0}}">
+          <view class="history-empty">还没有抽签记录</view>
+        </block>
+        <block wx:else>
+          <view class="history-item" wx:for="{{historyList}}" wx:key="index">
+            <view class="history-item-date">{{item.date}} {{item.time}}</view>
+            <view class="history-item-main">
+              <text class="history-item-name">{{item.name}}</text>
+              <text class="history-item-sign">{{item.signNumber}}</text>
+            </view>
+            <view class="history-item-fortune" wx:if="{{item.fortune}}">{{item.fortune}}</view>
+            <view class="history-item-tip" wx:if="{{item.tip}}">{{item.tip}}</view>
+          </view>
+        </block>
+      </view>
+    </view>
+  </view>
+
+  <!-- Category picker overlay -->
+  <view class="category-overlay {{categoryVisible ? 'active' : ''}}" id="category-overlay" bindtap="closeCategoryPicker" bindtouchstart="onOverlayTouchStart" bindtouchend="onOverlayTouchEnd">
+    <view class="category-panel" catchtap="onPanelTap">
+      <view class="category-header">
+        <view class="category-title">选择菜系</view>
+      </view>
+      <view class="category-list">
+        <block wx:for="{{categoryList}}" wx:key="name">
+          <view class="category-row {{item.selected ? 'selected' : ''}}">
+            <view class="category-row-main" bindtap="toggleCategory" data-index="{{index}}">
+              <text class="category-checkbox">{{item.selected ? '☑' : '☐'}}</text>
+              <text class="category-row-name">{{item.name}}</text>
+              <view class="category-row-meta">
+                <text class="category-row-count">{{item.statusText}}</text>
+                <button class="category-expand" catchtap="toggleExpandCategory" data-index="{{index}}">{{item.expanded ? '收起' : '展开'}}</button>
+              </view>
+            </view>
+            <view class="category-items" wx:if="{{item.expanded}}">
+              <text class="category-item {{item2.inPool ? '' : 'excluded'}}" wx:for="{{item.items}}" wx:for-item="item2" wx:for-index="idx2" wx:key="name" catchtap="toggleFoodExclude" data-name="{{item2.name}}" data-cat="{{index}}">{{item2.name}}</text>
+            </view>
+          </view>
+        </block>
+      </view>
+    </view>
+  </view>
+
+  <!-- Toast -->
+  <view class="toast {{toastVisible ? 'visible' : ''}}" id="toast">{{toastMsg}}</view>
+
+  <!-- Hidden canvas for share cards -->
+  <canvas type="2d" id="shareCanvas" class="share-canvas" style="width: 540px; height: 2400px;" />
 </view>

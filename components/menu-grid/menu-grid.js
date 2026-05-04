@@ -18,7 +18,7 @@ Component({
     },
 
     onInputConfirm(e) {
-      const val = e.detail.value.trim();
+      const val = (e.detail.value || '').trim();
       this.setData({ isEditing: false });
       if (val) {
         this.triggerEvent('onAdd', val);
@@ -26,7 +26,7 @@ Component({
     },
 
     onInputBlur(e) {
-      const val = e.detail.value.trim();
+      const val = (e.detail.value || '').trim();
       this.setData({ isEditing: false });
       if (val) {
         this.triggerEvent('onAdd', val);

@@ -1,7 +1,18 @@
 <view class="menu-grid-container">
   <block wx:if="{{foods.length === 0}}">
     <view class="menu-grid-empty">
-      <view class="menu-grid-add" bindtap="onAddTap">＋</view>
+      <block wx:if="{{!isEditing}}">
+        <view class="menu-grid-add" bindtap="onAddTap">＋</view>
+      </block>
+      <block wx:else>
+        <input
+          class="menu-grid-input"
+          placeholder="菜名，回车添加"
+          focus
+          bindconfirm="onInputConfirm"
+          bindblur="onInputBlur"
+        />
+      </block>
     </view>
   </block>
   <block wx:else>

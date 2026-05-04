@@ -97,9 +97,17 @@ function getFoods(state) {
   const { currentPool, selectedCategories, excludedFoods, myMenu } = state;
   if (currentPool === 'myMenu') return [...myMenu];
 
+  // 过滤掉已不存在的分类名（兼容旧数据）
+  const validCatNames = new Set(FOOD_CATEGORIES.map(c => c.name));
+  const effectiveSelected = (selectedCategories || []).filter(name => validCatNames.has(name));
+  // 若有效选中为空，回退到默认河南菜，避免内容完全空白
+  if (effectiveSelected.length === 0) {
+    effectiveSelected.push('河南菜');
+  }
+
   const base = ALL_FOODS.filter(name => {
     const cat = FOOD_CATEGORIES.find(c => c.items.includes(name));
-    return cat && selectedCategories.includes(cat.name) && !excludedFoods.includes(name);
+    return cat && effectiveSelected.includes(cat.name) && !excludedFoods.includes(name);
   });
 
   myMenu.forEach(name => {
