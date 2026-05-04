@@ -1352,6 +1352,9 @@ h1 {
   left: 0;
   width: 100%;
   will-change: transform;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .slot-item {
   height: 44px;
@@ -1458,11 +1461,6 @@ h1 {
 .slot-column.spinning .slot-item {
   opacity: 0.15;
   transform: scaleY(0.9);
-}
-/* 滚动时隐藏删除按钮，避免干扰 */
-.slot-column.spinning .item-remove,
-.slot-column.spinning .slot-item:hover .item-remove {
-  display: none !important;
 }
 /* 注意：不在每个 item 上加 filter: blur 和 transition，
    否则 300+ 道菜 × 3~5 列 × 重复次数 = 数千个 DOM 节点同时 blur，
@@ -2863,7 +2861,7 @@ h1 {
    ═══════════════════════════════════════ */
 
 const STORAGE_KEY = 'chisha-state';
-const STATE_VERSION = 8;
+const STATE_VERSION = 9;
 
 const DEFAULT_FOODS = [];
 
@@ -2875,9 +2873,9 @@ function defaultState() {
   return {
     version: STATE_VERSION,
     myMenu: [],
-    selectedCategories: ['河南菜', '我的菜单'],
+    selectedCategories: ['北京', '我的菜单'],
     excludedFoods: [],
-    categoryOrder: ['河南菜','川菜','粤菜','鲁菜','苏菜','浙菜','闽菜','湘菜','徽菜','东北菜','西北菜','西南菜-云贵'],
+    categoryOrder: ['北京','天津','河北','山西','内蒙古','辽宁','吉林','黑龙江','上海','江苏','浙江','安徽','福建','江西','山东','河南','湖北','湖南','广东','广西','海南','重庆','四川','贵州','云南','西藏','陕西','甘肃','青海','宁夏','新疆','台湾','香港','澳门'],
     customTips: {},
     customRecipes: {},
     history: {
@@ -2946,6 +2944,14 @@ function migrateState(raw) {
   if (raw.version < 8) {
     raw.categoryOrder = defaultState().categoryOrder;
     raw.version = 8;
+  }
+
+  // v8 → v9: 分类体系按省籍地域重组
+  if (raw.version < 9) {
+    raw.selectedCategories = ['北京', '我的菜单'];
+    raw.categoryOrder = defaultState().categoryOrder;
+    raw.excludedFoods = [];
+    raw.version = 9;
   }
 
   return raw;
@@ -3199,14 +3205,7 @@ function initSlotMachine() {
         item.dataset.index = idx;
         item.dataset.name = name;
         item.title = '点击查看详情';
-        // 悬浮删除按钮
-        const removeBtn = document.createElement('span');
-        removeBtn.className = 'item-remove';
-        removeBtn.textContent = '×';
-        removeBtn.title = state.myMenu.includes(name) ? '删除' : '排除';
-        removeBtn.onclick = (e) => { e.stopPropagation(); handleItemRemove(name); };
-        item.appendChild(removeBtn);
-        item.onclick = (e) => { if (e.target.classList.contains('item-remove')) return; previewFood(name); };
+        item.onclick = () => previewFood(name);
         strip.appendChild(item);
       });
     }
@@ -3217,31 +3216,87 @@ function initSlotMachine() {
     // 初始状态每列独立随机偏移，避免所有列同步显示
     const initialOffset = Math.floor(Math.random() * foods.length) * 44;
     strip.style.transform = `translateY(-${initialOffset}px)`;
+
+    // 初始化拖拽滑动
+    initSlotDrag(strip, col.offsetHeight);
   }
 }
 
-function handleItemRemove(name) {
-  if (state.myMenu.includes(name)) {
-    const idx = state.myMenu.indexOf(name);
-    if (idx >= 0) {
-      if (state.myMenu.length <= 1) {
-        showToast('菜单至少保留一道菜');
-        return;
-      }
-      state.myMenu.splice(idx, 1);
+function initSlotDrag(strip, colHeight) {
+  let startY = 0;
+  let startTranslateY = 0;
+  let currentTranslateY = 0;
+  let isDragging = false;
+  let hasMoved = false;
+
+  function getTranslateY() {
+    const transform = strip.style.transform;
+    const match = transform.match(/translateY\(([-\d.]+)px\)/);
+    return match ? parseFloat(match[1]) : 0;
+  }
+
+  function setTranslateY(y, animate) {
+    currentTranslateY = y;
+    strip.style.transition = animate ? 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)' : 'none';
+    strip.style.transform = 'translateY(' + y + 'px)';
+  }
+
+  function onStart(y) {
+    if (strip.closest('.slot-column').classList.contains('spinning')) return;
+    isDragging = true;
+    hasMoved = false;
+    startY = y;
+    startTranslateY = getTranslateY();
+    strip.style.transition = 'none';
+  }
+
+  function onMove(y) {
+    if (!isDragging) return;
+    const delta = y - startY;
+    if (Math.abs(delta) > 3) hasMoved = true;
+
+    let newY = startTranslateY + delta;
+    // 超出边界的阻力效果（像橡皮筋）
+    if (newY > 0) newY = newY * 0.35;
+    if (newY < -(strip.scrollHeight - colHeight)) {
+      const minY = -(strip.scrollHeight - colHeight);
+      newY = minY + (newY - minY) * 0.35;
     }
-  } else {
-    // 排除/恢复
-    const idx = state.excludedFoods.indexOf(name);
-    if (idx >= 0) {
-      state.excludedFoods.splice(idx, 1);
-    } else {
-      state.excludedFoods.push(name);
+
+    setTranslateY(newY, false);
+  }
+
+  function onEnd() {
+    if (!isDragging) return;
+    isDragging = false;
+    if (!hasMoved) return; // 视为点击，不处理
+
+    const minY = -(strip.scrollHeight - colHeight);
+    // 弹性回弹到边界
+    if (currentTranslateY > 0) {
+      setTranslateY(0, true);
+    } else if (currentTranslateY < minY) {
+      setTranslateY(minY, true);
     }
   }
-  saveState();
-  renderSlotMachine();
-  renderCategoryList();
+
+  strip.addEventListener('touchstart', function(e) { onStart(e.touches[0].clientY); }, { passive: true });
+  strip.addEventListener('touchmove', function(e) { onMove(e.touches[0].clientY); }, { passive: true });
+  strip.addEventListener('touchend', onEnd);
+  strip.addEventListener('touchcancel', onEnd);
+
+  const onMouseMove = function(e) { onMove(e.clientY); };
+  const onMouseUp = function() {
+    onEnd();
+    window.removeEventListener('mousemove', onMouseMove);
+    window.removeEventListener('mouseup', onMouseUp);
+  };
+
+  strip.addEventListener('mousedown', function(e) {
+    onStart(e.clientY);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  });
 }
 
 function previewFood(name) {
@@ -3970,10 +4025,6 @@ function removeMyMenuItem(event, name) {
   event.stopPropagation();
   const idx = state.myMenu.indexOf(name);
   if (idx >= 0) {
-    if (state.myMenu.length <= 1) {
-      showToast('菜单至少保留一道菜');
-      return;
-    }
     state.myMenu.splice(idx, 1);
     saveState();
     renderSlotMachine();
