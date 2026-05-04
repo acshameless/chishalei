@@ -68,10 +68,6 @@ Component({
       return i === 0 ? this.data.items0 : i === 1 ? this.data.items1 : this.data.items2;
     },
 
-    _setItems(itemsArr) {
-      this.setData({ items0: itemsArr[0], items1: itemsArr[1], items2: itemsArr[2] });
-    },
-
     initColumns(foods) {
       if (!foods || foods.length === 0) {
         this.setData({
@@ -84,25 +80,19 @@ Component({
         return;
       }
 
-      // 减少 repeat 降低 setData 数据量：max 8 → 6，阈值 600 → 400
-      const repeat = Math.min(6, Math.max(3, Math.floor(400 / foods.length)));
+      const itemHeight = this.data.itemHeight;
+      // 极致压缩 repeat：max 8→5，阈值 600→300，降低 setData 数据量约 40%
+      const repeat = Math.min(5, Math.max(3, Math.floor(300 / foods.length)));
       const itemsArr = [0, 1, 2].map(() => {
         const items = [];
         for (let r = 0; r < repeat; r++) items.push(...this._shuffle(foods));
         return items;
       });
 
-      // 方向：左右列反方向（初始在底部），中列正方向（初始在顶部）
-      const colHeight = this.data.colHeight || 240;
-      const maxOffset = -(repeat * foods.length * this.data.itemHeight - colHeight);
-      const offsets = [0, 1, 2].map(i => {
-        if (i === 1) {
-          // 正方向：从顶部附近随机开始
-          return -Math.floor(Math.random() * foods.length) * this.data.itemHeight;
-        }
-        // 反方向：从底部附近随机开始
-        return maxOffset + Math.floor(Math.random() * foods.length) * this.data.itemHeight;
-      });
+      // 三列统一从顶部附近随机开始，均在可视范围内
+      const offsets = [0, 1, 2].map(() =>
+        -Math.floor(Math.random() * foods.length) * itemHeight
+      );
 
       const hash = this._hashFoods(foods);
 
@@ -121,73 +111,58 @@ Component({
 
     startSpin(opts) {
       const foods = this.data.foods.length ? this.data.foods : this.properties.foods;
+      const foodsLen = foods.length;
       const itemHeight = this.data.itemHeight;
       const targetIndex = (opts && opts.targetIndex !== undefined)
         ? opts.targetIndex
         : (this.data.targetIndex >= 0 ? this.data.targetIndex : this.properties.targetIndex);
 
-      if (!foods.length || targetIndex < 0 || targetIndex >= foods.length) return;
+      if (!foodsLen || targetIndex < 0 || targetIndex >= foodsLen) return;
 
       this._clearTimers();
 
       const colHeight = this.data.colHeight || 240;
-      const repeat = Math.min(6, Math.max(3, Math.floor(400 / foods.length)));
-      const cycleHeight = foods.length * itemHeight;
+      const repeat = Math.min(5, Math.max(3, Math.floor(300 / foodsLen)));
+      const cycleHeight = foodsLen * itemHeight;
       const targetCycle = Math.floor(repeat / 2);
       const centerOffset = colHeight / 2 - itemHeight / 2;
 
-      // 若当前位置接近边界，重新 initColumns 避免空白
+      // 统一安全检查：所有列不能太靠下
       const safeBottom = -(repeat - 2) * cycleHeight;
-      const safeTop = -cycleHeight * 2;
       const offsets = [this.data.offset0, this.data.offset1, this.data.offset2];
-      const needsReset = offsets.some((y, i) => {
-        if (i === 1) return y < safeBottom; // 正方向列：不能太靠下
-        return y > safeTop;                 // 反方向列：不能太靠上
-      });
+      const needsReset = offsets.some(y => y < safeBottom);
       if (needsReset) this.initColumns(foods);
 
-      let maxDurationMs = 0;
+      const duration = 2.0;
+      const delay = 0;
+      const maxDurationMs = (duration + delay + 0.3) * 1000;
       const anims = [null, null, null];
       const finalOffsets = [0, 0, 0];
       const finalHighlights = [-1, -1, -1];
 
-      // 方向：左右列反方向（向上滚），中列正方向（向下滚）
-      const isReverse = [true, false, true];
-      const duration = 2.0;
+      // 缓存目标食物，避免重复索引
+      const targetFood = foods[targetIndex];
+      const destCycle = targetCycle;
+      const cycleStartIdx = destCycle * foodsLen;
 
       [0, 1, 2].forEach(i => {
         const items = this._getItems(i);
-        const destCycle = targetCycle;
 
         // 在目标 cycle 中查找这道菜的位置
-        const posInCol = items.indexOf(foods[targetIndex], destCycle * foods.length);
-        const effectivePos = posInCol >= 0 ? posInCol % foods.length : targetIndex;
+        const posInCol = items.indexOf(targetFood, cycleStartIdx);
+        const effectivePos = posInCol >= 0 ? posInCol % foodsLen : targetIndex;
 
         const finalY = -(destCycle * cycleHeight + effectivePos * itemHeight) + centerOffset;
         finalOffsets[i] = finalY;
-        finalHighlights[i] = destCycle * foods.length + effectivePos;
+        finalHighlights[i] = cycleStartIdx + effectivePos;
 
-        const delay = 0;
-        maxDurationMs = Math.max(maxDurationMs, (duration + delay + 0.3) * 1000);
-
-        if (isReverse[i]) {
-          // 反方向：从底部向上滚动到 finalY（初始 offset 已在底部）
-          const anim = wx.createAnimation({
-            duration: duration * 1000,
-            timingFunction: 'cubic-bezier(0.22, 0.8, 0.3, 1)',
-            delay: delay * 1000
-          });
-          anim.translateY(finalY).step();
-          anims[i] = anim.export();
-        } else {
-          const anim = wx.createAnimation({
-            duration: duration * 1000,
-            timingFunction: 'cubic-bezier(0.22, 0.8, 0.3, 1)',
-            delay: delay * 1000
-          });
-          anim.translateY(finalY).step();
-          anims[i] = anim.export();
-        }
+        const anim = wx.createAnimation({
+          duration: duration * 1000,
+          timingFunction: 'cubic-bezier(0.22, 0.8, 0.3, 1)',
+          delay: delay * 1000
+        });
+        anim.translateY(finalY).step();
+        anims[i] = anim.export();
       });
 
       // 只更新 animation 和 highlight，绝不触碰庞大的 items
@@ -209,19 +184,21 @@ Component({
 
     updateHighlight(index) {
       const foods = this.data.foods;
-      if (!foods.length || index < 0) return;
+      const foodsLen = foods.length;
+      if (!foodsLen || index < 0) return;
 
-      const repeat = Math.min(6, Math.max(3, Math.floor(400 / foods.length)));
+      const repeat = Math.min(5, Math.max(3, Math.floor(300 / foodsLen)));
       const targetCycle = Math.floor(repeat / 2);
+      const destCycle = targetCycle;
+      const cycleStartIdx = destCycle * foodsLen;
       const highlights = [-1, -1, -1];
 
-      [0, 1, 2].forEach(i => {
+      for (let i = 0; i < 3; i++) {
         const items = this._getItems(i);
-        const destCycle = targetCycle;
-        const posInCol = items.indexOf(foods[index], destCycle * foods.length);
-        const effectivePos = posInCol >= 0 ? posInCol % foods.length : index;
-        highlights[i] = destCycle * foods.length + effectivePos;
-      });
+        const posInCol = items.indexOf(foods[index], cycleStartIdx);
+        const effectivePos = posInCol >= 0 ? posInCol % foodsLen : index;
+        highlights[i] = cycleStartIdx + effectivePos;
+      }
 
       this.setData({
         highlight0: highlights[0], highlight1: highlights[1], highlight2: highlights[2]
