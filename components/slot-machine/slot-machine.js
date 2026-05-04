@@ -81,9 +81,7 @@ Component({
       }
 
       const itemHeight = this.data.itemHeight;
-      // repeat=5：items=100（比原版 160 少 37.5%），同时保证 destCycle=4 安全
       const repeat = Math.min(5, Math.max(3, Math.floor(300 / foods.length)));
-      // 三列各自独立洗牌，内容完全随机，有真正 slot machine 的错落感
       const itemsArr = [0, 1, 2].map(() => {
         const items = [];
         for (let r = 0; r < repeat; r++) items.push(...this._shuffle(foods));
@@ -120,22 +118,51 @@ Component({
 
       this._clearTimers();
 
+      const repeat = Math.min(5, Math.max(3, Math.floor(300 / foodsLen)));
+      const cycleHeight = foodsLen * itemHeight;
+      const safeBottom = -(repeat - 2) * cycleHeight;
+      const offsets = [this.data.offset0, this.data.offset1, this.data.offset2];
+      const needsReset = offsets.some(y => y < safeBottom);
+
+      if (needsReset) {
+        // 关键修复：initColumns 的 setData 是异步的，不能直接接着跑动画。
+        // 先同步 setData 新的随机 offset，等 DOM 更新后再启动动画。
+        const newOffsets = [0, 1, 2].map(() =>
+          -Math.floor(Math.random() * foodsLen) * itemHeight
+        );
+        this.setData({
+          offset0: newOffsets[0], offset1: newOffsets[1], offset2: newOffsets[2],
+          anim0: null, anim1: null, anim2: null,
+          highlight0: -1, highlight1: -1, highlight2: -1
+        });
+        this.initColumns(foods);
+        // 50ms 足够 setData 完成 DOM 更新
+        this.spinTimer = setTimeout(() => {
+          this.spinTimer = null;
+          this._runSpinAnimation(opts);
+        }, 50);
+        return;
+      }
+
+      this._runSpinAnimation(opts);
+    },
+
+    _runSpinAnimation(opts) {
+      const foods = this.data.foods.length ? this.data.foods : this.properties.foods;
+      const foodsLen = foods.length;
+      const itemHeight = this.data.itemHeight;
+      const targetIndex = (opts && opts.targetIndex !== undefined)
+        ? opts.targetIndex
+        : (this.data.targetIndex >= 0 ? this.data.targetIndex : this.properties.targetIndex);
+
       const colHeight = this.data.colHeight || 240;
       const repeat = Math.min(5, Math.max(3, Math.floor(300 / foodsLen)));
       const cycleHeight = foodsLen * itemHeight;
       const centerOffset = colHeight / 2 - itemHeight / 2;
 
-      // 统一安全检查：所有列不能太靠下
-      const safeBottom = -(repeat - 2) * cycleHeight;
-      const offsets = [this.data.offset0, this.data.offset1, this.data.offset2];
-      const needsReset = offsets.some(y => y < safeBottom);
-      if (needsReset) this.initColumns(foods);
-
-      // 老虎机核心：ease-in-out（先加速后减速），有机械惯性
       const duration = 3.0;
       const timing = 'cubic-bezier(0.4, 0, 0.2, 1)';
       const targetFood = foods[targetIndex];
-      // destCycle 设为 repeat-1，最大化滚动距离（约 4 个周期）
       const destCycle = repeat - 1;
       const cycleStartIdx = destCycle * foodsLen;
 
@@ -185,8 +212,8 @@ Component({
       const repeat = Math.min(5, Math.max(3, Math.floor(300 / foodsLen)));
       const destCycle = repeat - 1;
       const cycleStartIdx = destCycle * foodsLen;
-
       const highlights = [-1, -1, -1];
+
       for (let i = 0; i < 3; i++) {
         const items = this._getItems(i);
         const posInCol = items.indexOf(foods[index], cycleStartIdx);
