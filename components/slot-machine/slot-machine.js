@@ -81,10 +81,14 @@ Component({
       }
 
       const itemHeight = this.data.itemHeight;
+      // repeat=5：items=100（比原版 160 少 37.5%），同时保证 destCycle=4 安全
       const repeat = Math.min(5, Math.max(3, Math.floor(300 / foods.length)));
+      const shuffled = this._shuffle(foods);
+      // 三列共用同一套洗牌：finalY 相同，滚动距离一致，速度自然一致
+      // 初始 offset 随机错开，滚动时内容不同，落定后高亮同一道菜
       const itemsArr = [0, 1, 2].map(() => {
         const items = [];
-        for (let r = 0; r < repeat; r++) items.push(...this._shuffle(foods));
+        for (let r = 0; r < repeat; r++) items.push(...shuffled);
         return items;
       });
 
@@ -121,41 +125,32 @@ Component({
       const colHeight = this.data.colHeight || 240;
       const repeat = Math.min(5, Math.max(3, Math.floor(300 / foodsLen)));
       const cycleHeight = foodsLen * itemHeight;
-      const targetCycle = Math.floor(repeat / 2);
       const centerOffset = colHeight / 2 - itemHeight / 2;
 
+      // 统一安全检查：所有列不能太靠下
       const safeBottom = -(repeat - 2) * cycleHeight;
       const offsets = [this.data.offset0, this.data.offset1, this.data.offset2];
       const needsReset = offsets.some(y => y < safeBottom);
       if (needsReset) this.initColumns(foods);
 
-      const duration = 2.0;
+      // 老虎机核心：ease-in-out（先加速后减速），有机械惯性
+      const duration = 3.0;
+      const timing = 'cubic-bezier(0.4, 0, 0.2, 1)';
       const targetFood = foods[targetIndex];
-      const anims = [null, null, null];
-      const finalOffsets = [0, 0, 0];
-      const finalHighlights = [-1, -1, -1];
+      // destCycle 设为 repeat-1，最大化滚动距离（约 4 个周期）
+      const destCycle = repeat - 1;
+      const cycleStartIdx = destCycle * foodsLen;
 
-      // 三列同时启动、同时结束，但加速度不同（timingFunction 不同）
-      // x1/y1 相同 → 初始速度相同；x2/y2 不同 → 中后期减速节奏不同
-      const colConfigs = [
-        { extraRounds: 0, timing: 'cubic-bezier(0.33, 0.66, 0.25, 1)' }, // 早期减速
-        { extraRounds: 1, timing: 'cubic-bezier(0.33, 0.66, 0.50, 1)' }, // 中期减速
-        { extraRounds: 2, timing: 'cubic-bezier(0.33, 0.66, 0.75, 1)' }  // 晚期减速
-      ];
+      // 三列共用同一套 items，只需查找一次目标位置
+      const items0 = this.data.items0;
+      const posInCol = items0.indexOf(targetFood, cycleStartIdx);
+      const effectivePos = posInCol >= 0 ? posInCol % foodsLen : targetIndex;
+      const finalY = -(destCycle * cycleHeight + effectivePos * itemHeight) + centerOffset;
+      const highlightIdx = cycleStartIdx + effectivePos;
+
+      const anims = [null, null, null];
 
       for (let i = 0; i < 3; i++) {
-        const items = this._getItems(i);
-        const { extraRounds, timing } = colConfigs[i];
-        const destCycle = targetCycle + extraRounds;
-        const cycleStartIdx = destCycle * foodsLen;
-
-        const posInCol = items.indexOf(targetFood, cycleStartIdx);
-        const effectivePos = posInCol >= 0 ? posInCol % foodsLen : targetIndex;
-
-        const finalY = -(destCycle * cycleHeight + effectivePos * itemHeight) + centerOffset;
-        finalOffsets[i] = finalY;
-        finalHighlights[i] = cycleStartIdx + effectivePos;
-
         const anim = wx.createAnimation({
           duration: duration * 1000,
           timingFunction: timing,
@@ -173,9 +168,9 @@ Component({
       this.spinTimer = setTimeout(() => {
         this.spinTimer = null;
         this.setData({
-          offset0: finalOffsets[0], offset1: finalOffsets[1], offset2: finalOffsets[2],
+          offset0: finalY, offset1: finalY, offset2: finalY,
           anim0: null, anim1: null, anim2: null,
-          highlight0: finalHighlights[0], highlight1: finalHighlights[1], highlight2: finalHighlights[2]
+          highlight0: highlightIdx, highlight1: highlightIdx, highlight2: highlightIdx
         });
         this.triggerEvent('onComplete');
       }, (duration + 0.3) * 1000);
@@ -187,21 +182,17 @@ Component({
       if (!foodsLen || index < 0) return;
 
       const repeat = Math.min(5, Math.max(3, Math.floor(300 / foodsLen)));
-      const targetCycle = Math.floor(repeat / 2);
-      const highlights = [-1, -1, -1];
+      const destCycle = repeat - 1;
+      const cycleStartIdx = destCycle * foodsLen;
 
-      for (let i = 0; i < 3; i++) {
-        const items = this._getItems(i);
-        const extraRounds = i;
-        const destCycle = targetCycle + extraRounds;
-        const cycleStartIdx = destCycle * foodsLen;
-        const posInCol = items.indexOf(foods[index], cycleStartIdx);
-        const effectivePos = posInCol >= 0 ? posInCol % foodsLen : index;
-        highlights[i] = cycleStartIdx + effectivePos;
-      }
+      // 三列 items 相同，只需查找一次
+      const items0 = this.data.items0;
+      const posInCol = items0.indexOf(foods[index], cycleStartIdx);
+      const effectivePos = posInCol >= 0 ? posInCol % foodsLen : index;
+      const highlightIdx = cycleStartIdx + effectivePos;
 
       this.setData({
-        highlight0: highlights[0], highlight1: highlights[1], highlight2: highlights[2]
+        highlight0: highlightIdx, highlight1: highlightIdx, highlight2: highlightIdx
       });
     },
 
