@@ -57,6 +57,9 @@ Page({
   currentIndex: -1,
   spinInterval: null,
   lastShown: 0,
+  _dateCacheKey: '',
+  _fortuneCacheKey: '',
+  _lastNavColor: '',
 
   onLoad() {
     this.applySolarTheme();
@@ -106,7 +109,11 @@ Page({
   applySolarTheme() {
     const color = getSolarPaperColor();
     this.setData({ pageBg: color });
-    wx.setNavigationBarColor({ frontColor: '#000000', backgroundColor: color });
+    // 避免重复设置相同的导航栏颜色
+    if (this._lastNavColor !== color) {
+      this._lastNavColor = color;
+      wx.setNavigationBarColor({ frontColor: '#000000', backgroundColor: color });
+    }
   },
 
   // ══════════ 状态 ══════════
@@ -138,6 +145,9 @@ Page({
 
   // ══════════ 签文 ══════════
   renderFortune() {
+    const today = new Date().toDateString();
+    if (this._fortuneCacheKey === today) return;
+    this._fortuneCacheKey = today;
     const daily = fortune.getDailyFortune();
     if (daily) {
       const f = fortune.formatFortune(daily);
@@ -152,6 +162,9 @@ Page({
 
   // ══════════ 日期 ══════════
   renderDate() {
+    const today = new Date().toDateString();
+    if (this._dateCacheKey === today) return;
+    this._dateCacheKey = today;
     const { ganZhi, solar } = getGanZhiDate(new Date());
     this.setData({
       dateGanZhi: `${ganZhi.year} ${ganZhi.month} ${ganZhi.day}`,

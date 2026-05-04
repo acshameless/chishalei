@@ -84,10 +84,11 @@ Component({
         return;
       }
 
-      const repeat = Math.min(8, Math.max(3, Math.floor(600 / foods.length)));
+      // 减少 repeat 降低 setData 数据量：max 8 → 6，阈值 600 → 400
+      const repeat = Math.min(6, Math.max(3, Math.floor(400 / foods.length)));
       const itemsArr = [0, 1, 2].map(() => {
         const items = [];
-        for (let r = 0; r < repeat; r++) items.push(...this._shuffle([...foods]));
+        for (let r = 0; r < repeat; r++) items.push(...this._shuffle(foods));
         return items;
       });
 
@@ -95,12 +96,18 @@ Component({
         -Math.floor(Math.random() * foods.length) * this.data.itemHeight
       );
 
+      const hash = this._hashFoods(foods);
+
+      // 分步 setData：先传庞大的 items，再传 metadata，降低单次 setData 压力
       this.setData({
-        items0: itemsArr[0], items1: itemsArr[1], items2: itemsArr[2],
-        offset0: offsets[0], offset1: offsets[1], offset2: offsets[2],
-        anim0: null, anim1: null, anim2: null,
-        highlight0: -1, highlight1: -1, highlight2: -1,
-        inited: true, _foodsHash: this._hashFoods(foods)
+        items0: itemsArr[0], items1: itemsArr[1], items2: itemsArr[2]
+      }, () => {
+        this.setData({
+          offset0: offsets[0], offset1: offsets[1], offset2: offsets[2],
+          anim0: null, anim1: null, anim2: null,
+          highlight0: -1, highlight1: -1, highlight2: -1,
+          inited: true, _foodsHash: hash
+        });
       });
     },
 
@@ -116,7 +123,7 @@ Component({
       this._clearTimers();
 
       const colHeight = this.data.colHeight || 240;
-      const repeat = Math.min(8, Math.max(3, Math.floor(600 / foods.length)));
+      const repeat = Math.min(6, Math.max(3, Math.floor(400 / foods.length)));
       const cycleHeight = foods.length * itemHeight;
       const targetCycle = Math.floor(repeat / 2);
       const centerOffset = colHeight / 2 - itemHeight / 2;
@@ -138,10 +145,8 @@ Component({
         const extraRounds = distFromMid * 2;
         const destCycle = targetCycle + extraRounds;
 
-        // 在目标 cycle 中查找这道菜的位置（每个 cycle 的 _shuffle 是独立的）
-        const posInCol = items.findIndex((name, idx) =>
-          idx >= destCycle * foods.length && name === foods[targetIndex]
-        );
+        // 在目标 cycle 中查找这道菜的位置（indexOf 比带条件 findIndex 更快）
+        const posInCol = items.indexOf(foods[targetIndex], destCycle * foods.length);
         const effectivePos = posInCol >= 0 ? posInCol % foods.length : targetIndex;
 
         const finalY = -(destCycle * cycleHeight + effectivePos * itemHeight) + centerOffset;
@@ -182,7 +187,7 @@ Component({
       const foods = this.data.foods;
       if (!foods.length || index < 0) return;
 
-      const repeat = Math.min(8, Math.max(3, Math.floor(600 / foods.length)));
+      const repeat = Math.min(6, Math.max(3, Math.floor(400 / foods.length)));
       const targetCycle = Math.floor(repeat / 2);
       const highlights = [-1, -1, -1];
 
@@ -191,9 +196,7 @@ Component({
         const distFromMid = Math.abs(i - 1);
         const extraRounds = distFromMid * 2;
         const destCycle = targetCycle + extraRounds;
-        const posInCol = items.findIndex((name, idx) =>
-          idx >= destCycle * foods.length && name === foods[index]
-        );
+        const posInCol = items.indexOf(foods[index], destCycle * foods.length);
         const effectivePos = posInCol >= 0 ? posInCol % foods.length : index;
         highlights[i] = destCycle * foods.length + effectivePos;
       });
@@ -209,10 +212,10 @@ Component({
     },
 
     _shuffle(arr) {
-      const a = [...arr];
+      const a = arr.slice();
       for (let i = a.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
+        const t = a[i]; a[i] = a[j]; a[j] = t;
       }
       return a;
     }
