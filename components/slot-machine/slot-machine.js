@@ -139,13 +139,15 @@ Component({
       const finalOffsets = [0, 0, 0];
       const finalHighlights = [-1, -1, -1];
 
+      // 方向：左右列反方向（向上滚），中列正方向（向下滚）
+      const isReverse = [true, false, true];
+      const duration = 2.0;
+
       [0, 1, 2].forEach(i => {
         const items = this._getItems(i);
-        const distFromMid = Math.abs(i - 1);
-        const extraRounds = distFromMid * 2;
-        const destCycle = targetCycle + extraRounds;
+        const destCycle = targetCycle;
 
-        // 在目标 cycle 中查找这道菜的位置（indexOf 比带条件 findIndex 更快）
+        // 在目标 cycle 中查找这道菜的位置
         const posInCol = items.indexOf(foods[targetIndex], destCycle * foods.length);
         const effectivePos = posInCol >= 0 ? posInCol % foods.length : targetIndex;
 
@@ -153,17 +155,29 @@ Component({
         finalOffsets[i] = finalY;
         finalHighlights[i] = destCycle * foods.length + effectivePos;
 
-        const delay = distFromMid * 0.25;
-        const duration = 1.6 + distFromMid * 0.6;
+        const delay = i * 0.3;
         maxDurationMs = Math.max(maxDurationMs, (duration + delay + 0.3) * 1000);
 
-        const anim = wx.createAnimation({
-          duration: duration * 1000,
-          timingFunction: 'cubic-bezier(0.22, 0.8, 0.3, 1)',
-          delay: delay * 1000
-        });
-        anim.translateY(finalY).step();
-        anims[i] = anim.export();
+        if (isReverse[i]) {
+          // 反方向：先瞬间跳转到列表底部，再向上滚动到 finalY
+          const maxOffset = -(items.length * itemHeight - colHeight);
+          const anim = wx.createAnimation({ duration: 0, timingFunction: 'linear' });
+          anim.translateY(maxOffset).step({ duration: 0 });
+          anim.translateY(finalY).step({
+            duration: duration * 1000,
+            timingFunction: 'cubic-bezier(0.22, 0.8, 0.3, 1)',
+            delay: delay * 1000
+          });
+          anims[i] = anim.export();
+        } else {
+          const anim = wx.createAnimation({
+            duration: duration * 1000,
+            timingFunction: 'cubic-bezier(0.22, 0.8, 0.3, 1)',
+            delay: delay * 1000
+          });
+          anim.translateY(finalY).step();
+          anims[i] = anim.export();
+        }
       });
 
       // 只更新 animation 和 highlight，绝不触碰庞大的 items
@@ -193,9 +207,7 @@ Component({
 
       [0, 1, 2].forEach(i => {
         const items = this._getItems(i);
-        const distFromMid = Math.abs(i - 1);
-        const extraRounds = distFromMid * 2;
-        const destCycle = targetCycle + extraRounds;
+        const destCycle = targetCycle;
         const posInCol = items.indexOf(foods[index], destCycle * foods.length);
         const effectivePos = posInCol >= 0 ? posInCol % foods.length : index;
         highlights[i] = destCycle * foods.length + effectivePos;
