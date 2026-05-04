@@ -476,6 +476,11 @@ page {
   border-style: dashed;
 }
 
+/* myMenu 时不显示高亮条 */
+.machine-area.no-winner-bar::after {
+  display: none;
+}
+
 /* ═══════════════════════════════════════
    Machine area
    ═══════════════════════════════════════ */

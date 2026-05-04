@@ -46,7 +46,15 @@ Page({
     categoryList: [],
     expandedCategoryIndex: -1,
     pageBg: '#F6F1E9',
-    state: null,
+    state: {
+      excludedFoods: [],
+      myMenu: [],
+      selectedCategories: ['河南菜'],
+      customTips: {},
+      customRecipes: {},
+      history: { recent: [], favorites: [], blacklist: [], draws: [] },
+      settings: { sound: true }
+    },
     hasWinner: false,
     dateGanZhi: '',
     dateSolar: ''
@@ -227,6 +235,8 @@ Page({
     const slotMachine = this.selectComponent('#slotMachine');
     if (slotMachine) slotMachine.startSpin({ targetIndex });
 
+    // menu-grid 扫描由 nextTick 每轮同步更新，此处不再单独触发
+
     this.setData({
       targetIndex,
       landed: false,
@@ -252,6 +262,11 @@ Page({
       if (!f || f.length === 0) return;
       this.lastShown = Math.floor(Math.random() * f.length);
       this.setData({ resultText: f[this.lastShown] });
+
+      // 同步更新 menu-grid 扫描位置，与上方文字切换完全同步
+      const menuGrid = this.selectComponent('#menuGrid');
+      if (menuGrid) menuGrid.setScanIndex && menuGrid.setScanIndex(this.lastShown);
+
       rounds++;
 
       if (rounds >= total) {
@@ -325,13 +340,15 @@ Page({
       fortuneVisible: false
     });
 
-    // 如果在 all pool，高亮对应的 slot machine 项
+    // 高亮对应的子组件项
     const foods = this.data.foods;
     const idx = foods.indexOf(name);
     if (idx >= 0) {
       const slotMachine = this.selectComponent('#slotMachine');
       if (slotMachine) slotMachine.updateHighlight && slotMachine.updateHighlight(idx);
     }
+    const menuGrid = this.selectComponent('#menuGrid');
+    if (menuGrid) menuGrid.updateHighlight && menuGrid.updateHighlight(name);
 
     // 自定义菜如果没有描述，自动请求
     if (!tipText) {
@@ -363,6 +380,10 @@ Page({
     // 高亮 slot machine
     const slotMachine = this.selectComponent('#slotMachine');
     if (slotMachine) slotMachine.updateHighlight && slotMachine.updateHighlight(idx);
+
+    // 设置 menu-grid 最终高亮（spin 已同步扫描，此处直接定格）
+    const menuGrid = this.selectComponent('#menuGrid');
+    if (menuGrid) menuGrid.setFinalHighlight && menuGrid.setFinalHighlight(idx);
 
     // 自定义菜如果没有描述，自动请求
     if (!tipText) {

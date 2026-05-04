@@ -1,12 +1,12 @@
-<view class="menu-grid-container">
+<view class="menu-container">
   <block wx:if="{{foods.length === 0}}">
-    <view class="menu-grid-empty">
+    <view class="menu-empty">
       <block wx:if="{{!isEditing}}">
-        <view class="menu-grid-add" bindtap="onAddTap">＋</view>
+        <view class="menu-add-btn" bindtap="onAddTap">＋</view>
       </block>
       <block wx:else>
         <input
-          class="menu-grid-input"
+          class="menu-input"
           placeholder="菜名，回车添加"
           focus
           bindconfirm="onInputConfirm"
@@ -16,28 +16,29 @@
     </view>
   </block>
   <block wx:else>
+    <!-- 加号在最前面 -->
+    <view class="menu-add-cell" wx:if="{{!isEditing}}">
+      <view class="menu-add-btn" bindtap="onAddTap">＋</view>
+    </view>
+    <view class="menu-input-cell" wx:if="{{isEditing}}">
+      <input
+        class="menu-input"
+        placeholder="菜名，回车添加"
+        focus
+        bindconfirm="onInputConfirm"
+        bindblur="onInputBlur"
+      />
+    </view>
+
+    <!-- 网格 items -->
     <view
-      class="menu-grid-item"
+      class="menu-item {{scanning && scanIndex === index ? 'scanning' : ''}} {{highlightIndex === index ? 'active' : ''}}"
       wx:for="{{foods}}"
       wx:key="index"
       data-index="{{index}}"
       data-item="{{item}}"
       bindtap="onItemTap"
       bindlongpress="onItemLongPress"
-    >
-      {{item}}
-    </view>
-    <block wx:if="{{!isEditing}}">
-      <view class="menu-grid-add" bindtap="onAddTap">＋</view>
-    </block>
-    <block wx:else>
-      <input
-        class="menu-grid-input"
-        placeholder="菜名，回车添加"
-        focus
-        bindconfirm="onInputConfirm"
-        bindblur="onInputBlur"
-      />
-    </block>
+    >{{item}}</view>
   </block>
 </view>

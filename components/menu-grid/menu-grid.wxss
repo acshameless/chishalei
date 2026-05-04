@@ -1,4 +1,4 @@
-.menu-grid-container {
+.menu-container {
   width: 100%;
   height: 100%;
   padding: 40rpx 48rpx;
@@ -6,15 +6,14 @@
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
+  justify-content: center;
   gap: 20rpx 24rpx;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   pointer-events: auto;
-  mask-image: linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%);
 }
 
-.menu-grid-empty {
+.menu-empty {
   width: 100%;
   height: 100%;
   display: flex;
@@ -22,25 +21,14 @@
   justify-content: center;
 }
 
-.menu-grid-item {
-  padding: 12rpx 28rpx;
-  font-size: 25rpx;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
-  color: var(--ink-mid);
-  border: 1rpx solid var(--paper-dark);
-  background: var(--card);
-  border-radius: 12rpx;
-  white-space: nowrap;
-  transition: all 0.15s;
-  letter-spacing: 0.04em;
-}
-.menu-grid-item:active {
-  transform: scale(0.96);
-  border-color: var(--lacquer);
-  color: var(--lacquer);
+.menu-add-cell,
+.menu-input-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.menu-grid-add {
+.menu-add-btn {
   width: 72rpx;
   height: 72rpx;
   border-radius: 50%;
@@ -54,23 +42,58 @@
   line-height: 1;
   transition: all 0.15s;
 }
-.menu-grid-add:active {
+.menu-add-btn:active {
   border-color: var(--lacquer);
   color: var(--lacquer);
   transform: scale(1.08);
 }
 
-.menu-grid-input {
-  width: 280rpx;
+.menu-input {
+  width: 200rpx;
   height: 60rpx;
   padding: 0 20rpx;
   border: 2rpx solid var(--paper-dark);
   background: var(--card);
   font-size: 26rpx;
+  text-align: center;
   font-family: 'Zen Kaku Gothic New', sans-serif;
   color: var(--ink);
-  text-align: center;
 }
-.menu-grid-input:focus {
+.menu-input:focus {
   border-color: var(--lacquer);
+}
+
+.menu-item {
+  padding: 12rpx 28rpx;
+  font-size: 26rpx;
+  font-family: 'Shippori Mincho B1', 'Noto Serif SC', 'Songti SC', serif;
+  color: var(--ink-mid);
+  border: 1rpx solid var(--paper-dark);
+  background: var(--card);
+  border-radius: 12rpx;
+  white-space: nowrap;
+  letter-spacing: 0.05em;
+  transition: all 0.1s ease;
+  opacity: 0.6;
+}
+
+.menu-item.scanning {
+  opacity: 1;
+  color: var(--lacquer);
+  border-color: var(--lacquer);
+  background: rgba(184, 84, 56, 0.12);
+  transform: scale(1.1);
+  font-weight: 600;
+  box-shadow: 0 0 16rpx rgba(184, 84, 56, 0.15);
+}
+
+.menu-item.active {
+  opacity: 1;
+  color: var(--lacquer-dim);
+  font-size: 30rpx;
+  font-weight: 600;
+  border-color: var(--lacquer);
+  transform: scale(1.08);
+  text-shadow: 0 0 14rpx rgba(184, 84, 56, 0.18);
+  transition: all 0.35s cubic-bezier(0.22, 0.8, 0.3, 1);
 }

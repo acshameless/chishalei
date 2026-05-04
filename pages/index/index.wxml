@@ -62,13 +62,13 @@
       </view>
 
       <!-- Slot machine / Menu grid -->
-      <view class="machine-area {{hasWinner ? 'has-winner' : ''}}" id="particle-container">
+      <view class="machine-area {{hasWinner ? 'has-winner' : ''}} {{currentPool === 'myMenu' ? 'no-winner-bar' : ''}}" id="particle-container">
         <slot-machine
           wx:if="{{currentPool === 'all'}}"
           id="slotMachine"
           foods="{{foods}}"
-          myMenu="{{state.myMenu}}"
-          excludedFoods="{{state.excludedFoods}}"
+          myMenu="{{state.myMenu || []}}"
+          excludedFoods="{{state.excludedFoods || []}}"
           spinning="{{isSpinning}}"
           targetIndex="{{targetIndex}}"
           bind:onComplete="onSpinComplete"
@@ -131,7 +131,7 @@
   <view class="share-overlay {{shareOverlayVisible ? 'active' : ''}}" id="share-overlay" bindtap="closeShareOverlay" bindtouchstart="onOverlayTouchStart" bindtouchend="onOverlayTouchEnd">
     <view class="share-preview" catchtap="onPanelTap">
       <button class="share-nav prev" wx:if="{{shareNavVisible}}" bindtap="scrollShare" data-dir="-1">‹</button>
-      <scroll-view class="share-slider" id="share-slider" scroll-x scroll-with-animation scroll-left="{{shareScrollLeft}}" bindscroll="onShareScroll">
+      <scroll-view class="share-slider" id="share-slider" scroll-x scroll-with-animation enable-flex scroll-left="{{shareScrollLeft}}" bindscroll="onShareScroll">
         <image class="share-img" wx:if="{{shareImageUrl1}}" src="{{shareImageUrl1}}" mode="widthFix" show-menu-by-longpress />
         <image class="share-img" wx:if="{{shareImageUrl2}}" src="{{shareImageUrl2}}" mode="widthFix" show-menu-by-longpress />
       </scroll-view>
