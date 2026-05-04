@@ -155,7 +155,7 @@ Component({
         finalOffsets[i] = finalY;
         finalHighlights[i] = destCycle * foods.length + effectivePos;
 
-        const delay = i * 0.3;
+        const delay = 0;
         maxDurationMs = Math.max(maxDurationMs, (duration + delay + 0.3) * 1000);
 
         if (isReverse[i]) {
