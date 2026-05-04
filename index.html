@@ -1232,23 +1232,59 @@ h1 {
 
 .pool-tabs {
   display: flex;
-  gap: 18px;
   align-items: center;
 }
 .pool-tab {
-  font-size: 11px;
-  color: var(--ink-light);
-  letter-spacing: 0.12em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 18px;
+  font-size: 13px;
+  color: var(--ink-mid);
+  letter-spacing: 0.04em;
   cursor: pointer;
-  padding: 6px 2px;
-  border-bottom: 1px solid transparent;
-  transition: color 0.2s, border-color 0.2s;
+  border: 1.5px solid var(--paper-dark);
+  background: var(--card);
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   user-select: none;
+  position: relative;
+  flex-shrink: 0;
+  line-height: 1;
+  box-sizing: border-box;
 }
-.pool-tab:hover { color: var(--ink-mid); }
-.pool-tab.active {
+.pool-tab:hover {
+  border-color: var(--lacquer);
   color: var(--lacquer);
-  border-bottom-color: var(--lacquer);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(168, 74, 47, 0.10);
+}
+.pool-tab.active {
+  background: var(--card);
+  color: var(--ink-mid);
+  border-color: var(--lacquer);
+}
+.pool-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--paper-dark);
+  color: var(--ink-light);
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 2px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  transition: all 0.2s;
+}
+.pool-tab.active .pool-tab-count {
+  background: rgba(168, 74, 47, 0.12);
+  color: var(--lacquer);
 }
 
 /* ── Food tags ── */
@@ -1384,16 +1420,6 @@ h1 {
 }
 .slot-item:hover .item-remove {
   display: flex;
-}
-
-/* Slot add bar (myMenu inline add) */
-.slot-add-bar {
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 5;
-  pointer-events: auto;
 }
 
 /* 横向贯穿的中心高亮条 */
@@ -2072,34 +2098,74 @@ h1 {
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   max-height: none;
   opacity: 1;
 }
 .control-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 1px solid var(--paper-dark);
-  background: var(--card);
-  color: var(--ink-mid);
-  font-size: 15px;
-  font-family: 'Shippori Mincho B1', serif;
-  cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  gap: 4px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 18px;
+  border: 1.5px solid var(--paper-dark);
+  background: var(--card);
+  color: var(--ink-mid);
+  font-size: 13px;
+  font-family: 'Shippori Mincho B1', serif;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   line-height: 1;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 .control-btn:hover {
   border-color: var(--lacquer);
   color: var(--lacquer);
-  transform: scale(1.08);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(168, 74, 47, 0.10);
 }
 .control-btn.muted {
   opacity: 0.4;
+}
+
+/* 三个按钮各自主题色 */
+#tab-all {
+  border-color: #C07A65;
+  color: #A84A2F;
+}
+#tab-all:hover {
+  background: var(--lacquer);
+  color: #fff;
+  border-color: var(--lacquer);
+  box-shadow: 0 4px 12px rgba(168, 74, 47, 0.15);
+}
+#tab-all:hover .pool-tab-count {
+  background: rgba(255,255,255,0.30);
+  color: #fff;
+}
+#category-toggle {
+  border-color: #7A9E7C;
+  color: #5B7A5D;
+}
+#category-toggle:hover {
+  background: #7A9E7C;
+  color: #fff;
+  border-color: #7A9E7C;
+  box-shadow: 0 4px 12px rgba(90, 126, 93, 0.15);
+}
+#history-toggle {
+  border-color: #C4A26E;
+  color: #9A7B4A;
+}
+#history-toggle:hover {
+  background: #C4A26E;
+  color: #fff;
+  border-color: #C4A26E;
+  box-shadow: 0 4px 12px rgba(154, 123, 74, 0.15);
 }
 
 /* ── History overlay ── */
@@ -2361,6 +2427,58 @@ h1 {
   border-color: var(--lacquer);
   color: var(--lacquer);
 }
+.category-add-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  color: var(--ink-light);
+  border: 1px dashed var(--paper-dark);
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  user-select: none;
+}
+.category-add-btn:hover {
+  border-color: var(--lacquer);
+  color: var(--lacquer);
+}
+.category-drag-handle {
+  margin-right: 6px;
+  font-size: 11px;
+  color: var(--ink-light);
+  cursor: grab;
+  user-select: none;
+  opacity: 0.35;
+  padding: 12px 8px;
+  line-height: 1;
+  letter-spacing: -1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  touch-action: none;
+}
+.category-drag-handle:active {
+  cursor: grabbing;
+  opacity: 0.6;
+}
+.category-row:hover .category-drag-handle {
+  opacity: 0.55;
+}
+.category-drag-handle.fixed {
+  cursor: default;
+  opacity: 0.9;
+  letter-spacing: 0;
+  color: var(--lacquer);
+}
+.category-row.dragging {
+  opacity: 0.5;
+  background: rgba(184, 84, 56, 0.03);
+}
+.category-row.drag-over {
+  border-top: 2px solid var(--lacquer);
+}
 .menu-grid-add-input {
   border: 1px solid var(--paper-dark);
   background: var(--card);
@@ -2376,6 +2494,143 @@ h1 {
   border-color: var(--lacquer);
 }
 
+/* ── Pool overlay ── */
+.pool-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(35,32,27,0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+}
+.pool-overlay.active { display: flex; }
+.pool-panel {
+  background: var(--card);
+  border: 1px solid var(--paper-dark);
+  max-width: 420px;
+  width: 100%;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.pool-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--paper-dark);
+  flex-shrink: 0;
+}
+.pool-title {
+  font-family: 'Shippori Mincho B1', serif;
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+}
+.pool-close {
+  background: none;
+  border: 1px solid var(--paper-dark);
+  padding: 4px 14px;
+  font-size: 11px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  color: var(--ink-light);
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  transition: all 0.15s;
+}
+.pool-close:hover { border-color: var(--lacquer); color: var(--lacquer); }
+.pool-subtitle {
+  padding: 8px 18px 0;
+  font-size: 11px;
+  color: var(--ink-light);
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+.pool-list {
+  overflow-y: auto;
+  flex: 1;
+  padding: 12px 18px 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 8px;
+  align-content: start;
+}
+.pool-list::-webkit-scrollbar { width: 3px; }
+.pool-list::-webkit-scrollbar-thumb { background: var(--paper-dark); border-radius: 2px; }
+.pool-item {
+  position: relative;
+  padding: 6px 10px;
+  font-size: 12.5px;
+  color: var(--ink-mid);
+  background: var(--paper);
+  border: 1px solid var(--paper-dark);
+  border-radius: 6px;
+  text-align: center;
+  letter-spacing: 0.04em;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  transition: all 0.15s;
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.pool-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+.pool-item-remove {
+  position: absolute;
+  top: -7px;
+  left: -7px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--lacquer);
+  color: #fff;
+  font-size: 12px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1.5px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  z-index: 2;
+  line-height: 1;
+  transition: transform 0.15s;
+}
+.pool-item:hover .pool-item-remove {
+  display: flex;
+}
+.pool-item-remove:hover {
+  transform: scale(1.15);
+  background: #8B3A24;
+}
+.pool-item.pressing {
+  transform: scale(0.95);
+  opacity: 0.6;
+}
+/* 菜系主题色 */
+.pool-item.theme-0 { border-color: #C07A65; background: rgba(192, 122, 101, 0.07); }
+.pool-item.theme-1 { border-color: #7A9E7C; background: rgba(122, 158, 124, 0.07); }
+.pool-item.theme-2 { border-color: #C4A26E; background: rgba(196, 162, 110, 0.07); }
+.pool-item.theme-3 { border-color: #9B8AA5; background: rgba(155, 138, 165, 0.07); }
+.pool-item.theme-4 { border-color: #6B8E9F; background: rgba(107, 142, 159, 0.07); }
+.pool-item.theme-5 { border-color: #B8A088; background: rgba(184, 160, 136, 0.07); }
+.pool-item.theme-6 { border-color: #A5A5A5; background: rgba(165, 165, 165, 0.07); }
+.pool-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--ink-light);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  line-height: 1.8;
+}
+
 .menu-grid-empty {
   width: 100%;
   height: 100%;
@@ -2383,27 +2638,6 @@ h1 {
   align-items: center;
   justify-content: center;
 }
-.menu-grid-add {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: 1px solid var(--paper-dark);
-  background: var(--card);
-  color: var(--ink-mid);
-  font-size: 22px;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: border-color 0.15s, color 0.15s, transform 0.15s;
-}
-.menu-grid-add:hover {
-  border-color: var(--lacquer);
-  color: var(--lacquer);
-  transform: scale(1.08);
-}
-
 @media (max-width: 640px) {
   .slot-column {
     min-width: 0;
@@ -2420,15 +2654,15 @@ h1 {
     padding: 0 8px;
   }
   .pool-tab {
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    padding: 5px 2px;
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    padding: 0 12px;
+    height: 34px;
   }
   .control-btn {
-    width: 36px;
-    height: 36px;
-    padding: 4px 10px;
-    font-size: 13px;
+    height: 34px;
+    padding: 0 12px;
+    font-size: 12px;
   }
   body {
     padding: 16px 12px 24px;
@@ -2452,7 +2686,8 @@ h1 {
   /* overlay 移动端适配 */
   .share-overlay,
   .history-overlay,
-  .category-overlay {
+  .category-overlay,
+  .pool-overlay {
     padding: 12px;
   }
   .share-preview {
@@ -2460,21 +2695,23 @@ h1 {
     max-width: 100%;
   }
   .history-panel,
-  .category-panel {
+  .category-panel,
+  .pool-panel {
     max-width: 100%;
     max-height: 85vh;
   }
   .history-header,
-  .category-header {
+  .category-header,
+  .pool-header {
     padding: 12px 14px;
+  }
+  .pool-list {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 6px;
+    padding: 10px 14px 14px;
   }
   .category-row {
     padding: 11px 14px;
-  }
-  .menu-grid-add {
-    width: 40px;
-    height: 40px;
-    font-size: 18px;
   }
 }
 </style>
@@ -2528,12 +2765,11 @@ h1 {
     </div>
 
     <div class="control-row" id="control-row">
+      <button class="control-btn" id="category-toggle" onclick="showCategoryPicker()" title="选择菜系">🥢 选菜</button>
       <div class="pool-tabs">
-        <span class="pool-tab active" id="tab-all" onclick="switchPool('all')">全部选项</span>
-        <span class="pool-tab" id="tab-my" onclick="switchPool('myMenu')">我的菜单</span>
+        <span class="pool-tab active" id="tab-all" onclick="showAllFoods()">🎲 签筒<span class="pool-tab-count" id="tab-all-count"></span></span>
       </div>
-      <button class="control-btn" id="category-toggle" onclick="showCategoryPicker()" title="选菜入单">选</button>
-      <button class="control-btn" id="history-toggle" onclick="showHistory()" title="抽签历史">历</button>
+      <button class="control-btn" id="history-toggle" onclick="showHistory()" title="抽签历史">📜 记录</button>
     </div>
 
     <!-- Slot machine / Menu grid -->
@@ -2609,117 +2845,39 @@ h1 {
   </div>
 </div>
 
+<!-- Pool overlay -->
+<div class="pool-overlay" id="pool-overlay" onclick="closeAllFoods(event)">
+  <div class="pool-panel">
+    <div class="pool-header">
+      <div class="pool-title">🎲 签筒</div>
+      <button class="pool-close" onclick="closeAllFoods()">关闭</button>
+    </div>
+    <div class="pool-subtitle" id="pool-subtitle">共 0 道菜品</div>
+    <div class="pool-list" id="pool-list"></div>
+  </div>
+</div>
+
 <script>
 /* ═══════════════════════════════════════
    State & localStorage
    ═══════════════════════════════════════ */
 
 const STORAGE_KEY = 'chisha-state';
-const STATE_VERSION = 6;
+const STATE_VERSION = 8;
 
 const DEFAULT_FOODS = [];
 
-const FOOD_CATEGORIES = [
-  {
-    name: '河南菜',
-    items: ['烩面','胡辣汤','灌汤包','羊肉汤','浆面条','道口烧鸡','鲤鱼焙面','水煎包','炒凉粉','杠子馍','菜馍','油茶','豆腐脑','红焖羊肉','卤面','炸紫酥肉','桶子鸡','烧饼夹肉','焦饼','葱油饼','蒸饺','煎包','板面','扁粉菜','臊子面','信阳焖罐肉','南阳黄牛肉','周口羊肉汤','许昌卤面','新乡烧饼','洛阳水席','开封炒凉粉','逍遥胡辣汤','三鲜烩面','萝卜丝饼']
-  },
-  {
-    name: '川菜',
-    items: ['回锅肉','麻婆豆腐','宫保鸡丁','水煮牛肉','鱼香肉丝','辣子鸡','毛血旺','夫妻肺片','水煮鱼','酸菜鱼','口水鸡','樟茶鸭','东坡肘子','担担面','龙抄手','赖汤圆','宜宾燃面','钵钵鸡','串串香','麻辣香锅','干锅牛蛙','泡椒凤爪','蒜泥白肉','鸡豆花','甜烧白','咸烧白','火爆腰花','干煸豆角','鱼香茄子','红烧兔肉','冷吃兔','跷脚牛肉','豆花饭','肥肠粉','蛋烘糕']
-  },
-  {
-    name: '粤菜',
-    items: ['白切鸡','烧鹅','烤乳猪','叉烧','蜜汁叉烧','豉油鸡','盐焗鸡','深井烧鹅','脆皮烧肉','烧鸭','烧乳鸽','老火靓汤','艇仔粥','及第粥','干炒牛河','湿炒牛河','虾饺','烧卖','叉烧包','蛋挞','流沙包','肠粉','布拉肠粉','马蹄糕','萝卜糕','芋头糕','煲仔饭','腊味煲仔饭','避风塘炒蟹','清蒸石斑','蒜蓉蒸扇贝','白灼虾','豉汁蒸排骨','陈皮骨','咕噜肉']
-  },
-  {
-    name: '鲁菜',
-    items: ['糖醋鲤鱼','九转大肠','葱烧海参','德州扒鸡','四喜丸子','油爆双脆','奶汤蒲菜','糟熘鱼片','爆三样','滑炒里脊丝','香酥鸡','炸蛎黄','清蒸加吉鱼','扒原壳鲍鱼','芙蓉鸡片','拔丝山药','诗礼银杏','孔府一品锅','坛子肉','把子肉','单县羊肉汤','周村烧饼','济南酥锅','胶东大包子','鲅鱼水饺','海鲜疙瘩汤','辣炒蛤蜊','葱油饼','甜沫','胶东四大拌']
-  },
-  {
-    name: '苏菜',
-    items: ['松鼠鳜鱼','狮子头','软兜长鱼','大煮干丝','文思豆腐','水晶肴肉','三套鸭','盐水鸭','鸭血粉丝汤','南京烤鸭','碧螺虾仁','响油鳝糊','蟹粉豆腐','平桥豆腐','拆烩鲢鱼头','白袍虾仁','霸王别姬','沛公狗肉','彭城鱼丸','地锅鸡','奥灶面','藏书白切羊肉','桃源红烧羊肉','无锡排骨','梁溪脆鳝','常州大麻糕','镇江肴肉','扬州炒饭','蟹黄汤包','千层油糕']
-  },
-  {
-    name: '浙菜',
-    items: ['西湖醋鱼','东坡肉','龙井虾仁','叫花鸡','宋嫂鱼羹','干炸响铃','蜜汁火方','冰糖甲鱼','苔菜小方烤','雪菜大汤黄鱼','腐皮包黄鱼','绍兴醉鸡','宁波汤圆','温州鱼丸','嘉兴粽子','片儿川','虾爆鳝面','葱包桧','西湖莼菜汤','千岛湖鱼头','金华火腿','湖州千张包','嘉兴酱鸭','舟山海鲜面','台州食饼筒']
-  },
-  {
-    name: '闽菜',
-    items: ['佛跳墙','荔枝肉','醉糟鸡','鸡汤汆海蚌','淡糟香螺片','太极芋泥','锅边糊','鱼丸','肉燕','扁肉燕','沙县拌面','沙县蒸饺','姜母鸭','同安封肉','海蛎煎','土笋冻','烧肉粽','面线糊','四果汤','花生汤','拗九粥','红糟鱼','白斩河田鸡','涮九品','九门头']
-  },
-  {
-    name: '湘菜',
-    items: ['剁椒鱼头','辣椒炒肉','湘西外婆菜','腊味合蒸','东安子鸡','组庵鱼翅','组庵豆腐','口味虾','口味蛇','麻辣子鸡','金钱蛋','擂辣椒皮蛋','农家小炒肉','土匪猪肝','发丝牛百叶','三层套鸡','百鸟朝凤','子龙脱袍','毛氏红烧肉','永州血鸭','常德牛肉粉','邵阳猪血丸子','衡阳鱼粉','郴州烧鸡公','浏阳蒸菜']
-  },
-  {
-    name: '徽菜',
-    items: ['臭鳜鱼','火腿炖甲鱼','腌鲜鳜鱼','黄山炖鸽','问政山笋','李鸿章杂烩','椒盐米鸡','云雾肉','八公山豆腐','徽州毛豆腐','徽州刀板香','中和汤','蜜汁红芋','方腊鱼','清炖马蹄蟹','杨梅丸子','凤炖牡丹','双脆锅巴','红烧划水','符离集烧鸡','肥西老母鸡汤','吴山贡鹅','三河米饺','庐州烤鸭','阜阳格拉条']
-  },
-  {
-    name: '东北菜',
-    items: ['锅包肉','猪肉炖粉条','小鸡炖蘑菇','地三鲜','溜肉段','杀猪菜','酸菜白肉血肠','排骨炖豆角','东北乱炖','得莫利炖鱼','铁锅炖大鹅','酱骨架','老虎菜','大拉皮','粘豆包','玉米饼子','东北饺子','烤冷面','延边冷面','鸡西冷面','哈尔滨红肠','松花鸡腿','老式锅包肉','雪衣豆沙','熘肥肠']
-  },
-  {
-    name: '西北菜',
-    items: ['羊肉泡馍','肉夹馍','凉皮','臊子面','油泼面','Biangbiang面','葫芦头','甑糕','腊汁肉','水盆羊肉','兰州牛肉面','酿皮','甜胚子','手抓羊肉','羊杂碎','大盘鸡','新疆烤羊肉串','烤包子','抓饭','馕包肉','拉条子','青海酸奶','狗浇尿饼','宁夏手抓','敦煌驴肉黄面']
-  },
-  {
-    name: '西南菜-云贵',
-    items: ['过桥米线','汽锅鸡','野生菌火锅','饵块','乳扇','宣威火腿','丽江腊排骨','菠萝饭','鬼鸡','老奶洋芋','大救驾','竹筒饭','酸汤鱼','丝娃娃','肠旺面','花溪牛肉粉','遵义羊肉粉','水城烙锅','青岩猪脚','盗汗鸡','鸡豆凉粉','糟辣脆皮鱼','乌江豆腐鱼','骟鸡点豆腐','折耳根炒腊肉']
-  },
-  {
-    name: '京鄂沪',
-    items: ['北京烤鸭','京酱肉丝','涮羊肉','炸酱面','豆汁儿','卤煮火烧','炒肝','爆肚','驴打滚','豌豆黄','芥末墩儿','萨其马','糖火烧','艾窝窝','羊蝎子','莲藕排骨汤','热干面','三鲜豆皮','武昌鱼','排骨藕汤','面窝','糊汤粉','沔阳三蒸','潜江油焖大虾','武汉鸭脖','小笼包','生煎包','红烧肉','响油鳝丝','油爆虾','白斩鸡','四喜烤麸','腌笃鲜','阳春面']
-  }
-];
-
-const ALL_FOODS = [...new Set(FOOD_CATEGORIES.flatMap(c => c.items))];
-
-const FOOD_TIPS = {
-  '烩面': '汤面一体，趁热吃更香',
-  '胡辣汤': '辛辣暖胃，配油条更佳',
-  '灌汤包': '汤汁烫口，轻咬慢吸',
-  '羊肉汤': '温补暖身，配饼最搭',
-  '浆面条': '酸香开胃，发酵易消化',
-  '道口烧鸡': '高蛋白，撕肉慢吃',
-  '鲤鱼焙面': '糖醋开胃，注意控糖',
-  '水煎包': '底部焦脆，油煎适量',
-  '炒凉粉': '爽滑Q弹，肠胃弱者少食',
-  '杠子馍': '实心耐嚼，配汤更宜',
-  '菜馍': '菜面结合，营养均衡',
-  '油茶': '早餐饮品，暖胃提神',
-  '豆腐脑': '植物蛋白，清淡爽口',
-  '红焖羊肉': '温补佳品，秋冬更宜',
-  '卤面': '蒸制少油，干湿适中',
-  '炸紫酥肉': '油炸解馋，适量为宜',
-  '桶子鸡': '咸香入味，多喝水',
-  '烧饼夹肉': '碳水蛋白，注意分量',
-  '焦饼': '酥脆焦香，细嚼慢咽',
-  '葱油饼': '葱香四溢，油分偏高',
-  '蒸饺': '蒸制健康，营养均衡',
-  '煎包': '焦底香脆，趁热吃',
-  '板面': '宽面劲道，汤浓味正',
-  '扁粉菜': '粉条青菜，补充纤维',
-  '臊子面': '汤菜丰富，多菜少油',
-  '信阳焖罐肉': '慢炖软糯，易消化',
-  '南阳黄牛肉': '优质蛋白，补中益气',
-  '周口羊肉汤': '汤鲜味厚，暖身佳品',
-  '许昌卤面': '卤香入味，配蒜更香',
-  '新乡烧饼': '外酥里嫩，适量为宜',
-  '洛阳水席': '汤菜多样，少量多餐',
-  '开封炒凉粉': '夜市经典，凉热适中',
-  '逍遥胡辣汤': '辛香浓郁，早餐饮品',
-  '三鲜烩面': '配料丰富，汤鲜面滑',
-  '萝卜丝饼': '蔬菜面饼，清淡爽口'
-};
+let FOOD_CATEGORIES = [];
+let FOOD_TIPS = {};
+let ALL_FOODS = [];
 
 function defaultState() {
   return {
     version: STATE_VERSION,
     myMenu: [],
-    selectedCategories: ['河南菜'],
+    selectedCategories: ['河南菜', '我的菜单'],
     excludedFoods: [],
+    categoryOrder: ['河南菜','川菜','粤菜','鲁菜','苏菜','浙菜','闽菜','湘菜','徽菜','东北菜','西北菜','西南菜-云贵'],
     customTips: {},
     customRecipes: {},
     history: {
@@ -2776,6 +2934,20 @@ function migrateState(raw) {
     raw.version = 6;
   }
 
+  // v6 → v7: 「我的菜单」移入选菜面板，默认选中
+  if (raw.version < 7) {
+    if (!raw.selectedCategories.includes('我的菜单')) {
+      raw.selectedCategories.push('我的菜单');
+    }
+    raw.version = 7;
+  }
+
+  // v7 → v8: 引入 categoryOrder，默认按原始顺序
+  if (raw.version < 8) {
+    raw.categoryOrder = defaultState().categoryOrder;
+    raw.version = 8;
+  }
+
   return raw;
 }
 
@@ -2795,16 +2967,19 @@ function saveState() {
   } catch { /* quota exceeded — silent */ }
 }
 
-const state = loadState();
+let state = null;
 
 // Convenience accessors
-let currentPool = 'all'; // 'all' | 'myMenu'
-
 function getFoods() {
-  if (currentPool === 'myMenu') return state.myMenu;
-  // 全部选项 = 选中分类的菜 - 被排除的 + myMenu
+  // 选中分类的菜 - 被排除的
   const all = [];
   state.selectedCategories.forEach(catName => {
+    if (catName === '我的菜单') {
+      state.myMenu.forEach(name => {
+        if (!all.includes(name)) all.push(name);
+      });
+      return;
+    }
     const cat = FOOD_CATEGORIES.find(c => c.name === catName);
     if (cat) {
       cat.items.forEach(item => {
@@ -2814,10 +2989,33 @@ function getFoods() {
       });
     }
   });
-  state.myMenu.forEach(name => {
-    if (!all.includes(name)) all.push(name);
-  });
   return all;
+}
+
+function getFoodsWithSource() {
+  const result = [];
+  const seen = new Set();
+  // 先加我的菜单
+  if (state.selectedCategories.includes('我的菜单')) {
+    state.myMenu.forEach(name => {
+      if (!seen.has(name)) {
+        seen.add(name);
+        result.push({ name, source: '我的菜单' });
+      }
+    });
+  }
+  // 再加分类菜品
+  state.selectedCategories.forEach(catName => {
+    if (catName === '我的菜单') return;
+    const cat = FOOD_CATEGORIES.find(c => c.name === catName);
+    if (!cat) return;
+    cat.items.forEach(item => {
+      if (seen.has(item) || state.excludedFoods.includes(item)) return;
+      seen.add(item);
+      result.push({ name: item, source: catName });
+    });
+  });
+  return result;
 }
 
 /* ═══════════════════════════════════════
@@ -2971,10 +3169,7 @@ function initSlotMachine() {
 
   if (foods.length === 0) {
     container.className = 'slot-container';
-    container.innerHTML = '<div class="slot-empty">' + (currentPool === 'myMenu' ? '菜单为空' : '暂无可选菜品') + '</div>';
-    if (currentPool === 'myMenu') {
-      appendSlotAddBar(container);
-    }
+    container.innerHTML = '<div class="slot-empty">暂无可选菜品</div>';
     return;
   }
 
@@ -3008,7 +3203,7 @@ function initSlotMachine() {
         const removeBtn = document.createElement('span');
         removeBtn.className = 'item-remove';
         removeBtn.textContent = '×';
-        removeBtn.title = currentPool === 'myMenu' ? '删除' : '排除';
+        removeBtn.title = state.myMenu.includes(name) ? '删除' : '排除';
         removeBtn.onclick = (e) => { e.stopPropagation(); handleItemRemove(name); };
         item.appendChild(removeBtn);
         item.onclick = (e) => { if (e.target.classList.contains('item-remove')) return; previewFood(name); };
@@ -3023,50 +3218,10 @@ function initSlotMachine() {
     const initialOffset = Math.floor(Math.random() * foods.length) * 44;
     strip.style.transform = `translateY(-${initialOffset}px)`;
   }
-
-  if (currentPool === 'myMenu') {
-    appendSlotAddBar(container);
-  }
-}
-
-function appendSlotAddBar(container) {
-  const bar = document.createElement('div');
-  bar.className = 'slot-add-bar';
-  bar.innerHTML = '<button class="menu-grid-add" onclick="showSlotAddInput(this)" title="添加菜品">＋</button><input type="text" class="menu-grid-add-input" style="display:none;" placeholder="菜名，回车添加" onkeydown="handleSlotAddKey(event,this)" onblur="handleSlotAddBlur(this)" />';
-  container.appendChild(bar);
-}
-
-function showSlotAddInput(btn) {
-  const input = btn.nextElementSibling;
-  btn.style.display = 'none';
-  input.style.display = 'block';
-  input.focus();
-}
-
-function handleSlotAddKey(e, input) {
-  if (e.key === 'Enter') {
-    const val = input.value.trim();
-    if (val) addToMyMenu(val);
-    input.value = '';
-    input.style.display = 'none';
-    input.previousElementSibling.style.display = 'inline-flex';
-  } else if (e.key === 'Escape') {
-    input.blur();
-  }
-}
-
-function handleSlotAddBlur(input) {
-  setTimeout(() => {
-    if (document.activeElement !== input) {
-      input.value = '';
-      input.style.display = 'none';
-      input.previousElementSibling.style.display = 'inline-flex';
-    }
-  }, 200);
 }
 
 function handleItemRemove(name) {
-  if (currentPool === 'myMenu') {
+  if (state.myMenu.includes(name)) {
     const idx = state.myMenu.indexOf(name);
     if (idx >= 0) {
       if (state.myMenu.length <= 1) {
@@ -3076,7 +3231,7 @@ function handleItemRemove(name) {
       state.myMenu.splice(idx, 1);
     }
   } else {
-    // 全部选项模式下：排除/恢复
+    // 排除/恢复
     const idx = state.excludedFoods.indexOf(name);
     if (idx >= 0) {
       state.excludedFoods.splice(idx, 1);
@@ -3086,6 +3241,7 @@ function handleItemRemove(name) {
   }
   saveState();
   renderSlotMachine();
+  renderCategoryList();
 }
 
 function previewFood(name) {
@@ -3218,8 +3374,18 @@ function updateSlotHighlight(index) {
   });
 }
 
+function updatePoolTabCount() {
+  const countEl = document.getElementById('tab-all-count');
+  if (countEl) {
+    countEl.textContent = '(' + getFoods().length + ')';
+  }
+}
+
 function renderSlotMachine() {
-  requestAnimationFrame(() => initSlotMachine());
+  requestAnimationFrame(() => {
+    initSlotMachine();
+    updatePoolTabCount();
+  });
 }
 
 function pick(index) {
@@ -3308,13 +3474,16 @@ function removeFood(index) {
   const foods = getFoods();
   const dishName = foods[index];
 
-  if (currentPool === 'myMenu') {
-    state.myMenu.splice(index, 1);
+  // 从 myMenu 中删除（如果存在）
+  const myIdx = state.myMenu.indexOf(dishName);
+  if (myIdx >= 0) {
+    state.myMenu.splice(myIdx, 1);
   }
 
-  // 安全 fallback：如果直接操作 foods 数组也能生效（myMenu 模式下 foods 是 state.myMenu 引用）
-  if (!currentPool || currentPool !== 'myMenu') {
-    foods.splice(index, 1);
+  // 从 excludedFoods 中移除（如果存在）
+  const exIdx = state.excludedFoods.indexOf(dishName);
+  if (exIdx >= 0) {
+    state.excludedFoods.splice(exIdx, 1);
   }
 
   if (current === index) {
@@ -3383,14 +3552,13 @@ function showAddInput() {
 function addToMyMenu(val) {
   if (state.myMenu.includes(val)) {
     // 仅在「我的菜单」页内闪现提示，其他页面静默
-    if (currentPool === 'myMenu') {
-      showToast('「' + val + '」已在菜单中');
-    }
+    showToast('「' + val + '」已在菜单中');
     return;
   }
   state.myMenu.push(val);
   saveState();
   renderSlotMachine();
+  renderCategoryList();
   if (!DEFAULT_FOODS.includes(val)) {
     fetchCookFor(val);
   }
@@ -3437,9 +3605,8 @@ async function fetchCookFor(dish) {
 }
 
 function switchPool(pool) {
-  currentPool = pool;
-  document.getElementById('tab-all').classList.toggle('active', pool === 'all');
-  document.getElementById('tab-my').classList.toggle('active', pool === 'myMenu');
+  // 目前仅保留全部选项一个池，此函数保留作为扩展点
+  document.getElementById('tab-all').classList.toggle('active', true);
 
   // 切换后如果当前高亮的菜不在新池中，清除高亮
   const foods = getFoods();
@@ -3456,23 +3623,6 @@ function switchPool(pool) {
     document.getElementById('cook-wrap').classList.remove('visible');
     document.getElementById('cook-btn').textContent = '做法';
   }
-  renderSlotMachine();
-}
-
-function toggleMyMenu(name) {
-  const idx = state.myMenu.indexOf(name);
-  if (idx >= 0) {
-    state.myMenu.splice(idx, 1);
-  } else {
-    state.myMenu.push(name);
-  }
-  saveState();
-  renderSlotMachine();
-}
-
-function clearMyMenu() {
-  state.myMenu = [];
-  saveState();
   renderSlotMachine();
 }
 
@@ -3493,55 +3643,112 @@ function closeCategoryPicker(e) {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeCategoryPicker();
+    closeAllFoods();
     closeHistory();
     closeShareOverlay();
   }
 });
 
+function getOrderedCategories() {
+  const order = state.categoryOrder || [];
+  const ordered = order.map(name => FOOD_CATEGORIES.find(c => c.name === name)).filter(Boolean);
+  // 补充新增分类
+  FOOD_CATEGORIES.forEach(cat => {
+    if (!ordered.includes(cat)) ordered.push(cat);
+  });
+  return ordered;
+}
+
 function renderCategoryList() {
   const list = document.getElementById('category-list');
-  list.innerHTML = FOOD_CATEGORIES.map((cat, i) => {
+  const orderedCats = getOrderedCategories();
+
+  // 我的菜单虚拟分类（永远置顶）
+  const isMyMenuSelected = state.selectedCategories.includes('我的菜单');
+  const myMenuCount = state.myMenu.length;
+  const myMenuExpanded = expandedCategoryIndex === '__myMenu__';
+
+  const myMenuStatus = (isMyMenuSelected ? myMenuCount : 0) + '/' + myMenuCount;
+
+  let myMenuItemsHtml = '';
+  if (myMenuExpanded) {
+    myMenuItemsHtml = '<div class="category-items">' +
+      state.myMenu.map(name => {
+        return '<span class="category-item" onclick="removeMyMenuItem(event, \'' + name + '\')">' + name + '</span>';
+      }).join('') +
+      '<span class="category-add-btn" onclick="showMyMenuAddInput(this)" title="添加菜品">＋</span>' +
+      '<input type="text" class="menu-grid-add-input" style="display:none;width:100px;" placeholder="菜名，回车添加" onkeydown="handleMyMenuAddKey(event,this)" onblur="handleMyMenuAddBlur(this)" />' +
+    '</div>';
+  }
+
+  const myMenuRow = '<div class="category-row pinned' + (isMyMenuSelected ? ' selected' : '') + '">' +
+    '<div class="category-row-main" onclick="toggleCategory(\'__myMenu__\')">' +
+      '<span class="category-drag-handle fixed" title="固定置顶">📌</span>' +
+      '<span class="category-checkbox">' + (isMyMenuSelected ? '☑' : '☐') + '</span>' +
+      '<span class="category-row-name">我的菜单</span>' +
+      '<span class="category-row-meta">' +
+        '<span class="category-row-count">' + myMenuStatus + '</span>' +
+        '<button class="category-expand" onclick="toggleExpandCategory(event, \'__myMenu__\')">' + (myMenuExpanded ? '收起' : '展开') + '</button>' +
+      '</span>' +
+    '</div>' +
+    myMenuItemsHtml +
+  '</div>';
+
+  // 其他菜系（可拖动排序）
+  const catRows = orderedCats.map((cat, i) => {
     const isSelected = state.selectedCategories.includes(cat.name);
     const excludedCount = cat.items.filter(n => state.excludedFoods.includes(n)).length;
     const inPoolCount = isSelected ? cat.items.length - excludedCount : 0;
 
-    let statusText = '';
-    if (!isSelected) {
-      statusText = '未选';
-    } else if (excludedCount === 0) {
-      statusText = '已全选';
-    } else {
-      statusText = '已选 ' + inPoolCount + '/' + cat.items.length;
-    }
+    const statusText = (isSelected ? inPoolCount : 0) + '/' + cat.items.length;
 
-    const expanded = expandedCategoryIndex === i;
+    const expanded = expandedCategoryIndex === cat.name;
     let itemsHtml = '';
     if (expanded) {
       itemsHtml = '<div class="category-items">' +
         cat.items.map(name => {
           const isExcluded = state.excludedFoods.includes(name);
           const inPool = isSelected && !isExcluded;
-          return '<span class="category-item' + (inPool ? '' : ' excluded') + '" onclick="toggleFoodExclude(event, \'' + name + '\', ' + i + ')">' + name + '</span>';
+          return '<span class="category-item' + (inPool ? '' : ' excluded') + '" draggable="false" onclick="toggleFoodExclude(event, \'' + name + '\', \'' + cat.name + '\')">' + name + '</span>';
         }).join('') +
       '</div>';
     }
 
-    return '<div class="category-row' + (isSelected ? ' selected' : '') + '">' +
-      '<div class="category-row-main" onclick="toggleCategory(' + i + ')">' +
-        '<span class="category-checkbox">' + (isSelected ? '☑' : '☐') + '</span>' +
-        '<span class="category-row-name">' + cat.name + '</span>' +
+    return '<div class="category-row' + (isSelected ? ' selected' : '') + '" draggable="true" data-cat="' + cat.name + '">' +
+      '<div class="category-row-main">' +
+        '<span class="category-drag-handle" data-cat="' + cat.name + '" ontouchstart="handleCategoryTouchStart(event)" ontouchmove="handleCategoryTouchMove(event)" ontouchend="handleCategoryTouchEnd(event)">⋮⋮</span>' +
+        '<span class="category-checkbox" onclick="toggleCategory(\'' + cat.name + '\')">' + (isSelected ? '☑' : '☐') + '</span>' +
+        '<span class="category-row-name" onclick="toggleCategory(\'' + cat.name + '\')">' + cat.name + '</span>' +
         '<span class="category-row-meta">' +
-          '<span class="category-row-count">' + statusText + '</span>' +
-          '<button class="category-expand" onclick="toggleExpandCategory(event, ' + i + ')">' + (expanded ? '收起' : '展开') + '</button>' +
+          '<span class="category-row-count" onclick="toggleCategory(\'' + cat.name + '\')">' + statusText + '</span>' +
+          '<button class="category-expand" onclick="toggleExpandCategory(event, \'' + cat.name + '\')">' + (expanded ? '收起' : '展开') + '</button>' +
         '</span>' +
       '</div>' +
       itemsHtml +
     '</div>';
   }).join('');
+
+  list.innerHTML = myMenuRow + catRows;
+  initCategoryDrag(list);
+  updatePoolTabCount();
 }
 
-function toggleCategory(index) {
-  const cat = FOOD_CATEGORIES[index];
+function toggleCategory(catName) {
+  if (catName === '__myMenu__') {
+    // 我的菜单虚拟分类
+    const idx = state.selectedCategories.indexOf('我的菜单');
+    if (idx >= 0) {
+      state.selectedCategories.splice(idx, 1);
+    } else {
+      state.selectedCategories.push('我的菜单');
+    }
+    saveState();
+    renderSlotMachine();
+    renderCategoryList();
+    return;
+  }
+
+  const cat = FOOD_CATEGORIES.find(c => c.name === catName);
   if (!cat) return;
 
   const idx = state.selectedCategories.indexOf(cat.name);
@@ -3561,15 +3768,16 @@ function toggleCategory(index) {
   renderCategoryList();
 }
 
-function toggleExpandCategory(event, index) {
+function toggleExpandCategory(event, catName) {
   event.stopPropagation();
-  expandedCategoryIndex = expandedCategoryIndex === index ? -1 : index;
+  expandedCategoryIndex = expandedCategoryIndex === catName ? -1 : catName;
   renderCategoryList();
 }
 
-function toggleFoodExclude(event, name, catIndex) {
+function toggleFoodExclude(event, name, catName) {
   event.stopPropagation();
-  const cat = FOOD_CATEGORIES[catIndex];
+  const cat = FOOD_CATEGORIES.find(c => c.name === catName);
+  if (!cat) return;
 
   // 如果分类未选中，先选中它
   if (!state.selectedCategories.includes(cat.name)) {
@@ -3586,6 +3794,220 @@ function toggleFoodExclude(event, name, catIndex) {
   saveState();
   renderSlotMachine();
   renderCategoryList();
+}
+
+/* ── Category Drag & Drop ── */
+let dragSrcCat = null;
+let touchDrag = null;
+
+function initCategoryDrag(list) {
+  const rows = list.querySelectorAll('.category-row[data-cat]');
+  rows.forEach(row => {
+    row.addEventListener('dragstart', handleCategoryDragStart);
+    row.addEventListener('dragover', handleCategoryDragOver);
+    row.addEventListener('drop', handleCategoryDrop);
+    row.addEventListener('dragend', handleCategoryDragEnd);
+    row.addEventListener('dragenter', handleCategoryDragEnter);
+    row.addEventListener('dragleave', handleCategoryDragLeave);
+  });
+}
+
+function handleCategoryDragStart(e) {
+  dragSrcCat = this.dataset.cat;
+  this.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', dragSrcCat);
+}
+
+function handleCategoryDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  return false;
+}
+
+function handleCategoryDragEnter(e) {
+  if (this.dataset.cat && this.dataset.cat !== dragSrcCat) {
+    this.classList.add('drag-over');
+  }
+}
+
+function handleCategoryDragLeave(e) {
+  this.classList.remove('drag-over');
+}
+
+function handleCategoryDrop(e) {
+  e.stopPropagation();
+  const targetCat = this.dataset.cat;
+  if (!targetCat || targetCat === dragSrcCat) return false;
+
+  const srcIdx = state.categoryOrder.indexOf(dragSrcCat);
+  const targetIdx = state.categoryOrder.indexOf(targetCat);
+  if (srcIdx === -1 || targetIdx === -1) return false;
+
+  state.categoryOrder.splice(srcIdx, 1);
+  state.categoryOrder.splice(targetIdx, 0, dragSrcCat);
+
+  saveState();
+  renderCategoryList();
+  return false;
+}
+
+function handleCategoryDragEnd(e) {
+  this.classList.remove('dragging');
+  const list = document.getElementById('category-list');
+  if (list) {
+    list.querySelectorAll('.category-row').forEach(r => r.classList.remove('drag-over'));
+  }
+  dragSrcCat = null;
+}
+
+/* Touch drag for mobile */
+function handleCategoryTouchStart(e) {
+  const el = e.target.nodeType === 3 ? e.target.parentElement : e.target;
+  const handle = el.closest('.category-drag-handle');
+  if (!handle) return;
+  const catName = handle.dataset.cat;
+  if (!catName) return;
+
+  const touch = e.touches[0];
+  touchDrag = {
+    catName: catName,
+    startX: touch.clientX,
+    startY: touch.clientY,
+    timer: setTimeout(() => {
+      startTouchDrag(catName, touch.clientX, touch.clientY);
+    }, 500)
+  };
+}
+
+function handleCategoryTouchMove(e) {
+  if (!touchDrag) return;
+  const touch = e.touches[0];
+
+  const dx = touch.clientX - touchDrag.startX;
+  const dy = touch.clientY - touchDrag.startY;
+  if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+    if (touchDrag.timer) {
+      clearTimeout(touchDrag.timer);
+      touchDrag.timer = null;
+    }
+  }
+
+  if (touchDrag.clone) {
+    e.preventDefault();
+    touchDrag.clone.style.transform = 'translate(' + (touch.clientX - touchDrag.offsetX) + 'px, ' + (touch.clientY - touchDrag.offsetY) + 'px)';
+
+    const list = document.getElementById('category-list');
+    if (list) {
+      list.querySelectorAll('.category-row').forEach(r => r.classList.remove('drag-over'));
+      const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+      const row = elem && elem.closest('.category-row[data-cat]');
+      if (row && row.dataset.cat !== touchDrag.catName) {
+        row.classList.add('drag-over');
+      }
+    }
+  }
+}
+
+function handleCategoryTouchEnd(e) {
+  if (!touchDrag) return;
+
+  if (touchDrag.timer) {
+    clearTimeout(touchDrag.timer);
+  }
+
+  if (touchDrag.clone) {
+    const touch = e.changedTouches[0];
+    const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+    const row = elem && elem.closest('.category-row[data-cat]');
+
+    if (row && row.dataset.cat && row.dataset.cat !== touchDrag.catName) {
+      const srcIdx = state.categoryOrder.indexOf(touchDrag.catName);
+      const targetIdx = state.categoryOrder.indexOf(row.dataset.cat);
+      if (srcIdx !== -1 && targetIdx !== -1) {
+        state.categoryOrder.splice(srcIdx, 1);
+        state.categoryOrder.splice(targetIdx, 0, touchDrag.catName);
+        saveState();
+      }
+    }
+
+    touchDrag.clone.remove();
+    const list = document.getElementById('category-list');
+    if (list) {
+      list.querySelectorAll('.category-row').forEach(r => r.classList.remove('drag-over'));
+    }
+  }
+
+  touchDrag = null;
+  renderCategoryList();
+}
+
+function startTouchDrag(catName, x, y) {
+  const row = document.querySelector('.category-row[data-cat="' + catName + '"]');
+  if (!row) return;
+
+  const rect = row.getBoundingClientRect();
+  const clone = row.cloneNode(true);
+  clone.style.position = 'fixed';
+  clone.style.left = rect.left + 'px';
+  clone.style.top = rect.top + 'px';
+  clone.style.width = rect.width + 'px';
+  clone.style.zIndex = '9999';
+  clone.style.opacity = '0.9';
+  clone.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+  clone.style.pointerEvents = 'none';
+  document.body.appendChild(clone);
+
+  touchDrag.clone = clone;
+  touchDrag.offsetX = x - rect.left;
+  touchDrag.offsetY = y - rect.top;
+  touchDrag.timer = null;
+
+  row.style.opacity = '0.3';
+}
+
+function removeMyMenuItem(event, name) {
+  event.stopPropagation();
+  const idx = state.myMenu.indexOf(name);
+  if (idx >= 0) {
+    if (state.myMenu.length <= 1) {
+      showToast('菜单至少保留一道菜');
+      return;
+    }
+    state.myMenu.splice(idx, 1);
+    saveState();
+    renderSlotMachine();
+    renderCategoryList();
+  }
+}
+
+function showMyMenuAddInput(btn) {
+  const input = btn.nextElementSibling;
+  btn.style.display = 'none';
+  input.style.display = 'block';
+  input.focus();
+}
+
+function handleMyMenuAddKey(e, input) {
+  if (e.key === 'Enter') {
+    const val = input.value.trim();
+    if (val) addToMyMenu(val);
+    input.value = '';
+    input.style.display = 'none';
+    input.previousElementSibling.style.display = 'inline-flex';
+  } else if (e.key === 'Escape') {
+    input.blur();
+  }
+}
+
+function handleMyMenuAddBlur(input) {
+  setTimeout(() => {
+    if (document.activeElement !== input) {
+      input.value = '';
+      input.style.display = 'none';
+      input.previousElementSibling.style.display = 'inline-flex';
+    }
+  }, 200);
 }
 
 /* ── Toast ── */
@@ -4064,7 +4486,7 @@ function updateHeaderDate() {
       const ganIdx = (ganStart + zhiIdx) % 10;
       const gzHour = Gan[ganIdx] + Zhi[zhiIdx];
 
-      lunarEl.textContent = gzYear + '-' + gzMonth + '-' + gzDay + '-' + gzHour;
+      lunarEl.textContent = gzYear + '·' + gzMonth + '·' + gzDay + '·' + gzHour;
     } else {
       lunarEl.textContent = '';
     }
@@ -4209,6 +4631,101 @@ function closeShareOverlay(e) {
   if (prev) prev.style.display = '';
   if (next) next.style.display = '';
   document.getElementById('share-dots').style.display = '';
+}
+
+/* ═══════════════════════════════════════
+   Pool / 签筒菜品
+   ═══════════════════════════════════════ */
+
+function showAllFoods() {
+  renderAllFoods();
+  initPoolLongPress();
+  document.getElementById('pool-overlay').classList.add('active');
+}
+
+function closeAllFoods(e) {
+  if (e && e.target !== document.getElementById('pool-overlay') && !e.target.closest('.pool-close')) return;
+  document.getElementById('pool-overlay').classList.remove('active');
+}
+
+function renderAllFoods() {
+  const items = getFoodsWithSource();
+  const subtitle = document.getElementById('pool-subtitle');
+  const list = document.getElementById('pool-list');
+  subtitle.textContent = '共 ' + items.length + ' 道菜品';
+
+  if (items.length === 0) {
+    list.innerHTML = '<div class="pool-empty">签筒空空如也<br>去「🥢 选菜」里挑一些吧</div>';
+    return;
+  }
+
+  // 为每个来源分配稳定主题色
+  const sourceSet = [...new Set(items.map(i => i.source))];
+  const sourceToTheme = {};
+  sourceSet.forEach((src, idx) => { sourceToTheme[src] = idx % 7; });
+
+  list.innerHTML = items.map(item => {
+    const themeClass = 'theme-' + sourceToTheme[item.source];
+    return '<div class="pool-item ' + themeClass + '" data-name="' + item.name + '" data-source="' + item.source + '">' +
+      '<span class="pool-item-remove" onclick="event.stopPropagation();handlePoolItemRemove(\'' + item.name + '\',\'' + item.source + '\')">×</span>' +
+      item.name +
+      '</div>';
+  }).join('');
+}
+
+function handlePoolItemRemove(name, source) {
+  if (source === '我的菜单') {
+    const idx = state.myMenu.indexOf(name);
+    if (idx >= 0) state.myMenu.splice(idx, 1);
+  } else {
+    if (!state.excludedFoods.includes(name)) state.excludedFoods.push(name);
+  }
+  saveState();
+  renderAllFoods();
+  renderCategoryList();
+  updatePoolTabCount();
+  renderSlotMachine();
+}
+
+let poolLongPressInited = false;
+let poolLongPressTimer = null;
+let poolLongPressTarget = null;
+
+function initPoolLongPress() {
+  if (poolLongPressInited) return;
+  poolLongPressInited = true;
+  const list = document.getElementById('pool-list');
+  if (!list) return;
+
+  list.addEventListener('touchstart', e => {
+    const item = e.target.closest('.pool-item');
+    if (!item) return;
+    poolLongPressTarget = item;
+    item.classList.add('pressing');
+    poolLongPressTimer = setTimeout(() => {
+      item.classList.remove('pressing');
+      const name = item.dataset.name;
+      const source = item.dataset.source;
+      if (name && confirm('删除「' + name + '」？')) {
+        handlePoolItemRemove(name, source);
+      }
+      poolLongPressTarget = null;
+    }, 600);
+  }, { passive: true });
+
+  list.addEventListener('touchend', () => {
+    if (poolLongPressTimer) clearTimeout(poolLongPressTimer);
+    if (poolLongPressTarget) poolLongPressTarget.classList.remove('pressing');
+    poolLongPressTimer = null;
+    poolLongPressTarget = null;
+  });
+
+  list.addEventListener('touchmove', () => {
+    if (poolLongPressTimer) clearTimeout(poolLongPressTimer);
+    if (poolLongPressTarget) poolLongPressTarget.classList.remove('pressing');
+    poolLongPressTimer = null;
+    poolLongPressTarget = null;
+  });
 }
 
 /* ═══════════════════════════════════════
@@ -4551,18 +5068,21 @@ window.previewSolarTheme = function(term) {
   console.log('Previewing theme for:', term, 'paper:', papers[term] || '#F6F1E9');
 };
 
-// 初始化分类按钮状态（默认全部选项下显示「选」）
-const catBtnInit = document.getElementById('category-toggle');
-catBtnInit.textContent = '选';
-catBtnInit.title = '选择菜系';
-catBtnInit.onclick = showCategoryPicker;
+function initApp() {
+  state = loadState();
 
-renderSlotMachine();
-renderSoundToggle();
-renderSignNumber();
-renderFortune();
-updateHeaderDate();
-setInterval(updateHeaderDate, 60000);
+  const catBtnInit = document.getElementById('category-toggle');
+  catBtnInit.textContent = '🥢 选菜';
+  catBtnInit.title = '选择菜系';
+  catBtnInit.onclick = showCategoryPicker;
+
+  renderSlotMachine();
+  renderSoundToggle();
+  renderSignNumber();
+  renderFortune();
+  updateHeaderDate();
+  setInterval(updateHeaderDate, 60000);
+}
 
 /* ── 触摸滑动切换池子 ── */
 let touchStartX = 0;
@@ -4576,9 +5096,7 @@ if (containerEl) {
   containerEl.addEventListener('touchend', e => {
     const dx = e.changedTouches[0].clientX - touchStartX;
     const dy = e.changedTouches[0].clientY - touchStartY;
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 60) {
-      switchPool(currentPool === 'all' ? 'myMenu' : 'all');
-    }
+    // 左右滑动切换 pool 的功能已移除（目前仅保留全部选项）
   }, { passive: true });
 }
 
@@ -4598,8 +5116,28 @@ if (shareOverlayEl) {
 // 窗口大小变化时重新渲染老虎机
 let resizeTimer;
 window.addEventListener('resize', () => {
+  if (!state) return;
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => renderSlotMachine(), 300);
+});
+
+// 加载菜品配置
+document.addEventListener('DOMContentLoaded', () => {
+  fetch('data/foods.json')
+    .then(r => {
+      if (!r.ok) throw new Error('加载失败: ' + r.status);
+      return r.json();
+    })
+    .then(data => {
+      FOOD_CATEGORIES = data.categories || [];
+      FOOD_TIPS = data.tips || {};
+      ALL_FOODS = [...new Set(FOOD_CATEGORIES.flatMap(c => c.items))];
+      initApp();
+    })
+    .catch(err => {
+      console.error('加载菜品数据失败:', err);
+      document.body.innerHTML = '<div style="padding:40px;text-align:center;font-family:sans-serif;color:#666;">🍜 菜品数据加载失败，请检查网络后刷新页面</div>';
+    });
 });
 </script>
 </body>
