@@ -81,7 +81,6 @@ Component({
       }
 
       const itemHeight = this.data.itemHeight;
-      // 极致压缩 repeat：max 8→5，阈值 600→300，降低 setData 数据量约 40%
       const repeat = Math.min(5, Math.max(3, Math.floor(300 / foods.length)));
       const itemsArr = [0, 1, 2].map(() => {
         const items = [];
@@ -89,14 +88,12 @@ Component({
         return items;
       });
 
-      // 三列统一从顶部附近随机开始，均在可视范围内
       const offsets = [0, 1, 2].map(() =>
         -Math.floor(Math.random() * foods.length) * itemHeight
       );
 
       const hash = this._hashFoods(foods);
 
-      // 分步 setData：先传庞大的 items，再传 metadata，降低单次 setData 压力
       this.setData({
         items0: itemsArr[0], items1: itemsArr[1], items2: itemsArr[2]
       }, () => {
@@ -127,28 +124,31 @@ Component({
       const targetCycle = Math.floor(repeat / 2);
       const centerOffset = colHeight / 2 - itemHeight / 2;
 
-      // 统一安全检查：所有列不能太靠下
       const safeBottom = -(repeat - 2) * cycleHeight;
       const offsets = [this.data.offset0, this.data.offset1, this.data.offset2];
       const needsReset = offsets.some(y => y < safeBottom);
       if (needsReset) this.initColumns(foods);
 
-      const duration = 2.0;
-      const delay = 0;
-      const maxDurationMs = (duration + delay + 0.3) * 1000;
+      // 列配置：同时启动，距离递增，速度大致相同，依次落定
+      // extraRounds 越大 → 滚动距离越长 → duration 越长，但速度保持相近
+      const colConfigs = [
+        { extraRounds: 0, duration: 1.6 }, // 左列：距离最短，最先停
+        { extraRounds: 1, duration: 2.2 }, // 中列：距离中等，次停
+        { extraRounds: 2, duration: 2.8 }  // 右列：距离最长，最后落定
+      ];
+
+      const targetFood = foods[targetIndex];
       const anims = [null, null, null];
       const finalOffsets = [0, 0, 0];
       const finalHighlights = [-1, -1, -1];
+      let maxDurationMs = 0;
 
-      // 缓存目标食物，避免重复索引
-      const targetFood = foods[targetIndex];
-      const destCycle = targetCycle;
-      const cycleStartIdx = destCycle * foodsLen;
-
-      [0, 1, 2].forEach(i => {
+      for (let i = 0; i < 3; i++) {
         const items = this._getItems(i);
+        const { extraRounds, duration } = colConfigs[i];
+        const destCycle = targetCycle + extraRounds;
+        const cycleStartIdx = destCycle * foodsLen;
 
-        // 在目标 cycle 中查找这道菜的位置
         const posInCol = items.indexOf(targetFood, cycleStartIdx);
         const effectivePos = posInCol >= 0 ? posInCol % foodsLen : targetIndex;
 
@@ -156,16 +156,17 @@ Component({
         finalOffsets[i] = finalY;
         finalHighlights[i] = cycleStartIdx + effectivePos;
 
+        maxDurationMs = Math.max(maxDurationMs, (duration + 0.3) * 1000);
+
         const anim = wx.createAnimation({
           duration: duration * 1000,
           timingFunction: 'cubic-bezier(0.22, 0.8, 0.3, 1)',
-          delay: delay * 1000
+          delay: 0
         });
         anim.translateY(finalY).step();
         anims[i] = anim.export();
-      });
+      }
 
-      // 只更新 animation 和 highlight，绝不触碰庞大的 items
       this.setData({
         anim0: anims[0], anim1: anims[1], anim2: anims[2],
         highlight0: -1, highlight1: -1, highlight2: -1
@@ -189,12 +190,13 @@ Component({
 
       const repeat = Math.min(5, Math.max(3, Math.floor(300 / foodsLen)));
       const targetCycle = Math.floor(repeat / 2);
-      const destCycle = targetCycle;
-      const cycleStartIdx = destCycle * foodsLen;
       const highlights = [-1, -1, -1];
 
       for (let i = 0; i < 3; i++) {
         const items = this._getItems(i);
+        const extraRounds = i; // 与 startSpin 的 colConfigs 对齐
+        const destCycle = targetCycle + extraRounds;
+        const cycleStartIdx = destCycle * foodsLen;
         const posInCol = items.indexOf(foods[index], cycleStartIdx);
         const effectivePos = posInCol >= 0 ? posInCol % foodsLen : index;
         highlights[i] = cycleStartIdx + effectivePos;
