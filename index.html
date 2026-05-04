@@ -2316,6 +2316,11 @@ h1 {
   border-bottom: 1px solid var(--paper-dark);
   flex-shrink: 0;
 }
+.category-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 .category-title {
   font-size: 16px;
   font-family: 'Shippori Mincho B1', serif;
@@ -2334,6 +2339,19 @@ h1 {
   transition: all 0.15s;
 }
 .category-close:hover { border-color: var(--lacquer); color: var(--lacquer); }
+.category-toggle-all {
+  background: none;
+  border: 1px solid var(--paper-dark);
+  padding: 4px 14px;
+  font-size: 11px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  color: var(--ink-light);
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  transition: all 0.15s;
+  border-radius: 4px;
+}
+.category-toggle-all:hover { border-color: var(--lacquer); color: var(--lacquer); }
 .category-list {
   overflow-y: auto;
   flex: 1;
@@ -2836,7 +2854,10 @@ h1 {
 <div class="category-overlay" id="category-overlay" onclick="closeCategoryPicker(event)">
   <div class="category-panel">
     <div class="category-header">
-      <div class="category-title">选择菜系</div>
+      <div class="category-header-left">
+        <div class="category-title">选择菜系</div>
+        <button class="category-toggle-all" id="category-toggle-all" onclick="toggleAllCategories()">全选</button>
+      </div>
       <button class="category-close" onclick="closeCategoryPicker()">关闭</button>
     </div>
     <div class="category-list" id="category-list"></div>
@@ -3786,6 +3807,33 @@ function renderCategoryList() {
   list.innerHTML = myMenuRow + catRows;
   initCategoryDrag(list);
   updatePoolTabCount();
+  updateToggleAllButton();
+}
+
+function updateToggleAllButton() {
+  const btn = document.getElementById('category-toggle-all');
+  if (!btn) return;
+  const allCatNames = FOOD_CATEGORIES.map(c => c.name);
+  const allSelected = allCatNames.length > 0 && allCatNames.every(name => state.selectedCategories.includes(name));
+  btn.textContent = allSelected ? '全不选' : '全选';
+}
+
+function toggleAllCategories() {
+  const allCatNames = FOOD_CATEGORIES.map(c => c.name);
+  const allSelected = allCatNames.length > 0 && allCatNames.every(name => state.selectedCategories.includes(name));
+
+  if (allSelected) {
+    // 全不选，保留「我的菜单」
+    state.selectedCategories = state.selectedCategories.filter(name => name === '我的菜单');
+  } else {
+    // 全选（包含「我的菜单」）
+    const newSelected = new Set([...state.selectedCategories, ...allCatNames]);
+    state.selectedCategories = Array.from(newSelected);
+  }
+
+  saveState();
+  renderCategoryList();
+  renderSlotMachine();
 }
 
 function toggleCategory(catName) {
@@ -3899,8 +3947,11 @@ function handleCategoryDrop(e) {
   const targetIdx = state.categoryOrder.indexOf(targetCat);
   if (srcIdx === -1 || targetIdx === -1) return false;
 
-  state.categoryOrder.splice(srcIdx, 1);
-  state.categoryOrder.splice(targetIdx, 0, dragSrcCat);
+  const items = [...state.categoryOrder];
+  const [moved] = items.splice(srcIdx, 1);
+  const newTargetIdx = targetIdx > srcIdx ? targetIdx - 1 : targetIdx;
+  items.splice(newTargetIdx, 0, moved);
+  state.categoryOrder = items;
 
   saveState();
   renderCategoryList();
@@ -3980,8 +4031,11 @@ function handleCategoryTouchEnd(e) {
       const srcIdx = state.categoryOrder.indexOf(touchDrag.catName);
       const targetIdx = state.categoryOrder.indexOf(row.dataset.cat);
       if (srcIdx !== -1 && targetIdx !== -1) {
-        state.categoryOrder.splice(srcIdx, 1);
-        state.categoryOrder.splice(targetIdx, 0, touchDrag.catName);
+        const items = [...state.categoryOrder];
+        const [moved] = items.splice(srcIdx, 1);
+        const newTargetIdx = targetIdx > srcIdx ? targetIdx - 1 : targetIdx;
+        items.splice(newTargetIdx, 0, moved);
+        state.categoryOrder = items;
         saveState();
       }
     }
