@@ -129,23 +129,23 @@ Component({
       const needsReset = offsets.some(y => y < safeBottom);
       if (needsReset) this.initColumns(foods);
 
-      // 列配置：同时启动，距离递增，速度大致相同，依次落定
-      // extraRounds 越大 → 滚动距离越长 → duration 越长，但速度保持相近
-      const colConfigs = [
-        { extraRounds: 0, duration: 1.6 }, // 左列：距离最短，最先停
-        { extraRounds: 1, duration: 2.2 }, // 中列：距离中等，次停
-        { extraRounds: 2, duration: 2.8 }  // 右列：距离最长，最后落定
-      ];
-
+      const duration = 2.0;
       const targetFood = foods[targetIndex];
       const anims = [null, null, null];
       const finalOffsets = [0, 0, 0];
       const finalHighlights = [-1, -1, -1];
-      let maxDurationMs = 0;
+
+      // 三列同时启动、同时结束，但加速度不同（timingFunction 不同）
+      // x1/y1 相同 → 初始速度相同；x2/y2 不同 → 中后期减速节奏不同
+      const colConfigs = [
+        { extraRounds: 0, timing: 'cubic-bezier(0.33, 0.66, 0.25, 1)' }, // 早期减速
+        { extraRounds: 1, timing: 'cubic-bezier(0.33, 0.66, 0.50, 1)' }, // 中期减速
+        { extraRounds: 2, timing: 'cubic-bezier(0.33, 0.66, 0.75, 1)' }  // 晚期减速
+      ];
 
       for (let i = 0; i < 3; i++) {
         const items = this._getItems(i);
-        const { extraRounds, duration } = colConfigs[i];
+        const { extraRounds, timing } = colConfigs[i];
         const destCycle = targetCycle + extraRounds;
         const cycleStartIdx = destCycle * foodsLen;
 
@@ -156,11 +156,9 @@ Component({
         finalOffsets[i] = finalY;
         finalHighlights[i] = cycleStartIdx + effectivePos;
 
-        maxDurationMs = Math.max(maxDurationMs, (duration + 0.3) * 1000);
-
         const anim = wx.createAnimation({
           duration: duration * 1000,
-          timingFunction: 'cubic-bezier(0.22, 0.8, 0.3, 1)',
+          timingFunction: timing,
           delay: 0
         });
         anim.translateY(finalY).step();
@@ -180,7 +178,7 @@ Component({
           highlight0: finalHighlights[0], highlight1: finalHighlights[1], highlight2: finalHighlights[2]
         });
         this.triggerEvent('onComplete');
-      }, maxDurationMs + 100);
+      }, (duration + 0.3) * 1000);
     },
 
     updateHighlight(index) {
@@ -194,7 +192,7 @@ Component({
 
       for (let i = 0; i < 3; i++) {
         const items = this._getItems(i);
-        const extraRounds = i; // 与 startSpin 的 colConfigs 对齐
+        const extraRounds = i;
         const destCycle = targetCycle + extraRounds;
         const cycleStartIdx = destCycle * foodsLen;
         const posInCol = items.indexOf(foods[index], cycleStartIdx);
