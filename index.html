@@ -2956,7 +2956,8 @@ function initSlotMachine() {
   container.className = 'slot-container';
   const columns = 3;
   // 根据菜品数量动态调整重复次数，防止 DOM 过多导致卡顿
-  const repeatCount = Math.min(8, Math.max(3, Math.floor(600 / foods.length)));
+  // 菜品较少时增加 repeatCount，让滚动距离更长、视觉上更壮观
+  const repeatCount = foods.length < 20 ? 12 : Math.min(8, Math.max(3, Math.floor(600 / foods.length)));
 
   for (let i = 0; i < columns; i++) {
     const col = document.createElement('div');
@@ -3151,12 +3152,12 @@ function triggerSlotSpin(targetIndex) {
     // 额外滚动圈数（中间列少转，两侧多转）
     const mid = Math.floor(strips.length / 2);
     const distFromMid = Math.abs(i - mid);
-    // 菜品较少时增加额外圈数，保证滚动距离足够壮观
-    const extraRounds = distFromMid + (foods.length < 20 ? Math.floor(150 / foods.length) : 0);
+    const extraRounds = distFromMid;
     const finalY = baseY - extraRounds * cycleHeight;
 
     const delay = distFromMid * 0.12;
-    const duration = 1.8 + distFromMid * 0.35;
+    // 菜品较少时缩短 duration，让滚动看起来更紧凑
+    const duration = foods.length < 20 ? 1.2 + distFromMid * 0.25 : 1.8 + distFromMid * 0.35;
 
     strip.dataset.finalY = finalY;
     strip.style.transition = `transform ${duration}s cubic-bezier(0.22, 0.8, 0.3, 1) ${delay}s`;
@@ -3658,8 +3659,8 @@ function spin() {
 
   const el = document.getElementById('result');
   let rounds = 0;
-  // 菜品较少时增加轮数，与下方 slot 长距离滚动同步
-  const total = foods.length < 20 ? 16 + Math.floor(Math.random() * 5) : 14 + Math.floor(Math.random() * 5);
+  // 菜品较少时减少总轮数，与下方 slot 短 duration 同步
+  const total = foods.length < 20 ? 12 + Math.floor(Math.random() * 4) : 14 + Math.floor(Math.random() * 5);
   const targetIndex = Math.floor(Math.random() * foods.length);
 
   triggerSlotSpin(targetIndex);
