@@ -3151,7 +3151,8 @@ function triggerSlotSpin(targetIndex) {
     // 额外滚动圈数（中间列少转，两侧多转）
     const mid = Math.floor(strips.length / 2);
     const distFromMid = Math.abs(i - mid);
-    const extraRounds = distFromMid;
+    // 菜品较少时增加额外圈数，保证滚动距离足够壮观
+    const extraRounds = distFromMid + (foods.length < 20 ? Math.floor(150 / foods.length) : 0);
     const finalY = baseY - extraRounds * cycleHeight;
 
     const delay = distFromMid * 0.12;
@@ -3657,7 +3658,8 @@ function spin() {
 
   const el = document.getElementById('result');
   let rounds = 0;
-  const total = 14 + Math.floor(Math.random() * 5); // 14~18轮，更紧凑
+  // 菜品较少时增加轮数，与下方 slot 长距离滚动同步
+  const total = foods.length < 20 ? 16 + Math.floor(Math.random() * 5) : 14 + Math.floor(Math.random() * 5);
   const targetIndex = Math.floor(Math.random() * foods.length);
 
   triggerSlotSpin(targetIndex);
