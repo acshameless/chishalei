@@ -2901,6 +2901,7 @@ function playStamp() {
 
 function renderSoundToggle() {
   const btn = document.getElementById('sound-toggle');
+  if (!btn) return;
   if (state.settings.sound) {
     btn.textContent = '♪';
     btn.classList.remove('muted');
