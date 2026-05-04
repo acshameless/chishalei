@@ -10,6 +10,10 @@
           <view class="mark-line"></view>
         </view>
         <view class="title">吃啥嘞</view>
+        <view class="date-display">
+          <view class="date-ganzhi">{{dateGanZhi}}</view>
+          <view class="date-solar">{{dateSolar}}</view>
+        </view>
       </view>
 
       <view class="result-wrap">

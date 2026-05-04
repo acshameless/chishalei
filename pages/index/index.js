@@ -2,6 +2,7 @@ const { getFoods, FOOD_CATEGORIES, FOOD_TIPS } = require('../../utils/data');
 const storage = require('../../utils/storage');
 const fortune = require('../../utils/fortune');
 const { getSolarPaperColor } = require('../../utils/solar-theme');
+const { getGanZhiDate } = require('../../utils/ganzhi');
 
 Page({
   data: {
@@ -46,7 +47,9 @@ Page({
     expandedCategoryIndex: -1,
     pageBg: '#F6F1E9',
     state: null,
-    hasWinner: false
+    hasWinner: false,
+    dateGanZhi: '',
+    dateSolar: ''
   },
 
   state: null,
@@ -60,6 +63,7 @@ Page({
     this.loadState();
     this.refreshFoods();
     this.renderFortune();
+    this.renderDate();
   },
 
   onShow() {
@@ -69,6 +73,7 @@ Page({
     this.applySolarTheme();
     this.refreshFoods();
     this.renderFortune();
+    this.renderDate();
   },
 
   onUnload() {
@@ -143,6 +148,15 @@ Page({
         fortuneJi: f.ji || ''
       });
     }
+  },
+
+  // ══════════ 日期 ══════════
+  renderDate() {
+    const { ganZhi, solar } = getGanZhiDate(new Date());
+    this.setData({
+      dateGanZhi: `${ganZhi.year} ${ganZhi.month} ${ganZhi.day}`,
+      dateSolar: solar
+    });
   },
 
   // ══════════ 池子 ══════════

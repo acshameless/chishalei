@@ -2,30 +2,14 @@
   "description": "吃啥嘞 - 今天吃什么小程序",
   "packOptions": {
     "ignore": [
-      {
-        "value": "web",
-        "type": "folder"
-      },
-      {
-        "value": "api",
-        "type": "folder"
-      },
-      {
-        "value": "web",
-        "type": "folder"
-      },
-      {
-        "value": ".vercel",
-        "type": "folder"
-      },
-      {
-        "value": ".env",
-        "type": "file"
-      },
-      {
-        "value": "chisha_prd.md",
-        "type": "file"
-      }
+      { "value": "web", "type": "folder" },
+      { "value": "api", "type": "folder" },
+      { "value": ".vercel", "type": "folder" },
+      { "value": ".deepseek", "type": "folder" },
+      { "value": "jietu", "type": "folder" },
+      { "value": ".env", "type": "file" },
+      { "value": "chisha_prd.md", "type": "file" },
+      { "value": "images", "type": "folder" }
     ],
     "include": []
   },
