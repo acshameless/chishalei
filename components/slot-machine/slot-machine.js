@@ -92,9 +92,17 @@ Component({
         return items;
       });
 
-      const offsets = [0, 1, 2].map(() =>
-        -Math.floor(Math.random() * foods.length) * this.data.itemHeight
-      );
+      // 方向：左右列反方向（初始在底部），中列正方向（初始在顶部）
+      const colHeight = this.data.colHeight || 240;
+      const maxOffset = -(repeat * foods.length * this.data.itemHeight - colHeight);
+      const offsets = [0, 1, 2].map(i => {
+        if (i === 1) {
+          // 正方向：从顶部附近随机开始
+          return -Math.floor(Math.random() * foods.length) * this.data.itemHeight;
+        }
+        // 反方向：从底部附近随机开始
+        return maxOffset + Math.floor(Math.random() * foods.length) * this.data.itemHeight;
+      });
 
       const hash = this._hashFoods(foods);
 
@@ -128,10 +136,14 @@ Component({
       const targetCycle = Math.floor(repeat / 2);
       const centerOffset = colHeight / 2 - itemHeight / 2;
 
-      // 若当前位置接近列底部，重新 initColumns 避免空白
+      // 若当前位置接近边界，重新 initColumns 避免空白
       const safeBottom = -(repeat - 2) * cycleHeight;
+      const safeTop = -cycleHeight * 2;
       const offsets = [this.data.offset0, this.data.offset1, this.data.offset2];
-      const needsReset = offsets.some(y => y < safeBottom);
+      const needsReset = offsets.some((y, i) => {
+        if (i === 1) return y < safeBottom; // 正方向列：不能太靠下
+        return y > safeTop;                 // 反方向列：不能太靠上
+      });
       if (needsReset) this.initColumns(foods);
 
       let maxDurationMs = 0;
@@ -159,15 +171,13 @@ Component({
         maxDurationMs = Math.max(maxDurationMs, (duration + delay + 0.3) * 1000);
 
         if (isReverse[i]) {
-          // 反方向：先瞬间跳转到列表底部，再向上滚动到 finalY
-          const maxOffset = -(items.length * itemHeight - colHeight);
-          const anim = wx.createAnimation({ duration: 0, timingFunction: 'linear' });
-          anim.translateY(maxOffset).step({ duration: 0 });
-          anim.translateY(finalY).step({
+          // 反方向：从底部向上滚动到 finalY（初始 offset 已在底部）
+          const anim = wx.createAnimation({
             duration: duration * 1000,
             timingFunction: 'cubic-bezier(0.22, 0.8, 0.3, 1)',
             delay: delay * 1000
           });
+          anim.translateY(finalY).step();
           anims[i] = anim.export();
         } else {
           const anim = wx.createAnimation({
