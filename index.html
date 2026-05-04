@@ -1414,6 +1414,11 @@ h1 {
   opacity: 0.15;
   transform: scaleY(0.9);
 }
+/* 滚动时隐藏删除按钮，避免干扰 */
+.slot-column.spinning .item-remove,
+.slot-column.spinning .slot-item:hover .item-remove {
+  display: none !important;
+}
 /* 注意：不在每个 item 上加 filter: blur 和 transition，
    否则 300+ 道菜 × 3~5 列 × 重复次数 = 数千个 DOM 节点同时 blur，
    是 GPU 性能杀手，会导致严重掉帧。 */
