@@ -21,7 +21,9 @@
       wx:for="{{foods}}"
       wx:key="index"
       data-index="{{index}}"
-      bindtap="onRemoveTap"
+      data-item="{{item}}"
+      bindtap="onItemTap"
+      bindlongpress="onItemLongPress"
     >
       {{item}}
     </view>

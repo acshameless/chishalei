@@ -11,8 +11,8 @@
         </view>
         <view class="title">吃啥嘞</view>
         <view class="date-display">
-          <view class="date-ganzhi">{{dateGanZhi}}</view>
           <view class="date-solar">{{dateSolar}}</view>
+          <view class="date-ganzhi">{{dateGanZhi}}</view>
         </view>
       </view>
 
@@ -73,6 +73,7 @@
           targetIndex="{{targetIndex}}"
           bind:onComplete="onSpinComplete"
           bind:onToggleFood="onToggleFoodInPool"
+          bind:onPreviewFood="onPreviewFood"
         />
         <menu-grid
           wx:if="{{currentPool === 'myMenu'}}"
@@ -80,6 +81,7 @@
           foods="{{foods}}"
           bind:onAdd="onMenuAdd"
           bind:onRemove="onMenuRemove"
+          bind:onPreviewFood="onPreviewFood"
         />
       </view>
 

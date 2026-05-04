@@ -216,6 +216,11 @@ Component({
 
     onItemTap(e) {
       const name = e.currentTarget.dataset.name;
+      this.triggerEvent('onPreviewFood', name);
+    },
+
+    onItemLongPress(e) {
+      const name = e.currentTarget.dataset.name;
       this.triggerEvent('onToggleFood', name);
     },
 

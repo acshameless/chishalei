@@ -167,7 +167,7 @@ Page({
     this._dateCacheKey = today;
     const { ganZhi, solar } = getGanZhiDate(new Date());
     this.setData({
-      dateGanZhi: `${ganZhi.year} ${ganZhi.month} ${ganZhi.day}`,
+      dateGanZhi: `${ganZhi.year} ${ganZhi.month} ${ganZhi.day} ${ganZhi.hour}`,
       dateSolar: solar
     });
   },
@@ -301,6 +301,42 @@ Page({
 
   onSpinComplete() {
     // slot machine 动画完成回调（已由 spin() 内部逻辑处理）
+  },
+
+  // ══════════ 预览（点击菜名）══════════
+  onPreviewFood(e) {
+    const name = e.detail;
+    if (!name) return;
+
+    const tipText = FOOD_TIPS[name] || this.state.customTips[name] || '';
+    const tipSub = fortune.getTimeTip() + ' · ' + fortune.getSolarTip();
+
+    this.setData({
+      resultText: name,
+      landed: true,
+      hasWinner: true,
+      tipVisible: true,
+      tipText: tipText,
+      tipSub: tipSub,
+      signNumberText: '',
+      shareVisible: true,
+      cookVisible: false,
+      cookBtnText: '做法',
+      fortuneVisible: false
+    });
+
+    // 如果在 all pool，高亮对应的 slot machine 项
+    const foods = this.data.foods;
+    const idx = foods.indexOf(name);
+    if (idx >= 0) {
+      const slotMachine = this.selectComponent('#slotMachine');
+      if (slotMachine) slotMachine.updateHighlight && slotMachine.updateHighlight(idx);
+    }
+
+    // 自定义菜如果没有描述，自动请求
+    if (!tipText) {
+      this.fetchCookFor(name);
+    }
   },
 
   pick(idx) {

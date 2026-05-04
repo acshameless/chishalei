@@ -12,7 +12,12 @@ Component({
       this.setData({ isEditing: true });
     },
 
-    onRemoveTap(e) {
+    onItemTap(e) {
+      const name = e.currentTarget.dataset.item;
+      this.triggerEvent('onPreviewFood', name);
+    },
+
+    onItemLongPress(e) {
       const idx = e.currentTarget.dataset.index;
       this.triggerEvent('onRemove', idx);
     },
