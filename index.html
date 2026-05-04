@@ -3978,6 +3978,47 @@ function renderFortune() {
   }
 }
 
+function getYearGZ(y, m, d) {
+  // 年干支以立春为界（万年历标准）
+  const liChun = calendar.getTerm(y, 3);
+  const yearForGZ = (m < 2 || (m === 2 && d < liChun)) ? y - 1 : y;
+  return calendar.toGanZhiYear(yearForGZ);
+}
+
+function getMonthGZ(y, m, d, yearGan) {
+  const Gan = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+  const Zhi = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+
+  // 十二节：小寒、立春、惊蛰、清明、立夏、芒种、小暑、立秋、白露、寒露、立冬、大雪
+  const jieN = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23];
+  const monthIdxMap = [11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+  let currentMonthIdx = 11; // 默认丑月
+
+  for (let year = y - 1; year <= y + 1; year++) {
+    for (let i = 0; i < 12; i++) {
+      const n = jieN[i];
+      const termM = Math.floor((n - 1) / 2) + 1;
+      const termD = calendar.getTerm(year, n);
+      if (year < y || (year === y && termM < m) || (year === y && termM === m && termD <= d)) {
+        currentMonthIdx = monthIdxMap[i];
+      }
+    }
+  }
+
+  const yearGanIdx = Gan.indexOf(yearGan);
+  let startGan;
+  if (yearGanIdx === 0 || yearGanIdx === 5) startGan = 2;      // 甲己 -> 丙寅
+  else if (yearGanIdx === 1 || yearGanIdx === 6) startGan = 4; // 乙庚 -> 戊寅
+  else if (yearGanIdx === 2 || yearGanIdx === 7) startGan = 6; // 丙辛 -> 庚寅
+  else if (yearGanIdx === 3 || yearGanIdx === 8) startGan = 8; // 丁壬 -> 壬寅
+  else startGan = 0;                                            // 戊癸 -> 甲寅
+
+  const ganIdx = (startGan + currentMonthIdx) % 10;
+  const zhiIdx = (2 + currentMonthIdx) % 12;
+  return Gan[ganIdx] + Zhi[zhiIdx];
+}
+
 function updateHeaderDate() {
   const now = new Date();
   const gregorian = document.getElementById('header-date-gregorian');
@@ -3990,17 +4031,40 @@ function updateHeaderDate() {
   gregorian.textContent = y + '.' + m + '.' + d;
 
   try {
-    const l = calendar.solar2lunar(y, parseInt(m), parseInt(d));
+    const yi = parseInt(m);
+    const di = parseInt(d);
+    const l = calendar.solar2lunar(y, yi, di);
     if (l && l !== -1) {
       const Gan = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
       const Zhi = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
-      const dayGan = Gan.indexOf(l.gzDay[0]);
       const hour = now.getHours();
+
+      // 年干支以立春为界
+      const gzYear = getYearGZ(y, yi, di);
+
+      // 日干支（始终显示当天，与万年历一致）
+      const gzDay = l.gzDay;
+
+      // 时干支（23:00 算次日子时，时干用次日日柱推算）
+      let hourDayGz = gzDay;
+      if (hour === 23) {
+        const t = new Date(now);
+        t.setDate(t.getDate() + 1);
+        const nextL = calendar.solar2lunar(t.getFullYear(), t.getMonth() + 1, t.getDate());
+        if (nextL && nextL !== -1) hourDayGz = nextL.gzDay;
+      }
+
+      // 月干支以节气为界
+      const gzMonth = getMonthGZ(y, yi, di, gzYear[0]);
+
+      // 时干支
+      const dayGan = Gan.indexOf(hourDayGz[0]);
       const zhiIdx = Math.floor(((hour + 1) % 24) / 2);
       const ganStart = (dayGan % 5) * 2;
       const ganIdx = (ganStart + zhiIdx) % 10;
       const gzHour = Gan[ganIdx] + Zhi[zhiIdx];
-      lunarEl.textContent = l.gzYear + '-' + l.gzMonth + '-' + l.gzDay + '-' + gzHour;
+
+      lunarEl.textContent = gzYear + '-' + gzMonth + '-' + gzDay + '-' + gzHour;
     } else {
       lunarEl.textContent = '';
     }
