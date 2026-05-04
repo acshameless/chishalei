@@ -68,6 +68,13 @@ Component({
       return i === 0 ? this.data.items0 : i === 1 ? this.data.items1 : this.data.items2;
     },
 
+    // 把 finalY 循环归一化到 [-cycleHeight, 0]，保持视觉内容不变
+    _normalizeOffset(y, cycleHeight) {
+      let o = y - Math.floor(y / cycleHeight) * cycleHeight;
+      if (o > 0) o -= cycleHeight;
+      return o;
+    },
+
     initColumns(foods) {
       if (!foods || foods.length === 0) {
         this.setData({
@@ -117,33 +124,6 @@ Component({
       if (!foodsLen || targetIndex < 0 || targetIndex >= foodsLen) return;
 
       this._clearTimers();
-
-      const repeat = Math.min(5, Math.max(3, Math.floor(300 / foodsLen)));
-      const cycleHeight = foodsLen * itemHeight;
-      const safeBottom = -(repeat - 2) * cycleHeight;
-      const offsets = [this.data.offset0, this.data.offset1, this.data.offset2];
-      const needsReset = offsets.some(y => y < safeBottom);
-
-      if (needsReset) {
-        // 关键修复：initColumns 的 setData 是异步的，不能直接接着跑动画。
-        // 先同步 setData 新的随机 offset，等 DOM 更新后再启动动画。
-        const newOffsets = [0, 1, 2].map(() =>
-          -Math.floor(Math.random() * foodsLen) * itemHeight
-        );
-        this.setData({
-          offset0: newOffsets[0], offset1: newOffsets[1], offset2: newOffsets[2],
-          anim0: null, anim1: null, anim2: null,
-          highlight0: -1, highlight1: -1, highlight2: -1
-        });
-        this.initColumns(foods);
-        // 50ms 足够 setData 完成 DOM 更新
-        this.spinTimer = setTimeout(() => {
-          this.spinTimer = null;
-          this._runSpinAnimation(opts);
-        }, 50);
-        return;
-      }
-
       this._runSpinAnimation(opts);
     },
 
@@ -195,8 +175,16 @@ Component({
 
       this.spinTimer = setTimeout(() => {
         this.spinTimer = null;
+        // 关键：动画结束后把 offset 循环归一化到 [-cycleHeight, 0]
+        // 因为 items 是周期重复的，-3400px 和 -760px 显示的内容完全相同
+        // 这样下次滚动起点在顶部附近，距离永远够长，不需要 reset
+        const normalizedOffsets = finalOffsets.map(y =>
+          this._normalizeOffset(y, cycleHeight)
+        );
         this.setData({
-          offset0: finalOffsets[0], offset1: finalOffsets[1], offset2: finalOffsets[2],
+          offset0: normalizedOffsets[0],
+          offset1: normalizedOffsets[1],
+          offset2: normalizedOffsets[2],
           anim0: null, anim1: null, anim2: null,
           highlight0: finalHighlights[0], highlight1: finalHighlights[1], highlight2: finalHighlights[2]
         });
