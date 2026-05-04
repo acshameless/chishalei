@@ -8,6 +8,7 @@
 <link rel="icon" href="data:image/svg+xml,&lt;svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22&gt;&lt;text y=%22.9em%22 font-size=%2290%22&gt;🍜&lt;/text&gt;&lt;/svg&gt;">
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@400;600;800&family=Zen+Kaku+Gothic+New:wght@300;400&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -99,6 +100,27 @@ h1 {
   color: var(--ink);
   letter-spacing: 0.14em;
   line-height: 1;
+}
+
+.header-date {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.header-date-line {
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 12px;
+  color: var(--ink-mid);
+  letter-spacing: 0.1em;
+  font-weight: 300;
+}
+.header-date-line.lunar {
+  font-family: 'Shippori Mincho B1', serif;
+  color: var(--ink-light);
+  font-size: 11px;
+  letter-spacing: 0.14em;
 }
 
 /* ── Result card ── */
@@ -443,6 +465,39 @@ h1 {
   margin-right: 4px;
   color: var(--lacquer);
   font-weight: 800;
+}
+
+/* Item remove button on hover */
+.slot-item {
+  position: relative;
+}
+.item-remove {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--lacquer);
+  color: #fff;
+  font-size: 10px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  line-height: 1;
+  padding-bottom: 1px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  transition: transform 0.15s, background 0.15s;
+}
+.item-remove:hover {
+  transform: scale(1.15);
+  background: var(--lacquer-dim);
+}
+.slot-item:hover .item-remove {
+  display: flex;
 }
 
 /* 横向贯穿的中心高亮条 */
@@ -1534,6 +1589,10 @@ h1 {
         <div class="mark-line"></div>
       </div>
       <h1>吃啥嘞</h1>
+      <div class="header-date" id="header-date">
+        <div class="header-date-line" id="header-date-gregorian"></div>
+        <div class="header-date-line lunar" id="header-date-lunar"></div>
+      </div>
     </div>
 
     <div class="result-wrap">
@@ -1574,6 +1633,7 @@ h1 {
       </div>
       <button class="control-btn" id="category-toggle" onclick="showCategoryPicker()" title="选菜入单">选</button>
       <button class="control-btn" id="history-toggle" onclick="showHistory()" title="抽签历史">历</button>
+      <button class="control-btn" id="add-toggle" onclick="showAddInputFromControl()" title="添加菜品" style="display:none;">添</button>
     </div>
 
     <!-- Slot machine / Menu grid -->
@@ -2008,34 +2068,9 @@ function initSlotMachine() {
 
   const foods = getFoods();
 
-  // 我的菜单模式下显示简洁网格列表
-  if (currentPool === 'myMenu') {
-    container.className = 'menu-grid-container';
-    if (foods.length === 0) {
-      container.innerHTML = '<div class="menu-grid-empty"><button class="menu-grid-add" onclick="showAddInput()" title="添加菜品">＋</button></div>';
-      return;
-    }
-    foods.forEach((name, idx) => {
-      const item = document.createElement('div');
-      item.className = 'menu-grid-item';
-      item.textContent = name;
-      item.title = '单击删除';
-      item.onclick = () => removeFood(idx);
-      container.appendChild(item);
-    });
-    // 非空也显示 + 按钮
-    const addBtn = document.createElement('button');
-    addBtn.className = 'menu-grid-add';
-    addBtn.textContent = '＋';
-    addBtn.title = '添加菜品';
-    addBtn.onclick = () => showAddInput();
-    container.appendChild(addBtn);
-    return;
-  }
-
-  // 全部选项模式
   if (foods.length === 0) {
-    container.innerHTML = '<div class="slot-empty">暂无可选菜品</div>';
+    container.className = 'slot-container';
+    container.innerHTML = '<div class="slot-empty">' + (currentPool === 'myMenu' ? '菜单为空' : '暂无可选菜品') + '</div>';
     return;
   }
 
@@ -2062,8 +2097,16 @@ function initSlotMachine() {
         item.className = 'slot-item';
         item.textContent = name;
         item.dataset.index = idx;
-        item.title = '单击排除';
-        item.onclick = (e) => { e.stopPropagation(); toggleFoodInPool(name); };
+        item.dataset.name = name;
+        item.title = '点击查看详情';
+        // 悬浮删除按钮
+        const removeBtn = document.createElement('span');
+        removeBtn.className = 'item-remove';
+        removeBtn.textContent = '×';
+        removeBtn.title = currentPool === 'myMenu' ? '删除' : '排除';
+        removeBtn.onclick = (e) => { e.stopPropagation(); handleItemRemove(name); };
+        item.appendChild(removeBtn);
+        item.onclick = (e) => { if (e.target.classList.contains('item-remove')) return; previewFood(name); };
         strip.appendChild(item);
       });
     }
@@ -2077,14 +2120,15 @@ function initSlotMachine() {
   }
 }
 
-function toggleFoodInPool(name) {
+function handleItemRemove(name) {
   if (currentPool === 'myMenu') {
     const idx = state.myMenu.indexOf(name);
     if (idx >= 0) {
-      if (state.myMenu.length <= 1) return;
+      if (state.myMenu.length <= 1) {
+        showToast('菜单至少保留一道菜');
+        return;
+      }
       state.myMenu.splice(idx, 1);
-    } else {
-      state.myMenu.push(name);
     }
   } else {
     // 全部选项模式下：排除/恢复
@@ -2097,6 +2141,48 @@ function toggleFoodInPool(name) {
   }
   saveState();
   renderSlotMachine();
+}
+
+function previewFood(name) {
+  const foods = getFoods();
+  const idx = foods.indexOf(name);
+  if (idx === -1) return;
+  current = idx;
+
+  const el = document.getElementById('result');
+  const tipEl = document.getElementById('result-tip');
+  el.classList.remove('landing');
+  void el.offsetWidth;
+  el.classList.add('landing');
+  el.textContent = name;
+
+  const tipText = FOOD_TIPS[name] || state.customTips[name] || '';
+  tipEl.innerHTML = '<span class="tip-main">' + tipText + '</span>' +
+    '<span class="tip-sub">' + getTimeTip() + ' · ' + getSolarTip() + '</span>';
+  tipEl.classList.add('visible');
+  showSignNumber();
+  showShareRow();
+
+  // 高亮老虎机中的选中项
+  updateSlotHighlight(idx);
+
+  // 切换菜品时 reset 做法区域
+  document.getElementById('cook-wrap').classList.remove('visible');
+  document.getElementById('cook-btn').textContent = '做法';
+  document.getElementById('cook-content').innerHTML = '';
+
+  // 自定义菜如果没有描述，自动请求 LLM 并更新显示
+  if (!tipText && !DEFAULT_FOODS.includes(name)) {
+    fetchCookFor(name).then(() => {
+      if (document.getElementById('result').textContent === name) {
+        const newTip = state.customTips[name];
+        if (newTip) {
+          tipEl.innerHTML = '<span class="tip-main">' + newTip + '</span>' +
+            '<span class="tip-sub">' + getTimeTip() + ' · ' + getSolarTip() + '</span>';
+        }
+      }
+    });
+  }
 }
 
 function triggerSlotSpin(targetIndex) {
@@ -2347,6 +2433,13 @@ function showAddInput() {
   });
 }
 
+function showAddInputFromControl() {
+  const val = prompt('请输入要添加的菜品名称：');
+  if (val && val.trim()) {
+    addToMyMenu(val.trim());
+  }
+}
+
 function addToMyMenu(val) {
   if (state.myMenu.includes(val)) {
     // 仅在「我的菜单」页内闪现提示，其他页面静默
@@ -2407,6 +2500,10 @@ function switchPool(pool) {
   currentPool = pool;
   document.getElementById('tab-all').classList.toggle('active', pool === 'all');
   document.getElementById('tab-my').classList.toggle('active', pool === 'myMenu');
+
+  // 控制「添」按钮显示
+  const addBtn = document.getElementById('add-toggle');
+  if (addBtn) addBtn.style.display = pool === 'myMenu' ? 'inline-flex' : 'none';
 
   // 切换后如果当前高亮的菜不在新池中，清除高亮
   const foods = getFoods();
@@ -2944,6 +3041,30 @@ function renderFortune() {
   }
 }
 
+function updateHeaderDate() {
+  const now = new Date();
+  const gregorian = document.getElementById('header-date-gregorian');
+  const lunarEl = document.getElementById('header-date-lunar');
+  if (!gregorian || !lunarEl) return;
+
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  const h = String(now.getHours()).padStart(2, '0');
+  const min = String(now.getMinutes()).padStart(2, '0');
+  gregorian.textContent = y + '年' + m + '月' + d + '日 ' + h + ':' + min;
+
+  if (typeof Solar !== 'undefined') {
+    try {
+      const solar = Solar.fromDate(now);
+      const l = solar.getLunar();
+      lunarEl.textContent = l.getYearInGanZhi() + '年 ' + l.getMonthInChinese() + '月' + l.getDayInChinese();
+    } catch (e) {
+      lunarEl.textContent = '';
+    }
+  }
+}
+
 function showFortune() {
   document.getElementById('fortune-wrap').classList.add('visible');
 }
@@ -3432,6 +3553,8 @@ renderSlotMachine();
 renderSoundToggle();
 renderSignNumber();
 renderFortune();
+updateHeaderDate();
+setInterval(updateHeaderDate, 60000);
 
 /* ── 触摸滑动切换池子 ── */
 let touchStartX = 0;
