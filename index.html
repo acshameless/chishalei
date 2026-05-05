@@ -2310,6 +2310,11 @@ h1 {
   align-items: center;
   gap: 12px;
 }
+.category-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 .category-title {
   font-size: 16px;
   font-family: 'Shippori Mincho B1', serif;
@@ -2341,6 +2346,20 @@ h1 {
   border-radius: 4px;
 }
 .category-toggle-all:hover { border-color: var(--lacquer); color: var(--lacquer); }
+.category-mode-switch {
+  background: none;
+  border: 1px solid var(--paper-dark);
+  padding: 4px 12px;
+  font-size: 11px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  color: var(--ink-light);
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: all 0.15s;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.category-mode-switch:hover { border-color: var(--lacquer); color: var(--lacquer); }
 .category-list {
   overflow-y: auto;
   flex: 1;
@@ -2854,10 +2873,13 @@ h1 {
   <div class="category-panel">
     <div class="category-header">
       <div class="category-header-left">
-        <div class="category-title">选择菜系</div>
-        <button class="category-toggle-all" id="category-toggle-all" onclick="toggleAllCategories()">全选</button>
+        <div class="category-title" id="category-title">选择菜品</div>
+        <button class="category-mode-switch" id="category-mode-switch" onclick="switchFoodMode()">🏛️ 菜系</button>
       </div>
-      <button class="category-close" onclick="closeCategoryPicker()">关闭</button>
+      <div class="category-header-right">
+        <button class="category-toggle-all" id="category-toggle-all" onclick="toggleAllCategories()">全选</button>
+        <button class="category-close" onclick="closeCategoryPicker()">关闭</button>
+      </div>
     </div>
     <div class="category-list" id="category-list"></div>
   </div>
@@ -2881,7 +2903,7 @@ h1 {
    ═══════════════════════════════════════ */
 
 const STORAGE_KEY = 'chisha-state';
-const STATE_VERSION = 9;
+const STATE_VERSION = 10;
 
 const DEFAULT_FOODS = [];
 
@@ -2892,8 +2914,9 @@ let ALL_FOODS = [];
 function defaultState() {
   return {
     version: STATE_VERSION,
+    foodMode: 'caixi',
     myMenu: [],
-    selectedCategories: ['北京', '我的菜单'],
+    selectedCategories: ['河南菜', '我的菜单'],
     excludedFoods: [],
     categoryOrder: ['北京','天津','河北','山西','内蒙古','辽宁','吉林','黑龙江','上海','江苏','浙江','安徽','福建','江西','山东','河南','湖北','湖南','广东','广西','海南','重庆','四川','贵州','云南','西藏','陕西','甘肃','青海','宁夏','新疆','台湾','香港','澳门'],
     customTips: {},
@@ -2972,6 +2995,17 @@ function migrateState(raw) {
     raw.categoryOrder = defaultState().categoryOrder;
     raw.excludedFoods = [];
     raw.version = 9;
+  }
+
+  // v9 → v10: 引入 foodMode 模式切换
+  if (raw.version < 10) {
+    // 旧版 classic → 省籍, daily → 家常
+    if (raw.foodMode === 'daily') {
+      raw.foodMode = 'jiachang';
+    } else {
+      raw.foodMode = 'shengji';
+    }
+    raw.version = 10;
   }
 
   return raw;
@@ -5172,14 +5206,100 @@ window.previewSolarTheme = function(term) {
   console.log('Previewing theme for:', term, 'paper:', papers[term] || '#F6F1E9');
 };
 
+function loadFoodData(mode) {
+  const urlMap = {
+    'shengji': 'data/shengji.json',
+    'caixi': 'data/caixi.json',
+    'jiachang': 'data/jiachang.json'
+  };
+  const url = urlMap[mode] || 'data/shengji.json';
+  return fetch(url)
+    .then(r => {
+      if (!r.ok) throw new Error('加载失败: ' + r.status);
+      return r.json();
+    })
+    .then(data => {
+      FOOD_CATEGORIES = data.categories || [];
+      FOOD_TIPS = data.tips || {};
+      ALL_FOODS = [...new Set(FOOD_CATEGORIES.flatMap(c => c.items))];
+      return data;
+    });
+}
+
+function updateModeSwitchButton() {
+  const btn = document.getElementById('category-mode-switch');
+  const title = document.getElementById('category-title');
+  if (!btn) return;
+  if (state.foodMode === 'shengji') {
+    btn.textContent = '🏛️ 省籍';
+    if (title) title.textContent = '选择菜品';
+  } else if (state.foodMode === 'caixi') {
+    btn.textContent = '🏛️ 菜系';
+    if (title) title.textContent = '选择菜品';
+  } else {
+    btn.textContent = '🍳 家常';
+    if (title) title.textContent = '选择菜品';
+  }
+}
+
+function switchFoodMode() {
+  const modeCycle = ['shengji', 'caixi', 'jiachang'];
+  const idx = modeCycle.indexOf(state.foodMode);
+  const newMode = modeCycle[(idx + 1) % modeCycle.length];
+  state.foodMode = newMode;
+
+  loadFoodData(newMode).then(() => {
+    const validCatNames = FOOD_CATEGORIES.map(c => c.name);
+    let newSelected = state.selectedCategories.filter(c => c === '我的菜单' || validCatNames.includes(c));
+    if (newSelected.length === 0 || (newSelected.length === 1 && newSelected[0] === '我的菜单')) {
+      newSelected = getDefaultSelectedForMode(newMode, validCatNames);
+    }
+    state.selectedCategories = newSelected;
+
+    // 保留跨模式的 categoryOrder，让 getOrderedCategories 自动过滤无效分类
+    validCatNames.forEach(c => {
+      if (!state.categoryOrder.includes(c)) state.categoryOrder.push(c);
+    });
+
+    // 不清空 excludedFoods，跨模式保留；不在当前池中的排除项自然无影响
+
+    saveState();
+    updateModeSwitchButton();
+    updatePoolTabCount();
+    renderSlotMachine();
+    renderCategoryList();
+
+    const poolOverlay = document.getElementById('pool-overlay');
+    if (poolOverlay && poolOverlay.classList.contains('active')) {
+      renderAllFoods();
+    }
+  });
+}
+
+function getDefaultSelectedForMode(mode, validCatNames) {
+  if (mode === 'caixi') {
+    return ['河南菜', '我的菜单'];
+  }
+  return ['我的菜单'];
+}
+
 function initApp() {
   state = loadState();
 
+  // 若当前选中分类不包含当前模式的有效分类，重置为该模式默认
+  const validCatNames = FOOD_CATEGORIES.map(c => c.name);
+  const hasRealCategory = state.selectedCategories.some(c => c !== '我的菜单' && validCatNames.includes(c));
+  if (!hasRealCategory) {
+    state.selectedCategories = getDefaultSelectedForMode(state.foodMode, validCatNames);
+    saveState();
+  }
+
   const catBtnInit = document.getElementById('category-toggle');
   catBtnInit.textContent = '🥢 选菜';
-  catBtnInit.title = '选择菜系';
+  catBtnInit.title = '选择菜品';
   catBtnInit.onclick = showCategoryPicker;
 
+  updateModeSwitchButton();
   renderSlotMachine();
   renderSoundToggle();
   renderSignNumber();
@@ -5227,15 +5347,9 @@ window.addEventListener('resize', () => {
 
 // 加载菜品配置
 document.addEventListener('DOMContentLoaded', () => {
-  fetch('data/foods.json')
-    .then(r => {
-      if (!r.ok) throw new Error('加载失败: ' + r.status);
-      return r.json();
-    })
-    .then(data => {
-      FOOD_CATEGORIES = data.categories || [];
-      FOOD_TIPS = data.tips || {};
-      ALL_FOODS = [...new Set(FOOD_CATEGORIES.flatMap(c => c.items))];
+  const initState = loadState();
+  loadFoodData(initState.foodMode)
+    .then(() => {
       initApp();
     })
     .catch(err => {
