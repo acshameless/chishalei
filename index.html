@@ -1358,8 +1358,9 @@ h1 {
 }
 .slot-item {
   height: 44px;
-  line-height: 44px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: 'Shippori Mincho B1', serif;
   font-size: 12.5px;
   color: var(--ink-mid);
@@ -1390,39 +1391,6 @@ h1 {
   margin-right: 4px;
   color: var(--lacquer);
   font-weight: 800;
-}
-
-/* Item remove button on hover */
-.slot-item {
-  position: relative;
-}
-.item-remove {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  width: 15px;
-  height: 15px;
-  border-radius: 50%;
-  background: var(--lacquer);
-  color: #fff;
-  font-size: 10px;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 2;
-  line-height: 1;
-  padding-bottom: 1px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-  transition: transform 0.15s, background 0.15s;
-}
-.item-remove:hover {
-  transform: scale(1.15);
-  background: var(--lacquer-dim);
-}
-.slot-item:hover .item-remove {
-  display: flex;
 }
 
 /* 横向贯穿的中心高亮条 */
@@ -2596,6 +2564,7 @@ h1 {
   grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
   gap: 8px;
   align-content: start;
+  align-items: start;
 }
 .pool-list::-webkit-scrollbar { width: 3px; }
 .pool-list::-webkit-scrollbar-thumb { background: var(--paper-dark); border-radius: 2px; }
@@ -2614,6 +2583,9 @@ h1 {
   cursor: default;
   user-select: none;
   -webkit-user-select: none;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  line-height: 1.5;
 }
 .pool-item:hover {
   transform: translateY(-1px);
@@ -3412,7 +3384,7 @@ function triggerSlotSpin(targetIndex) {
 
   // 计算最外侧列的总动画时间，用于结束后移除效果
   const maxDist = Math.floor(strips.length / 2);
-  const maxDuration = 1.8 + maxDist * 0.35 + maxDist * 0.12;
+  const maxDuration = 2.178 + maxDist * 0.424 + maxDist * 0.145;
   setTimeout(() => {
     document.querySelectorAll('.slot-column').forEach(col => col.classList.remove('spinning'));
   }, maxDuration * 1000 + 100);
@@ -3439,9 +3411,9 @@ function triggerSlotSpin(targetIndex) {
     const extraRounds = distFromMid;
     const finalY = baseY - extraRounds * cycleHeight;
 
-    const delay = distFromMid * 0.12;
+    const delay = distFromMid * 0.145;
     // 菜品较少时缩短 duration，让滚动看起来更紧凑
-    const duration = foods.length < 20 ? 1.2 + distFromMid * 0.25 : 1.8 + distFromMid * 0.35;
+    const duration = foods.length < 20 ? 1.452 + distFromMid * 0.303 : 2.178 + distFromMid * 0.424;
 
     strip.dataset.finalY = finalY;
     strip.style.transition = `transform ${duration}s cubic-bezier(0.22, 0.8, 0.3, 1) ${delay}s`;
