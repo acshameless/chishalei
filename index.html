@@ -2089,6 +2089,27 @@ h1 {
   font-family: 'Shippori Mincho B1', serif;
 }
 
+.float-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  font-size: 10.5px;
+  color: var(--ink-light);
+  letter-spacing: 0.28em;
+  font-weight: 300;
+  font-family: 'Shippori Mincho B1', serif;
+  margin-top: 28px;
+  margin-bottom: 12px;
+  opacity: 0.75;
+}
+.footer-rule {
+  width: 24px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--lacquer-dim), transparent);
+  opacity: 0.5;
+}
+
 /* ── Control row ── */
 .control-row {
   display: flex;
@@ -2793,6 +2814,12 @@ h1 {
 
     <div class="cook-wrap" id="cook-wrap">
       <div class="cook-content" id="cook-content"></div>
+    </div>
+
+    <div class="float-footer">
+      <span class="footer-rule"></span>
+      每一餐都将就不得
+      <span class="footer-rule"></span>
     </div>
   </div>
 </div>
