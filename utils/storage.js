@@ -3,15 +3,17 @@
  * 所有页面统一通过此模块读写全局状态
  */
 
-const STORAGE_KEY = 'chisha_state_v6';
+const STORAGE_KEY = 'chisha_state_v10';
 
 // 规范默认状态 —— 与 app.js 保持唯一同步
 // 如需增加字段，同时修改此处和 app.js
 const DEFAULT_STATE = {
-  version: 6,
-  selectedCategories: ['河南菜'],
-  excludedFoods: [],
+  version: 10,
+  foodMode: 'caixi',
   myMenu: [],
+  selectedCategories: ['河南菜', '我的菜单'],
+  excludedFoods: [],
+  categoryOrder: null, // 运行时从 DEFAULT_CATEGORY_ORDER[foodMode] 填充
   customTips: {},
   customRecipes: {},
   history: {
@@ -29,45 +31,82 @@ const DEFAULT_STATE = {
   currentPool: 'all'
 };
 
-function migrate(s) {
-  if (!s || typeof s !== 'object') return null;
+function defaultState() {
+  return JSON.parse(JSON.stringify(DEFAULT_STATE));
+}
+
+function migrate(raw) {
+  if (!raw || typeof raw !== 'object') return null;
 
   // 确保基础结构
-  if (s.version == null) s.version = 1;
-  if (!Array.isArray(s.selectedCategories) || s.selectedCategories.length === 0) {
-    s.selectedCategories = ['河南菜'];
+  if (raw.version == null) raw.version = 1;
+
+  // v6 → v7: 「我的菜单」移入选菜面板，默认选中
+  if (raw.version < 7) {
+    if (!Array.isArray(raw.selectedCategories)) raw.selectedCategories = [];
+    if (!raw.selectedCategories.includes('我的菜单')) {
+      raw.selectedCategories.push('我的菜单');
+    }
+    raw.version = 7;
   }
-  // 过滤掉已不存在的分类名（兼容旧版本数据）
-  const validCats = ['河南菜','川菜','粤菜','鲁菜','苏菜','浙菜','闽菜','湘菜','徽菜','东北菜','西北菜','西南菜-云贵','京鄂沪'];
-  s.selectedCategories = s.selectedCategories.filter(name => validCats.includes(name));
-  if (s.selectedCategories.length === 0) {
-    s.selectedCategories = ['河南菜'];
+
+  // v7 → v8: 引入 categoryOrder，默认按原始顺序
+  if (raw.version < 8) {
+    raw.categoryOrder = defaultState().categoryOrder;
+    raw.version = 8;
   }
-  if (!Array.isArray(s.excludedFoods)) s.excludedFoods = [];
-  if (!Array.isArray(s.myMenu)) s.myMenu = [];
-  if (!s.customTips || typeof s.customTips !== 'object') s.customTips = {};
-  if (!s.customRecipes || typeof s.customRecipes !== 'object') s.customRecipes = {};
+
+  // v8 → v9: 分类体系按省籍地域重组
+  if (raw.version < 9) {
+    raw.selectedCategories = ['河南菜', '我的菜单'];
+    raw.categoryOrder = defaultState().categoryOrder;
+    raw.excludedFoods = [];
+    raw.version = 9;
+  }
+
+  // v9 → v10: 引入 foodMode 模式切换
+  if (raw.version < 10) {
+    if (raw.foodMode === 'daily') {
+      raw.foodMode = 'jiachang';
+    } else {
+      raw.foodMode = 'caixi';
+    }
+    raw.version = 10;
+  }
+
+  // 确保字段存在
+  if (!raw.foodMode || !['caixi', 'shengji', 'jiachang'].includes(raw.foodMode)) {
+    raw.foodMode = 'caixi';
+  }
+  if (!Array.isArray(raw.selectedCategories) || raw.selectedCategories.length === 0) {
+    raw.selectedCategories = ['河南菜', '我的菜单'];
+  }
+  if (!Array.isArray(raw.excludedFoods)) raw.excludedFoods = [];
+  if (!Array.isArray(raw.myMenu)) raw.myMenu = [];
+  if (!raw.customTips || typeof raw.customTips !== 'object') raw.customTips = {};
+  if (!raw.customRecipes || typeof raw.customRecipes !== 'object') raw.customRecipes = {};
 
   // 兼容旧版 history
-  if (!s.history || typeof s.history !== 'object') s.history = {};
-  if (Array.isArray(s.history)) s.history = { recent: s.history };
+  if (!raw.history || typeof raw.history !== 'object') raw.history = {};
+  if (Array.isArray(raw.history)) raw.history = { recent: raw.history };
 
-  if (!Array.isArray(s.history.recent)) s.history.recent = [];
-  if (!Array.isArray(s.history.favorites)) s.history.favorites = [];
-  if (!Array.isArray(s.history.blacklist)) s.history.blacklist = [];
-  if (!Array.isArray(s.history.draws)) s.history.draws = [];
-  if (!('todayFortune' in s.history)) s.history.todayFortune = null;
-  if (!('todayPick' in s.history)) s.history.todayPick = null;
+  if (!Array.isArray(raw.history.recent)) raw.history.recent = [];
+  if (!Array.isArray(raw.history.favorites)) raw.history.favorites = [];
+  if (!Array.isArray(raw.history.blacklist)) raw.history.blacklist = [];
+  if (!Array.isArray(raw.history.draws)) raw.history.draws = [];
+  if (!('todayFortune' in raw.history)) raw.history.todayFortune = null;
+  if (!('todayPick' in raw.history)) raw.history.todayPick = null;
 
-  if (!s.settings || typeof s.settings !== 'object') s.settings = {};
-  if (typeof s.settings.sound !== 'boolean') s.settings.sound = true;
+  if (!raw.settings || typeof raw.settings !== 'object') raw.settings = {};
+  if (typeof raw.settings.sound !== 'boolean') raw.settings.sound = true;
 
   // 运行时字段
-  if (!s.currentPool) s.currentPool = 'all';
+  if (!raw.currentPool) raw.currentPool = 'all';
 
-  // 标记已迁移到当前版本
-  s.version = DEFAULT_STATE.version;
-  return s;
+  // categoryOrder 允许为 null，运行时会填充
+  if (!raw.hasOwnProperty('categoryOrder')) raw.categoryOrder = null;
+
+  return raw;
 }
 
 function load() {
@@ -82,7 +121,7 @@ function load() {
     console.warn('[storage] load failed:', e.message);
   }
   // 返回深拷贝的默认状态
-  return JSON.parse(JSON.stringify(DEFAULT_STATE));
+  return defaultState();
 }
 
 function save(state) {
@@ -90,9 +129,11 @@ function save(state) {
     // 只持久化核心字段，过滤运行时字段
     const toSave = {
       version: state.version,
+      foodMode: state.foodMode,
       selectedCategories: state.selectedCategories,
       excludedFoods: state.excludedFoods,
       myMenu: state.myMenu,
+      categoryOrder: state.categoryOrder,
       customTips: state.customTips,
       customRecipes: state.customRecipes,
       history: state.history,

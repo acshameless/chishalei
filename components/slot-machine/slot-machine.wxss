@@ -33,6 +33,7 @@
   width: 100%;
 }
 
+
 .slot-item {
   height: 44px;
   line-height: 44px;
@@ -54,7 +55,9 @@
   font-weight: 600;
   transform: scale(1.07);
   text-shadow: 0 0 14rpx rgba(184, 84, 56, 0.18);
-  transition: all 0.35s cubic-bezier(0.22, 0.8, 0.3, 1);
+  transition: opacity 0.35s cubic-bezier(0.22, 0.8, 0.3, 1),
+              color   0.35s cubic-bezier(0.22, 0.8, 0.3, 1),
+              transform 0.35s cubic-bezier(0.22, 0.8, 0.3, 1);
 }
 
 .slot-item.in-my-menu {
@@ -67,10 +70,4 @@
   margin-right: 8rpx;
   color: var(--lacquer);
   font-weight: 800;
-}
-
-/* 滚动时的动态模拟效果 */
-.slot-column.spinning .slot-item {
-  opacity: 0.15;
-  transform: scaleY(0.9);
 }

@@ -1,7 +1,6 @@
 {
   "usingComponents": {
-    "slot-machine": "/components/slot-machine/slot-machine",
-    "menu-grid": "/components/menu-grid/menu-grid"
+    "slot-machine": "/components/slot-machine/slot-machine"
   },
   "navigationBarTitleText": "吃啥嘞",
   "navigationStyle": "custom"

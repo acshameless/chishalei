@@ -1,26 +1,36 @@
-const { getFoods, FOOD_CATEGORIES, FOOD_TIPS } = require('../../utils/data');
+const { getFoods, getFoodsWithSource, getTips, FOOD_MODES, DEFAULT_CATEGORY_ORDER } = require('../../utils/data');
 const storage = require('../../utils/storage');
 const fortune = require('../../utils/fortune');
 const { getSolarPaperColor } = require('../../utils/solar-theme');
 const { getGanZhiDate } = require('../../utils/ganzhi');
+const calendar = require('../../utils/calendar');
 
 Page({
   data: {
-    currentPool: 'all',
-    foods: [],
+    // 主题
+    pageBg: '#F6F1E9',
+    // 日期
+    dateGregorian: '',
+    dateLunar: '',
+    // 结果
     isSpinning: false,
-    targetIndex: -1,
-    resultText: '待君问签',
     landed: false,
-    signNumberText: '',
+    resultText: '待君问签',
+    targetIndex: -1,
     tipVisible: false,
     tipText: '',
     tipSub: '',
+    signNumberText: '',
+    // 签文
     fortuneVisible: false,
     fortuneText: '',
     fortuneType: '',
     fortuneYi: '',
     fortuneJi: '',
+    // 按钮
+    btnText: '问问天意',
+    btnKanji: '签',
+    // 分享/做法
     shareVisible: false,
     cookVisible: false,
     cookLoading: false,
@@ -28,36 +38,54 @@ Page({
     cookMaterials: [],
     cookSteps: [],
     cookTips: [],
-    toastVisible: false,
-    toastMsg: '',
-    btnText: '问问天意',
-    btnKanji: '签',
-    historyVisible: false,
-    historyList: [],
-    shareOverlayVisible: false,
-    shareImageUrl1: '',
-    shareImageUrl2: '',
-    shareHint: '长按保存',
-    shareNavVisible: false,
-    shareDotsVisible: false,
-    shareDotIndex: 0,
-    shareScrollLeft: 0,
-    categoryVisible: false,
-    categoryList: [],
-    expandedCategoryIndex: -1,
-    pageBg: '#F6F1E9',
+    // Slot machine
+    foods: [],
+    foodsCount: 0,
+    hasWinner: false,
+    // 状态
     state: {
+      foodMode: 'caixi',
       excludedFoods: [],
       myMenu: [],
-      selectedCategories: ['河南菜'],
+      selectedCategories: ['河南菜', '我的菜单'],
+      categoryOrder: null,
       customTips: {},
       customRecipes: {},
       history: { recent: [], favorites: [], blacklist: [], draws: [] },
       settings: { sound: true }
     },
-    hasWinner: false,
-    dateGanZhi: '',
-    dateSolar: ''
+    // 分享图 overlay
+    shareOverlayVisible: false,
+    shareImageUrl1: '',
+    shareImageUrl2: '',
+    shareNavVisible: false,
+    shareDotsVisible: false,
+    shareDotIndex: 0,
+    shareScrollLeft: 0,
+    shareHint: '长按保存图片',
+    // 历史
+    historyVisible: false,
+    historyList: [],
+    // 分类选择器
+    categoryVisible: false,
+    foodModeLabel: '🍲 菜系',
+    allSelected: false,
+    myMenuSelected: true,
+    myMenuCountText: '0/0',
+    myMenuExpanded: false,
+    myMenuAdding: false,
+    categoryList: [],
+    expandedCategoryIndex: -1,
+    // 签筒弹窗
+    poolVisible: false,
+    poolFoods: [],
+    // Fly animation
+    flyAnim: {},
+    flyOpacity: 0,
+    flyText: '',
+    // Toast
+    toastVisible: false,
+    toastMsg: ''
   },
 
   state: null,
@@ -78,9 +106,7 @@ Page({
   },
 
   onShow() {
-    const currentPool = this.state ? this.data.currentPool : 'all';
     this.loadState();
-    this.setData({ currentPool });
     this.applySolarTheme();
     this.refreshFoods();
     this.renderFortune();
@@ -93,7 +119,6 @@ Page({
   },
 
   onReady() {
-    // 兜底：延迟初始化 slot-machine，避免和页面 onLoad 的大量 setData 冲突导致 timeout
     setTimeout(() => {
       const slotMachine = this.selectComponent('#slotMachine');
       if (slotMachine && this.data.foods.length > 0 && !slotMachine.data.inited) {
@@ -117,7 +142,6 @@ Page({
   applySolarTheme() {
     const color = getSolarPaperColor();
     this.setData({ pageBg: color });
-    // 避免重复设置相同的导航栏颜色
     if (this._lastNavColor !== color) {
       this._lastNavColor = color;
       wx.setNavigationBarColor({ frontColor: '#000000', backgroundColor: color });
@@ -127,6 +151,10 @@ Page({
   // ══════════ 状态 ══════════
   loadState() {
     this.state = storage.load();
+    // 初始化 categoryOrder
+    if (!this.state.categoryOrder) {
+      this.state.categoryOrder = DEFAULT_CATEGORY_ORDER[this.state.foodMode || 'shengji'];
+    }
     this.setData({ state: this.state });
   },
 
@@ -137,14 +165,8 @@ Page({
 
   // ══════════ 食物 ══════════
   refreshFoods() {
-    const foods = getFoods({
-      currentPool: this.data.currentPool,
-      selectedCategories: this.state.selectedCategories,
-      excludedFoods: this.state.excludedFoods,
-      myMenu: this.state.myMenu
-    });
-    this.setData({ foods });
-    // 兜底：若 observer 未触发，手动初始化 slot-machine
+    const foods = getFoods(this.state);
+    this.setData({ foods, foodsCount: foods.length });
     const slotMachine = this.selectComponent('#slotMachine');
     if (slotMachine && foods.length > 0 && !slotMachine.data.inited) {
       slotMachine.initColumns(foods);
@@ -173,45 +195,90 @@ Page({
     const today = new Date().toDateString();
     if (this._dateCacheKey === today) return;
     this._dateCacheKey = today;
-    const { ganZhi, solar } = getGanZhiDate(new Date());
-    this.setData({
-      dateGanZhi: `${ganZhi.year} ${ganZhi.month} ${ganZhi.day} ${ganZhi.hour}`,
-      dateSolar: solar
-    });
+    const now = new Date();
+    // 公历
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const dateGregorian = `${y}.${m}.${d}`;
+    // 农历 + 四柱
+    let dateLunar = '';
+    try {
+      const yi = parseInt(m);
+      const di = parseInt(d);
+      const l = calendar.solar2lunar(y, yi, di);
+      if (l && l !== -1) {
+        const Gan = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+        const Zhi = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+        const hour = now.getHours();
+
+        // 年干支以立春为界
+        const gzYear = this._getYearGZ(y, yi, di);
+
+        // 日干支
+        const gzDay = l.gzDay;
+
+        // 时干支（23:00 算次日子时，时干用次日日柱推算）
+        let hourDayGz = gzDay;
+        if (hour === 23) {
+          const t = new Date(now);
+          t.setDate(t.getDate() + 1);
+          const nextL = calendar.solar2lunar(t.getFullYear(), t.getMonth() + 1, t.getDate());
+          if (nextL && nextL !== -1) hourDayGz = nextL.gzDay;
+        }
+
+        // 月干支以节气为界
+        const gzMonth = this._getMonthGZ(y, yi, di, gzYear[0]);
+
+        // 时干支
+        const dayGan = Gan.indexOf(hourDayGz[0]);
+        const zhiIdx = Math.floor(((hour + 1) % 24) / 2);
+        const ganStart = (dayGan % 5) * 2;
+        const ganIdx = (ganStart + zhiIdx) % 10;
+        const gzHour = Gan[ganIdx] + Zhi[zhiIdx];
+
+        dateLunar = gzYear + '·' + gzMonth + '·' + gzDay + '·' + gzHour;
+      }
+    } catch (e) {
+      console.warn('[calendar] error:', e.message);
+      const { ganZhi } = getGanZhiDate(now);
+      dateLunar = `${ganZhi.year}·${ganZhi.month}·${ganZhi.day}`;
+    }
+    this.setData({ dateGregorian, dateLunar });
   },
 
-  // ══════════ 池子 ══════════
-  switchPool(e) {
-    const pool = e.currentTarget.dataset.pool;
-    // 如果正在旋转，先停止
-    if (this.data.isSpinning) {
-      this.stopSpin();
+  _getYearGZ(y, m, d) {
+    const liChun = calendar.getTerm(y, 3);
+    const yearForGZ = (m < 2 || (m === 2 && d < liChun)) ? y - 1 : y;
+    return calendar.toGanZhiYear(yearForGZ);
+  },
+
+  _getMonthGZ(y, m, d, yearGan) {
+    const Gan = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+    const Zhi = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+    const jieN = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23];
+    const monthIdxMap = [11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    let currentMonthIdx = 11;
+    for (let year = y - 1; year <= y + 1; year++) {
+      for (let i = 0; i < 12; i++) {
+        const n = jieN[i];
+        const termM = Math.floor((n - 1) / 2) + 1;
+        const termD = calendar.getTerm(year, n);
+        if (year < y || (year === y && termM < m) || (year === y && termM === m && termD <= d)) {
+          currentMonthIdx = monthIdxMap[i];
+        }
+      }
     }
-    this.setData({ currentPool: pool });
-    this.refreshFoods();
-    // 切换后如果当前高亮的菜不在新池中，清除高亮
-    const foods = getFoods({
-      currentPool: pool,
-      selectedCategories: this.state.selectedCategories,
-      excludedFoods: this.state.excludedFoods,
-      myMenu: this.state.myMenu
-    });
-    if (this.currentIndex !== -1 && (this.currentIndex >= foods.length || foods[this.currentIndex] !== this.data.resultText)) {
-      this.currentIndex = -1;
-      this.setData({
-        resultText: '待君问签',
-        landed: false,
-        hasWinner: false,
-        tipVisible: false,
-        tipText: '',
-        tipSub: '',
-        signNumberText: '',
-        shareVisible: false,
-        cookVisible: false,
-        cookBtnText: '做法',
-        fortuneVisible: false
-      });
-    }
+    const yearGanIdx = Gan.indexOf(yearGan);
+    let startGan;
+    if (yearGanIdx === 0 || yearGanIdx === 5) startGan = 2;
+    else if (yearGanIdx === 1 || yearGanIdx === 6) startGan = 4;
+    else if (yearGanIdx === 2 || yearGanIdx === 7) startGan = 6;
+    else if (yearGanIdx === 3 || yearGanIdx === 8) startGan = 8;
+    else startGan = 0;
+    const ganIdx = (startGan + currentMonthIdx) % 10;
+    const zhiIdx = (2 + currentMonthIdx) % 12;
+    return Gan[ganIdx] + Zhi[zhiIdx];
   },
 
   // ══════════ 抽签 ══════════
@@ -231,11 +298,8 @@ Page({
     this.currentIndex = targetIndex;
     this.lastShown = targetIndex;
 
-    // 触发 slot machine 旋转
     const slotMachine = this.selectComponent('#slotMachine');
     if (slotMachine) slotMachine.startSpin({ targetIndex });
-
-    // menu-grid 扫描由 nextTick 每轮同步更新，此处不再单独触发
 
     this.setData({
       targetIndex,
@@ -250,27 +314,19 @@ Page({
       fortuneVisible: false
     });
     this.setSpinState(true);
-
     this.playWoodblock();
 
-    // 文字快速切换
     let rounds = 0;
-    const total = 14 + Math.floor(Math.random() * 5);
+    const total = foods.length < 20 ? 12 + Math.floor(Math.random() * 4) : 14 + Math.floor(Math.random() * 5);
 
     const nextTick = () => {
       const f = this.data.foods;
       if (!f || f.length === 0) return;
       this.lastShown = Math.floor(Math.random() * f.length);
       this.setData({ resultText: f[this.lastShown] });
-
-      // 同步更新 menu-grid 扫描位置，与上方文字切换完全同步
-      const menuGrid = this.selectComponent('#menuGrid');
-      if (menuGrid) menuGrid.setScanIndex && menuGrid.setScanIndex(this.lastShown);
-
       rounds++;
 
       if (rounds >= total) {
-        // 自然结束
         this.spinInterval = null;
         this.setSpinState(false);
         this.playStamp();
@@ -322,8 +378,12 @@ Page({
   onPreviewFood(e) {
     const name = e.detail;
     if (!name) return;
+    this.previewByName(name);
+  },
 
-    const tipText = FOOD_TIPS[name] || this.state.customTips[name] || '';
+  previewByName(name) {
+    const tips = getTips(this.state);
+    const tipText = tips[name] || this.state.customTips[name] || '';
     const tipSub = fortune.getTimeTip() + ' · ' + fortune.getSolarTip();
 
     this.setData({
@@ -340,17 +400,13 @@ Page({
       fortuneVisible: false
     });
 
-    // 高亮对应的子组件项
     const foods = this.data.foods;
     const idx = foods.indexOf(name);
     if (idx >= 0) {
       const slotMachine = this.selectComponent('#slotMachine');
       if (slotMachine) slotMachine.updateHighlight && slotMachine.updateHighlight(idx);
     }
-    const menuGrid = this.selectComponent('#menuGrid');
-    if (menuGrid) menuGrid.updateHighlight && menuGrid.updateHighlight(name);
 
-    // 自定义菜如果没有描述，自动请求
     if (!tipText) {
       this.fetchCookFor(name);
     }
@@ -360,7 +416,8 @@ Page({
     const foods = this.data.foods;
     if (idx < 0 || idx >= foods.length) return;
     const name = foods[idx];
-    const tipText = FOOD_TIPS[name] || this.state.customTips[name] || '';
+    const tips = getTips(this.state);
+    const tipText = tips[name] || this.state.customTips[name] || '';
     const tipSub = fortune.getTimeTip() + ' · ' + fortune.getSolarTip();
 
     const signNum = fortune.getSignNumber(name);
@@ -377,18 +434,50 @@ Page({
       shareVisible: true
     });
 
-    // 高亮 slot machine
     const slotMachine = this.selectComponent('#slotMachine');
     if (slotMachine) slotMachine.updateHighlight && slotMachine.updateHighlight(idx);
 
-    // 设置 menu-grid 最终高亮（spin 已同步扫描，此处直接定格）
-    const menuGrid = this.selectComponent('#menuGrid');
-    if (menuGrid) menuGrid.setFinalHighlight && menuGrid.setFinalHighlight(idx);
-
-    // 自定义菜如果没有描述，自动请求
     if (!tipText) {
       this.fetchCookFor(name);
     }
+  },
+
+  flyAnimation(name) {
+    const query = wx.createSelectorQuery();
+    query.select('#result-card').boundingClientRect();
+    query.select('#particle-container').boundingClientRect();
+    query.exec((res) => {
+      if (!res[0] || !res[1]) return;
+      const cardRect = res[0];
+      const machineRect = res[1];
+      const startX = machineRect.left + machineRect.width / 2;
+      const startY = machineRect.top + machineRect.height / 2;
+      const endX = cardRect.left + cardRect.width / 2;
+      const endY = cardRect.top + cardRect.height / 2;
+
+      this.setData({ flyText: name, flyOpacity: 1 });
+
+      const anim = wx.createAnimation({
+        duration: 0,
+        timingFunction: 'step-start'
+      });
+      anim.left(startX).top(startY).scale(1).opacity(1).step({ duration: 0 });
+
+      const anim2 = wx.createAnimation({
+        duration: 300,
+        timingFunction: 'cubic-bezier(0.08, 0.9, 0.15, 1)'
+      });
+      anim2.left(endX).top(endY).scale(1.5).opacity(0.1).step({ duration: 300 });
+
+      this.setData({ flyAnim: anim.export() });
+      setTimeout(() => {
+        this.setData({ flyAnim: anim2.export() });
+      }, 50);
+
+      setTimeout(() => {
+        this.setData({ flyOpacity: 0 });
+      }, 400);
+    });
   },
 
   addToRecent(foodName) {
@@ -403,13 +492,14 @@ Page({
     const draws = this.state.history.draws;
     const now = new Date();
     const signNum = fortune.getSignNumber(foodName);
+    const tips = getTips(this.state);
     const draw = {
       name: foodName,
       date: now.toISOString().slice(0, 10),
       time: String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0'),
       signNumber: '第' + fortune.toChineseUpper(signNum) + '签',
       fortune: daily.type === 'food' ? daily.yi + ' · ' + daily.ji : daily.text,
-      tip: FOOD_TIPS[foodName] || this.state.customTips[foodName] || ''
+      tip: tips[foodName] || this.state.customTips[foodName] || ''
     };
     draws.unshift(draw);
     if (draws.length > 100) draws.length = 100;
@@ -418,22 +508,16 @@ Page({
   // ══════════ 做法 ══════════
   askCook() {
     if (this.data.resultText === '待君问签') return;
-
     if (this.data.cookVisible) {
       this.exportCookCard();
       return;
     }
-
     const dish = this.data.resultText;
-
-    // 优先从 state.customRecipes 获取
     if (this.state.customRecipes[dish]) {
       this.renderCook(this.state.customRecipes[dish]);
       this.setData({ cookVisible: true, cookBtnText: '导出' });
       return;
     }
-
-    // 加载状态
     this.setData({
       cookLoading: true,
       cookVisible: true,
@@ -442,8 +526,6 @@ Page({
       cookSteps: [],
       cookTips: []
     });
-
-    // 调用云函数
     wx.cloud.callFunction({
       name: 'cook',
       data: { dish },
@@ -480,7 +562,7 @@ Page({
         const msg = err && err.errMsg ? err.errMsg : '网络异常';
         this.showToast('调用失败：' + msg + '，已显示通用做法');
         this.setData({ cookLoading: false, cookBtnText: '做法' });
-      },
+      }
     });
   },
 
@@ -572,7 +654,9 @@ Page({
       const tempPath = await this.drawFortuneCard(dish);
       this.setData({
         shareImageUrl1: tempPath,
-        shareHint: '长按保存图片'
+        shareNavVisible: true,
+        shareDotsVisible: true,
+        shareHint: '左右滑动切换 · 长按保存'
       });
     } catch (e) {
       console.error('[index] share card fail:', e);
@@ -602,7 +686,9 @@ Page({
       const tempPath = await this.drawCookCard(dish, recipe);
       this.setData({
         shareImageUrl2: tempPath,
-        shareHint: '长按保存图片'
+        shareNavVisible: true,
+        shareDotsVisible: true,
+        shareHint: '左右滑动切换 · 长按保存'
       });
     } catch (e) {
       console.error('[index] export fail:', e);
@@ -612,8 +698,10 @@ Page({
   },
 
   drawFortuneCard(dish) {
+    const that = this;
     return new Promise((resolve, reject) => {
-      const tipText = FOOD_TIPS[dish] || this.state.customTips[dish] || '';
+      const tips = getTips(this.state);
+      const tipText = tips[dish] || this.state.customTips[dish] || '';
       const timeTip = fortune.getTimeTip();
       const solarTip = fortune.getSolarTip();
       const d = new Date();
@@ -673,6 +761,7 @@ Page({
   },
 
   drawCookCard(dish, recipe) {
+    const that = this;
     return new Promise((resolve, reject) => {
       wx.createSelectorQuery().select('#shareCanvas').fields({ node: true, size: true }).exec((res) => {
         if (!res[0] || !res[0].node) { reject(new Error('canvas not found')); return; }
@@ -680,7 +769,6 @@ Page({
         const ctx = canvas.getContext('2d');
         const dpr = wx.getSystemInfoSync().pixelRatio;
         const W = 540;
-        // 先用一个足够大的高度绘制，避免内容被截断
         const MAX_H = 5000;
         canvas.width = W * dpr;
         canvas.height = MAX_H * dpr;
@@ -743,11 +831,11 @@ Page({
             y += 22;
             ctx.fillStyle = '#6B6055';
             ctx.font = '400 12px sans-serif';
-            if (s.desc) y = this._drawWrapped(ctx, s.desc, 72, y, W - 96, 20);
+            if (s.desc) y = that._drawWrapped(ctx, s.desc, 72, y, W - 96, 20);
             if (s.why) {
               ctx.fillStyle = '#A89F94';
               ctx.font = 'italic 400 11px sans-serif';
-              y = this._drawWrapped(ctx, '→ ' + s.why, 72, y, W - 96, 18);
+              y = that._drawWrapped(ctx, '→ ' + s.why, 72, y, W - 96, 18);
             }
             if (s.heat) {
               ctx.fillStyle = '#8A3D27';
@@ -767,12 +855,11 @@ Page({
           ctx.fillStyle = '#6B6055';
           ctx.font = '400 12px sans-serif';
           tips.forEach(t => {
-            y = this._drawWrapped(ctx, '· ' + t, 48, y, W - 96, 20);
+            y = that._drawWrapped(ctx, '· ' + t, 48, y, W - 96, 20);
             y += 4;
           });
         }
 
-        // 底部信息紧贴在内容下方，不再依赖固定画布高度
         y += 48;
         ctx.fillStyle = '#A89F94';
         ctx.font = '400 12px sans-serif';
@@ -780,14 +867,10 @@ Page({
         ctx.fillText('吃啥嘞', W / 2, y);
         ctx.fillText('chisha.shameless.top', W / 2, y + 18);
 
-        // 实际内容高度 = 底部信息底部 + 留白
         const actualH = Math.max(y + 40, 960);
         wx.canvasToTempFilePath({
           canvas,
-          x: 0,
-          y: 0,
-          width: W,
-          height: actualH,
+          x: 0, y: 0, width: W, height: actualH,
           success: r => resolve(r.tempFilePath),
           fail: reject
         });
@@ -814,7 +897,7 @@ Page({
   },
 
   // ══════════ 分享 Overlay ══════════
-  closeShareOverlay(e) {
+  closeShareOverlay() {
     this.setData({
       shareOverlayVisible: false,
       shareImageUrl1: '',
@@ -875,21 +958,118 @@ Page({
     this.setData({ categoryVisible: false });
   },
 
+  switchFoodMode() {
+    const modes = ['shengji', 'caixi', 'jiachang'];
+    const current = this.state.foodMode || 'shengji';
+    const nextIndex = (modes.indexOf(current) + 1) % modes.length;
+    const nextMode = modes[nextIndex];
+    this.state.foodMode = nextMode;
+    this.state.selectedCategories = [DEFAULT_CATEGORY_ORDER[nextMode][0], '我的菜单'];
+    this.state.excludedFoods = [];
+    this.state.categoryOrder = DEFAULT_CATEGORY_ORDER[nextMode];
+    this.saveState();
+    this.refreshFoods();
+    this.renderCategoryList();
+  },
+
+  toggleAllCategories() {
+    const mode = FOOD_MODES[this.state.foodMode] || FOOD_MODES.shengji;
+    const allCatNames = (mode.categories || []).map(c => c.name);
+    const allSelected = allCatNames.length > 0 && allCatNames.every(name => this.state.selectedCategories.includes(name));
+    if (allSelected) {
+      this.state.selectedCategories = this.state.selectedCategories.filter(name => name === '我的菜单');
+    } else {
+      const newSelected = new Set([...this.state.selectedCategories, ...allCatNames]);
+      this.state.selectedCategories = Array.from(newSelected);
+    }
+    this.saveState();
+    this.refreshFoods();
+    this.renderCategoryList();
+  },
+
+  toggleMyMenuCategory() {
+    const idx = this.state.selectedCategories.indexOf('我的菜单');
+    if (idx >= 0) {
+      this.state.selectedCategories.splice(idx, 1);
+    } else {
+      this.state.selectedCategories.push('我的菜单');
+    }
+    this.saveState();
+    this.refreshFoods();
+    this.renderCategoryList();
+  },
+
+  toggleExpandMyMenu(e) {
+    e.stopPropagation && e.stopPropagation();
+    this.setData({ myMenuExpanded: !this.data.myMenuExpanded });
+  },
+
+  removeMyMenuItem(e) {
+    e.stopPropagation && e.stopPropagation();
+    const name = e.currentTarget.dataset.name;
+    const idx = this.state.myMenu.indexOf(name);
+    if (idx >= 0) {
+      this.state.myMenu.splice(idx, 1);
+      this.saveState();
+      this.refreshFoods();
+      this.renderCategoryList();
+    }
+  },
+
+  showMyMenuAddInput(e) {
+    e.stopPropagation && e.stopPropagation();
+    this.setData({ myMenuAdding: true });
+  },
+
+  onMyMenuAddConfirm(e) {
+    const val = (e.detail.value || '').trim();
+    this.setData({ myMenuAdding: false });
+    if (val) this.addToMyMenu(val);
+  },
+
+  onMyMenuAddBlur(e) {
+    const val = (e.detail.value || '').trim();
+    this.setData({ myMenuAdding: false });
+    if (val) this.addToMyMenu(val);
+  },
+
+  addToMyMenu(val) {
+    if (this.state.myMenu.includes(val)) {
+      this.showToast('「' + val + '」已在菜单中');
+      return;
+    }
+    this.state.myMenu.push(val);
+    if (!this.state.selectedCategories.includes('我的菜单')) {
+      this.state.selectedCategories.push('我的菜单');
+    }
+    this.saveState();
+    this.refreshFoods();
+    this.renderCategoryList();
+    this.fetchCookFor(val);
+  },
+
   renderCategoryList() {
-    const { selectedCategories, excludedFoods } = this.state;
+    const { foodMode, selectedCategories, excludedFoods, myMenu } = this.state;
+    const mode = FOOD_MODES[foodMode] || FOOD_MODES.shengji;
+    const allCatNames = (mode.categories || []).map(c => c.name);
+    const allSelected = allCatNames.length > 0 && allCatNames.every(name => selectedCategories.includes(name));
+
+    const myMenuSelected = selectedCategories.includes('我的菜单');
+    const myMenuCount = myMenu.length;
+    const myMenuCountText = (myMenuSelected ? myMenuCount : 0) + '/' + myMenuCount;
+
+    const foodModeLabel = {
+      shengji: '🏛️ 省籍',
+      caixi: '🏛️ 菜系',
+      jiachang: '🏛️ 家常'
+    }[foodMode] || '🏛️ 省籍';
+
     const expandedCategoryIndex = this.data.expandedCategoryIndex;
-    const categoryList = FOOD_CATEGORIES.map((cat, i) => {
+    const categoryList = (mode.categories || []).map((cat, i) => {
       const isSelected = selectedCategories.includes(cat.name);
       const excludedCount = cat.items.filter(n => excludedFoods.includes(n)).length;
       const inPoolCount = isSelected ? cat.items.length - excludedCount : 0;
-      let statusText = '';
-      if (!isSelected) {
-        statusText = '未选';
-      } else if (excludedCount === 0) {
-        statusText = '已全选';
-      } else {
-        statusText = '已选 ' + inPoolCount + '/' + cat.items.length;
-      }
+      const statusText = (isSelected ? inPoolCount : 0) + '/' + cat.items.length;
       return {
         name: cat.name,
         selected: isSelected,
@@ -901,7 +1081,14 @@ Page({
         }))
       };
     });
-    this.setData({ categoryList });
+
+    this.setData({
+      categoryList,
+      allSelected,
+      myMenuSelected,
+      myMenuCountText,
+      foodModeLabel
+    });
   },
 
   toggleCategory(e) {
@@ -909,12 +1096,11 @@ Page({
     const list = this.data.categoryList;
     const cat = list[idx];
     const catName = cat.name;
-
     const sIdx = this.state.selectedCategories.indexOf(catName);
     if (sIdx >= 0) {
       this.state.selectedCategories.splice(sIdx, 1);
-      // 取消分类时，清空该分类在 excludedFoods 中的记录
-      const catData = FOOD_CATEGORIES.find(c => c.name === catName);
+      const mode = FOOD_MODES[this.state.foodMode] || FOOD_MODES.shengji;
+      const catData = (mode.categories || []).find(c => c.name === catName);
       if (catData) {
         catData.items.forEach(name => {
           const eIdx = this.state.excludedFoods.indexOf(name);
@@ -924,13 +1110,13 @@ Page({
     } else {
       this.state.selectedCategories.push(catName);
     }
-
     this.saveState();
     this.refreshFoods();
     this.renderCategoryList();
   },
 
   toggleExpandCategory(e) {
+    e.stopPropagation && e.stopPropagation();
     const idx = e.currentTarget.dataset.index;
     const current = this.data.expandedCategoryIndex;
     this.setData({ expandedCategoryIndex: current === idx ? -1 : idx });
@@ -938,86 +1124,84 @@ Page({
   },
 
   toggleFoodExclude(e) {
+    e.stopPropagation && e.stopPropagation();
     const name = e.currentTarget.dataset.name;
     const catIdx = e.currentTarget.dataset.cat;
     const cat = this.data.categoryList[catIdx];
-
-    // 如果分类未选中，先选中它
     if (!this.state.selectedCategories.includes(cat.name)) {
       this.state.selectedCategories.push(cat.name);
     }
-
     const idx = this.state.excludedFoods.indexOf(name);
     if (idx >= 0) {
       this.state.excludedFoods.splice(idx, 1);
     } else {
       this.state.excludedFoods.push(name);
     }
-
     this.saveState();
     this.refreshFoods();
     this.renderCategoryList();
   },
 
-  // ══════════ 菜单 ══════════
-  onMenuAdd(e) {
-    const val = e.detail;
-    if (!val) return;
-    if (this.state.myMenu.includes(val)) {
-      if (this.data.currentPool === 'myMenu') this.showToast('「' + val + '」已在菜单中');
-      return;
-    }
-    this.state.myMenu.push(val);
-    this.saveState();
-    this.refreshFoods();
-    this.fetchCookFor(val);
+  // ══════════ 签筒弹窗 ══════════
+  showAllFoods() {
+    const foodsWithSource = getFoodsWithSource(this.state);
+    const poolFoods = foodsWithSource.map((item, i) => ({
+      name: item.name,
+      source: item.source,
+      themeIndex: i % 7,
+      removable: item.source === '我的菜单'
+    }));
+    this.setData({ poolVisible: true, poolFoods });
   },
 
-  onMenuRemove(e) {
-    const idx = e.detail;
-    if (idx < 0 || idx >= this.state.myMenu.length) return;
-    const name = this.state.myMenu[idx];
-    this.state.myMenu.splice(idx, 1);
-    this.saveState();
-    this.refreshFoods();
-    if (this.currentIndex === idx) {
-      this.currentIndex = -1;
-      // 如果正在旋转，先停止
-      if (this.data.isSpinning) {
-        this.stopSpin();
-      }
-      this.setData({
-        resultText: '待君问签',
-        landed: false,
-        hasWinner: false,
-        tipVisible: false,
-        tipText: '',
-        tipSub: '',
-        signNumberText: '',
-        shareVisible: false,
-        cookVisible: false,
-        cookBtnText: '做法',
-        fortuneVisible: false
-      });
-    } else if (this.currentIndex > idx) {
-      this.currentIndex--;
-    }
+  closePoolOverlay() {
+    this.setData({ poolVisible: false });
   },
 
-  onToggleFoodInPool(e) {
-    const name = e.detail;
-    if (this.data.currentPool === 'myMenu') return;
-    const idx = this.state.excludedFoods.indexOf(name);
+  onPoolItemTap(e) {
+    const name = e.currentTarget.dataset.name;
+    this.previewByName(name);
+    this.setData({ poolVisible: false });
+  },
+
+  onPoolItemLongPress(e) {
+    const name = e.currentTarget.dataset.name;
+    const idx = this.state.myMenu.indexOf(name);
     if (idx >= 0) {
-      this.state.excludedFoods.splice(idx, 1);
-    } else {
-      this.state.excludedFoods.push(name);
+      wx.showModal({
+        title: '删除确认',
+        content: '从「我的菜单」中删除「' + name + '」？',
+        success: (res) => {
+          if (res.confirm) {
+            this.state.myMenu.splice(idx, 1);
+            this.saveState();
+            this.refreshFoods();
+            if (this.data.poolVisible) this.showAllFoods();
+          }
+        }
+      });
     }
-    this.saveState();
-    this.refreshFoods();
+  },
+
+  onPoolItemRemove(e) {
+    e.stopPropagation && e.stopPropagation();
+    const name = e.currentTarget.dataset.name;
+    const idx = this.state.myMenu.indexOf(name);
+    if (idx >= 0) {
+      this.state.myMenu.splice(idx, 1);
+      this.saveState();
+      this.refreshFoods();
+      this.showAllFoods();
+    }
   },
 
   // ══════════ 音效 ══════════
+  toggleSound() {
+    this.state.settings.sound = !this.state.settings.sound;
+    this.saveState();
+    if (this.state.settings.sound) this.playWoodblock();
+  },
+
   playWoodblock() {
     const app = getApp();
     if (app.woodblock && this.state.settings.sound !== false) {
@@ -1042,7 +1226,7 @@ Page({
   },
 
   onPanelTap() {
-    // 阻止冒泡，防止点击面板关闭 overlay
+    // 阻止冒泡
   },
 
   // ══════════ 触摸滑动 ══════════
@@ -1055,8 +1239,7 @@ Page({
     const dx = e.changedTouches[0].clientX - this.touchStartX;
     const dy = e.changedTouches[0].clientY - this.touchStartY;
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 60) {
-      const pool = this.data.currentPool === 'all' ? 'myMenu' : 'all';
-      this.switchPool({ currentTarget: { dataset: { pool } } });
+      // 左右滑动可切换签筒与选菜，此处暂不处理
     }
   },
 
@@ -1070,11 +1253,11 @@ Page({
   onOverlayTouchEnd(e) {
     const dx = e.changedTouches[0].clientX - this.overlayTouchStartX;
     const dy = e.changedTouches[0].clientY - this.overlayTouchStartY;
-    // 水平滑动超过 80px，或垂直下滑超过 80px，关闭当前 overlay
     if (Math.abs(dx) > 80 || dy > 80) {
       if (this.data.shareOverlayVisible) this.closeShareOverlay();
       else if (this.data.historyVisible) this.closeHistory();
       else if (this.data.categoryVisible) this.closeCategoryPicker();
+      else if (this.data.poolVisible) this.closePoolOverlay();
     }
   }
 });
