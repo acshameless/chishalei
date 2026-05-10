@@ -353,7 +353,8 @@ Page({
     this.setSpinState(false);
     this.playStamp();
     const foods = this.data.foods;
-    const idx = this.lastShown;
+    const idx = this.currentIndex; // 修复：必须使用确定的目标索引，而不是跳动中的 lastShown
+    this.lastShown = idx; // 同步最后显示的状态
     if (idx >= 0 && idx < foods.length) {
       this.pick(idx);
       this.addToRecent(foods[idx]);
