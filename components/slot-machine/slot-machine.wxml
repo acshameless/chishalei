@@ -7,28 +7,28 @@
     <view class="slot-column">
       <view class="slot-strip" animation="{{anim0}}">
         <view
-          class="slot-item {{highlight0 >= 0 && highlight0 === idx ? 'active' : ''}} {{utils.includes(myMenu, name) ? 'in-my-menu' : ''}}"
-          wx:for="{{items0}}" wx:for-item="name" wx:for-index="idx" wx:key="idx"
-          data-name="{{name}}" bindtap="onItemTap" bindlongpress="onItemLongPress"
-        >{{name}}</view>
+          class="slot-item {{highlight0 >= 0 && highlight0 === idx ? 'active' : ''}} {{utils.includes(myMenu, item.name) ? 'in-my-menu' : ''}}"
+          wx:for="{{items0}}" wx:for-item="item" wx:for-index="idx" wx:key="id"
+          data-name="{{item.name}}" bindtap="onItemTap" bindlongpress="onItemLongPress"
+        >{{item.name}}</view>
       </view>
     </view>
     <view class="slot-column">
       <view class="slot-strip" animation="{{anim1}}">
         <view
-          class="slot-item {{highlight1 >= 0 && highlight1 === idx ? 'active' : ''}} {{utils.includes(myMenu, name) ? 'in-my-menu' : ''}}"
-          wx:for="{{items1}}" wx:for-item="name" wx:for-index="idx" wx:key="idx"
-          data-name="{{name}}" bindtap="onItemTap" bindlongpress="onItemLongPress"
-        >{{name}}</view>
+          class="slot-item {{highlight1 >= 0 && highlight1 === idx ? 'active' : ''}} {{utils.includes(myMenu, item.name) ? 'in-my-menu' : ''}}"
+          wx:for="{{items1}}" wx:for-item="item" wx:for-index="idx" wx:key="id"
+          data-name="{{item.name}}" bindtap="onItemTap" bindlongpress="onItemLongPress"
+        >{{item.name}}</view>
       </view>
     </view>
     <view class="slot-column">
       <view class="slot-strip" animation="{{anim2}}">
         <view
-          class="slot-item {{highlight2 >= 0 && highlight2 === idx ? 'active' : ''}} {{utils.includes(myMenu, name) ? 'in-my-menu' : ''}}"
-          wx:for="{{items2}}" wx:for-item="name" wx:for-index="idx" wx:key="idx"
-          data-name="{{name}}" bindtap="onItemTap" bindlongpress="onItemLongPress"
-        >{{name}}</view>
+          class="slot-item {{highlight2 >= 0 && highlight2 === idx ? 'active' : ''}} {{utils.includes(myMenu, item.name) ? 'in-my-menu' : ''}}"
+          wx:for="{{items2}}" wx:for-item="item" wx:for-index="idx" wx:key="id"
+          data-name="{{item.name}}" bindtap="onItemTap" bindlongpress="onItemLongPress"
+        >{{item.name}}</view>
       </view>
     </view>
   </block>

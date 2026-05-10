@@ -131,6 +131,7 @@ Component({
       var foods = this.properties.foods.length ? this.properties.foods : this.data.foods;
       var foodsLen = foods.length;
       var targetIndex = (opts && opts.targetIndex !== undefined) ? opts.targetIndex : this.properties.targetIndex;
+      var duration = opts && opts.duration ? opts.duration : 2800;
 
       if (!foodsLen || targetIndex < 0 || targetIndex >= foodsLen) return;
 
@@ -143,16 +144,18 @@ Component({
       this.initColumns(foods, targetFood, function() {
         wx.nextTick(function() {
           wx.nextTick(function() {
-            self._runSpinAnimation();
+            self._runSpinAnimation(duration);
           });
         });
       });
     },
 
-    _runSpinAnimation() {
+    _runSpinAnimation(totalDuration) {
       var self     = this;
-      var duration = 2800;
       var delays   = [0, 120, 240];
+      // 为了让最后第三列完美贴合上方框框的停止时间，
+      // 第三列实际 CSS 动画时长 = 总时长 - 它本身的延时启动时间
+      var duration = totalDuration ? Math.max(500, totalDuration - delays[2]) : 2800;
       var finalY   = this._calcFinalY();
 
       this._delayTimers = [];

@@ -298,9 +298,6 @@ Page({
     this.currentIndex = targetIndex;
     this.lastShown = targetIndex;
 
-    const slotMachine = this.selectComponent('#slotMachine');
-    if (slotMachine) slotMachine.startSpin({ targetIndex });
-
     this.setData({
       targetIndex,
       landed: false,
@@ -318,6 +315,20 @@ Page({
 
     let rounds = 0;
     const total = foods.length < 20 ? 12 + Math.floor(Math.random() * 4) : 14 + Math.floor(Math.random() * 5);
+
+    // 计算上方框框闪动动画的总时长
+    let expectedDuration = 50;
+    for (let i = 1; i < total; i++) {
+      let remaining = total - i;
+      let nextDelay = 80;
+      if (remaining < 3) nextDelay = 300;
+      else if (remaining < 5) nextDelay = 200;
+      else if (remaining < 8) nextDelay = 120;
+      expectedDuration += nextDelay;
+    }
+
+    const slotMachine = this.selectComponent('#slotMachine');
+    if (slotMachine) slotMachine.startSpin({ targetIndex, duration: expectedDuration });
 
     const nextTick = () => {
       const f = this.data.foods;
